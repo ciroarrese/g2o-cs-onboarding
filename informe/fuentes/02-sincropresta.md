@@ -2,6 +2,8 @@
 
 **Período:** del 1/10 al 4/11/2026. **Fuente:** documento "Sincropresta: mejoras de octubre y noviembre 2026" (21 páginas).
 
+**Hecho con:** Claude (desarrollo, specs, pruebas, relevamiento y documentación).
+
 **Qué es:** el módulo que sincroniza las tiendas PrestaShop con el ERP Flexxus (catálogo, precios, stock, clientes y pedidos), más el módulo de cuenta corriente.
 
 ## Cifras clave
@@ -15,7 +17,6 @@
 | Bugs graves corregidos | **12**, entre ellos pedidos perdidos, catálogo apagado y packs vacíos |
 | Clientes con mejoras en producción | **12** |
 | Clientes nuevos | **5** (3 ya en marcha y 2 en curso) |
-| Desarrollos a medida | **2** aceptados por clientes, más un abono mensual |
 | Tiendas relevadas | Informe automático de salud de **68** tiendas |
 | Monitor de sincros | **316** tiendas en un solo panel |
 
@@ -41,8 +42,7 @@
    | Error de sincro | 19 |
    | Advertencias | 12 |
 
-7. **Proceso con IA.** El repo tiene agentes especialistas (Firebird, PrestaShop, UX y backend), skills de diagnóstico, el orquestador `/caso`, un flujo de specs y una base de conocimiento de incidentes. Ningún cambio llega a un cliente sin probarse antes en un entorno de prueba.
-8. **Impacto comercial.** Las propuestas se presentan con capturas reales del prototipo ya funcionando. En un caso, el cliente confirmó el presupuesto al día siguiente.
+7. **Todo con Claude.** Los ~200 commits, las 15 specs, el relevamiento de 68 tiendas y el monitor se hicieron con Claude. En el repo hay agentes especialistas (Firebird, PrestaShop, UX y backend), skills de diagnóstico, el orquestador `/caso` y una base de conocimiento de incidentes. Ningún cambio llega a producción sin probarse antes en un entorno de prueba.
 
 ## Próximos pasos (según el documento)
 
