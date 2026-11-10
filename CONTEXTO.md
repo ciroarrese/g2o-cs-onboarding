@@ -31,10 +31,22 @@ El orden de trabajo es este:
 |---|---|---|---|
 | 1 | Asistente IA dentro de cada ticket (userscript de Violentmonkey en la mesa de soporte): redacción con IA en 4 modos, dictado por voz, diagnóstico de pedidos y escalado en un clic | `01-panel-ia-tickets.md` | Listo |
 | 2 | Sincropresta, el módulo PrestaShop ↔ Flexxus renovado (PS 9, Hostinger, 6 funciones al core, precios incrementales, cuenta corriente, ~200 commits) | `02-sincropresta.md` | Listo |
-| 3 | **Sincro Monitor:** panel de monitoreo de las sincros PrestaShop | `03-sincro-monitor.md` | **Pendiente: mapear el panel** |
+| 3 | Sincro Monitor: panel de monitoreo de las sincros PrestaShop (315 tiendas, más de 1,2 M de corridas clasificadas, control de salud en piloto) | `03-sincro-monitor.md` | Listo |
 | … | Otros proyectos que el usuario pase | | |
 
-## Tarea siguiente: ficha 3 (Sincro Monitor)
+## Ficha 3 (Sincro Monitor): hecha el 10/11/2026
+
+Notas para la próxima sesión:
+- Las cifras de la ficha 3 son del panel en vivo (315 tiendas: 146 OK, 73 error de servidor, 17 error de sincro, 12 advertencias, 67 sin datos recientes). Difieren de las del PDF (316 / 150 / 71 / 19 / 12), que son de otro momento del mismo día. En el informe usar las del panel y citar la fecha.
+- El panel no mide tickets evitados. No afirmar una cifra de "tickets anticipados" sin una fuente que el usuario apruebe.
+- El panel tiene acciones que escriben (crear ticket, actualizar desde Cronicle, ejecutar sincro, relanzar). Al recorrerlo, solo lectura.
+- Las capturas quedaron en el scratchpad de la sesión (muestran dominios de clientes, no van al repo).
+
+## Tarea siguiente
+
+Esperar el próximo proyecto que pase el usuario. Después: informe en Claude Docs, guion y video.
+
+### Referencia de la tarea anterior (ficha 3)
 
 - **Objetivo del panel, según el usuario:** monitorear las integraciones para **reaccionar antes de que el cliente abra un ticket**.
 - **Acceso:**
