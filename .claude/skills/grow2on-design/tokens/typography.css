@@ -1,0 +1,25 @@
+:root{
+  --font-family-base:"Geist",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --font-family-mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+
+  --font-weight-regular:400;
+  --font-weight-medium:500;
+  --font-weight-semibold:600;
+  --font-weight-bold:600; /* intentional: the brand caps "bold" at 600 for UI */
+
+  --text-h1:clamp(30px,4vw,44px);
+  --text-h2:clamp(24px,3vw,30px);
+  --text-h3:24px;
+  --text-h4:20px;
+  --text-body-lg:18px;
+  --text-body:16px;
+  --text-body-sm:14px;
+  --text-caption:12px;
+  --text-stat:36px;
+  --text-card-title:22px;
+
+  --leading-tight:1.15; /* @kind font */
+  --leading-body:1.5; /* @kind font */
+  --tracking-eyebrow:.06em; /* @kind font */
+  --tracking-footer-label:.04em; /* @kind font */
+}

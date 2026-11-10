@@ -1,0 +1,56 @@
+/* Base palette — verbatim from grow2on.com theme.css */
+:root{
+  /* Brand */
+  --g2o-pink:#e7007e;
+  --g2o-pink-dark:#b8005f;
+  --g2o-pink-light:#fce4f0;
+  --g2o-orange:#f56406;
+  --g2o-orange-dark:#c94f03;
+  --g2o-orange-light:#fee6d3;
+  --g2o-purple:#770ce9;
+
+  /* Neutrals */
+  --g2o-black:#1a1a1c;
+  --g2o-white:#ffffff;
+  --g2o-gray-50:#f7f7f8;
+  --g2o-gray-100:#eeedef;
+  --g2o-gray-200:#dcdadd;
+  --g2o-gray-300:#b8b6ba;
+  --g2o-gray-600:#5c5b5f;
+  --g2o-gray-800:#332f33;
+  --g2o-gray-text:#5c5b5f;
+  --g2o-footer-bar:#3c3c3c;
+
+  /* Semantic status */
+  --g2o-success:#1fa25a;
+  --g2o-warning:#f5a623;
+  --g2o-error:#d7016b;
+
+  /* Semantic aliases — prefer these in product code */
+  --color-brand-primary:var(--g2o-pink);
+  --color-brand-secondary:var(--g2o-orange);
+  --color-text-primary:var(--g2o-gray-text);
+  --color-text-secondary:var(--g2o-gray-text);
+  --color-text-muted:var(--g2o-gray-300);
+  --color-text-strong:var(--g2o-black);
+  --color-text-on-brand:var(--g2o-white);
+  --color-surface-page:var(--g2o-white);
+  --color-surface-card:var(--g2o-white);
+  --color-surface-subtle:var(--g2o-gray-50);
+  --color-border-default:var(--g2o-gray-200);
+  --color-border-focus:var(--g2o-pink);
+  --color-link:var(--g2o-pink);
+  --color-link-hover:var(--g2o-pink-dark);
+
+  /* Gradients */
+  --gradient-brand:linear-gradient(90deg,var(--g2o-pink) 0%,var(--g2o-orange) 100%);
+  --gradient-thumb:linear-gradient(135deg,#ffd6ea,#ffe3cf); /* @kind color */
+  --gradient-thumb-3:linear-gradient(135deg,#ffe3cf,#ffd6ea,#e9d5ff); /* @kind color */
+  --gradient-panel:linear-gradient(180deg,var(--color-surface-subtle),var(--color-surface-card));
+  --gradient-aurora:radial-gradient(circle at 20% 70%,var(--g2o-purple) 0%,transparent 60%),radial-gradient(circle at 75% 55%,var(--g2o-pink) 0%,transparent 60%),radial-gradient(circle at 45% 100%,var(--g2o-orange) 0%,transparent 55%);
+
+  /* Brand tints used for active/hover washes */
+  --tint-pink-8:#e7007e14;   /* 8%  */
+  --tint-pink-10:#e7007e1a;  /* 10% */
+  --tint-pink-55:#e7007e8c;  /* 55% */
+}

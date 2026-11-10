@@ -1,0 +1,18 @@
+<!-- @dsCard group="Components" viewport="700x690" name="Navigation" subtitle="Header, FilterBar, MobileAccordion, Footer" -->
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0;background:#fff;font-family:var(--font-family-base)}.pad{padding:20px}</style>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const {Header,Footer,FilterBar,MobileAccordion}=window.Grow2onDesignSystem_455be5;
+function App(){return <>
+<Header sticky={false} logo="../../assets/brand/logo-grow2on.png" links={[{label:'Funcionalidades',items:[{label:'Publicación de artículos'},{label:'Stock de seguridad'}]},{label:'Integraciones',items:[{label:'Mercado Libre'},{label:'Shopify'}]},{label:'Blog'},{label:'¿Sos un ERP?'}]}/>
+<div className="pad"><FilterBar options={[{label:'Todas',count:19},{label:'Marketplaces',count:6},{label:'ERP',count:8},{label:'eCommerce',count:5}]}/>
+<div style={{maxWidth:280,marginTop:16}}><MobileAccordion label="Integraciones" defaultOpen><a href="#" style={{padding:'8px 0',fontSize:14,color:'var(--color-text-secondary)'}}>Mercado Libre</a><a href="#" style={{padding:'8px 0',fontSize:14,color:'var(--color-text-secondary)'}}>Tiendanube</a></MobileAccordion></div></div>
+<Footer logo="../../assets/brand/logo-grow2on.png" blurb="Grow2on centraliza tu catálogo y lo sincroniza con todos tus canales de venta." columns={[{title:'PRODUCTO',links:[{label:'Funcionalidades'},{label:'Integraciones'},{label:'Blog'}]},{title:'AYUDA',links:[{label:'Mapa de sitio'},{label:'Políticas de privacidad'}]}]} offices={[{country:'Argentina',flag:'../../assets/icons/flag-argentina.png',address:'Humberto Primo 843\n5000 Córdoba, Argentina'}]} bottom="© GROW2ON 2026. Todos los derechos reservados."/></>}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

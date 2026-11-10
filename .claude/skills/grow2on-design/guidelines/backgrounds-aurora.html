@@ -1,0 +1,21 @@
+<!-- @dsCard group="Brand" viewport="700x330" name="Aurora backgrounds" subtitle="Blurred pink/orange/purple cloud sets for hero and section surfaces" -->
+<!doctype html><html lang="es"><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css">
+<style>*{box-sizing:border-box}body{margin:0;padding:16px;background:#fff;font-family:var(--font-family-base)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.tile{position:relative;overflow:hidden;border-radius:var(--radius-lg);border:1px solid var(--color-border-default);height:140px}
+.tile .cloud{position:absolute;inset:-10%;filter:var(--blur-cloud);opacity:.55;z-index:0}
+.tile .b{position:absolute;border-radius:50%}
+.tile .aurora{position:absolute;inset:-20%;filter:var(--blur-aurora);opacity:.5;background:var(--gradient-aurora)}
+.tile label{position:absolute;left:10px;bottom:8px;z-index:2;font-family:var(--font-family-mono);font-size:10px;color:var(--g2o-gray-600);background:#fffc;padding:2px 6px;border-radius:6px}
+.dark{background:var(--g2o-black)}
+.dark label{color:#fff;background:#0006}
+</style></head><body>
+<div class="grid">
+<div class="tile"><div class="cloud"><span class="b" style="background:var(--g2o-pink);width:46%;height:46%;left:6%;top:8%"></span><span class="b" style="background:var(--g2o-orange);width:38%;height:38%;right:10%;top:22%"></span><span class="b" style="background:var(--g2o-purple);width:34%;height:34%;left:42%;bottom:0"></span></div><label>Cloud — default</label></div>
+<div class="tile"><div class="aurora"></div><label>Aurora — gradient-aurora</label></div>
+<div class="tile dark"><div class="cloud" style="opacity:.7"><span class="b" style="background:var(--g2o-purple);width:50%;height:50%;left:0;top:0"></span><span class="b" style="background:var(--g2o-pink);width:40%;height:40%;right:0;bottom:10%"></span></div><label>Cloud — on dark</label></div>
+<div class="tile"><div class="cloud" style="opacity:.4"><span class="b" style="background:var(--g2o-orange);width:60%;height:60%;left:-10%;top:-10%"></span><span class="b" style="background:var(--g2o-pink);width:40%;height:40%;right:0;bottom:0"></span></div><label>Cloud — subtle wash</label></div>
+<div class="tile dark"><div class="aurora" style="opacity:.65"></div><label>Aurora — on dark</label></div>
+<div class="tile"><div class="cloud"><span class="b" style="background:var(--g2o-pink);width:70%;height:70%;left:15%;top:-20%;animation:g2o-cloud-a 18s ease-in-out infinite"></span><span class="b" style="background:var(--g2o-orange);width:50%;height:50%;right:-10%;bottom:-10%;animation:g2o-cloud-b 22s ease-in-out infinite"></span></div><label>Cloud — animated (18s/22s)</label></div>
+</div>
+</body></html>

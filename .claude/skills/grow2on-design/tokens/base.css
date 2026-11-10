@@ -1,0 +1,12 @@
+/* Minimal element resets the brand relies on */
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--font-family-base);color:var(--color-text-primary);background:var(--color-surface-page);-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:var(--color-link);text-decoration:none}
+a:hover{color:var(--color-link-hover)}
+button{font-family:inherit}
+h1{font-size:var(--text-h1);line-height:var(--leading-tight);color:var(--color-text-strong)}
+h2{font-size:var(--text-h2);line-height:var(--leading-tight);color:var(--color-text-strong)}
+h3{font-size:var(--text-h3);line-height:var(--leading-tight)}
+h4{font-size:var(--text-h4);line-height:var(--leading-tight)}
+p{line-height:var(--leading-body)}

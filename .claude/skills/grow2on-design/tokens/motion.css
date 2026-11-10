@@ -1,0 +1,53 @@
+:root{
+  --ease-standard:cubic-bezier(.4,0,.2,1); /* @kind other */
+  --ease-out:ease-out; /* @kind other */
+  --ease-in-out:ease-in-out; /* @kind other */
+  --dur-fast:.15s; /* @kind other */
+  --dur-base:.2s; /* @kind other */
+  --dur-slow:.35s; /* @kind other */
+  --dur-reveal:.5s; /* @kind other */
+  --loop-gradient:3.5s; /* @kind other */
+  --loop-pulse:1.4s; /* @kind other */
+  --loop-marquee:26s; /* @kind other */
+  --loop-spin:46s; /* @kind other */
+}
+/* Signature loops — copied from the live site */
+@keyframes g2o-gradient-shift{0%{background-position:0% 50%}50%{background-position:100% 50%}to{background-position:0% 50%}}
+@keyframes g2o-badge-pulse{0%,to{transform:scale(1)}50%{transform:scale(1.2)}}
+@keyframes g2o-cloud-a{0%,to{transform:translate(0) scale(1)}50%{transform:translate(42px,-32px) scale(1.14)}}
+@keyframes g2o-cloud-b{0%,to{transform:translate(0) scale(1)}50%{transform:translate(-38px,36px) scale(1.12)}}
+@keyframes g2o-hero-float{0%,to{transform:translate(0)}50%{transform:translate(14px)}}
+@keyframes g2o-hero-float-y{0%,to{transform:translateY(0)}50%{transform:translateY(-16px)}}
+@keyframes g2o-step-glow{0%,to{box-shadow:0 0 6px #e7007e1a}50%{box-shadow:0 0 18px #e7007ed9}}
+@keyframes g2o-marquee{0%{transform:translate(0)}to{transform:translate(-50%)}}
+@keyframes g2o-marquee-x4-left{0%{transform:translate(0)}to{transform:translate(-25%)}}
+@keyframes g2o-marquee-x4-right{0%{transform:translate(-25%)}to{transform:translate(0)}}
+@keyframes g2o-spin{0%{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes g2o-bar-grow{0%,to{transform:scaleY(.35)}50%{transform:scaleY(1)}}
+@keyframes g2o-dot-pulse{0%,to{transform:scale(1);opacity:.55}50%{transform:scale(1.35);opacity:1}}
+@keyframes g2o-uptime-sweep{0%{transform:translate(-100%)}to{transform:translate(280%)}}
+@keyframes orbit-center-glow{0%,to{box-shadow:0 0 14px 3px #e7007e14}50%{box-shadow:0 0 24px 6px #e7007e38}}
+@keyframes orbit-sparkle{0%,to{opacity:0;transform:scale(.4)}50%{opacity:1;transform:scale(1)}}
+@keyframes orbit-float{0%,to{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes chip-pulse{0%,to{opacity:.35}50%{opacity:1}}
+@keyframes g2o-appear-y{0%,8%{opacity:0;transform:translateY(6px)}20%{opacity:1;transform:translateY(0)}82%{opacity:1}95%,to{opacity:0;transform:translateY(6px)}}
+@keyframes g2o-fade-hold{0%,8%{opacity:0;transform:scale(.9)}20%{opacity:1;transform:scale(1)}80%{opacity:1;transform:scale(1)}95%,to{opacity:0;transform:scale(.9)}}
+@keyframes g2o-anchor-flash{0%{box-shadow:0 0 #e7007e,var(--shadow-sm);border-color:var(--g2o-pink)}to{box-shadow:0 0 0 6px #e7007e00,var(--shadow-sm);border-color:var(--color-border-default)}}
+@keyframes g2oSheetDown{0%{opacity:0;transform:scaleY(.94) translateY(-4px)}to{opacity:1;transform:scaleY(1) translateY(0)}}
+@keyframes g2o-rise{0%{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes g2o-bar-up{0%{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes g2o-bar-in{0%{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes g2o-twinkle{0%,to{opacity:0;transform:scale(.4)}45%,55%{opacity:1;transform:scale(1)}}
+@keyframes g2o-sweep{0%{transform:translateX(-100%)}60%,to{transform:translateX(100%)}}
+@keyframes g2o-drift-a{0%,to{transform:translate(0,0) scale(1)}50%{transform:translate(30px,-34px) scale(1.1)}}
+@keyframes g2o-drift-b{0%,to{transform:translate(0,0) scale(1)}50%{transform:translate(-34px,26px) scale(1.08)}}
+@keyframes g2o-donut-in{0%{opacity:0;transform:rotate(-140deg) scale(.78)}to{opacity:1;transform:rotate(0) scale(1)}}
+@keyframes g2o-draw{0%{stroke-dashoffset:420}to{stroke-dashoffset:0}}
+@keyframes g2o-glow-pink{0%,to{box-shadow:0 0 0 0 #e7007e00}50%{box-shadow:0 0 30px 2px #e7007e59}}
+@keyframes g2o-opacity-pulse{0%,to{opacity:.5}50%{opacity:1}}
+/* Animated brand-gradient text — the single most recognisable Grow2on device */
+.g2o-grad-text{background:var(--gradient-brand);background-size:300% auto;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;animation:g2o-gradient-shift var(--loop-gradient) ease-in-out infinite}
+@media(prefers-reduced-motion:reduce){
+  .g2o-grad-text{animation:none}
+  *{animation-duration:.01ms!important;animation-iteration-count:1!important}
+}

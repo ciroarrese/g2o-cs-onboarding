@@ -1,0 +1,26 @@
+<!-- @dsCard group="Components" viewport="700x970" name="Core" subtitle="Buttons, cards, badges, gradient text" -->
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0;padding:24px;background:#fff;font-family:var(--font-family-base)}.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:18px}.lbl{font-size:11px;font-family:var(--font-family-mono);color:var(--g2o-gray-300);letter-spacing:.04em;margin-bottom:8px}</style>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const {Button,Card,CardVisual,Badge,GradientText}=window.Grow2onDesignSystem_455be5;
+function App(){return <>
+<div className="lbl">BUTTON</div>
+<div className="row"><Button>Pedí tu demo gratis</Button><Button variant="outline" iconRight="↓">Ver cómo funciona</Button><Button size="sm">Hablemos</Button><Button variant="outline" size="sm">Log in</Button><Button disabled>Enviando…</Button><Button variant="ghost" size="sm">Ver todas →</Button></div>
+<div className="lbl">BADGE</div>
+<div className="row"><Badge>19</Badge><Badge tone="pink">6</Badge><Badge tone="success">Activo</Badge><Badge tone="warning">Pausado</Badge><Badge tone="error">Error</Badge></div>
+<div className="lbl">GRADIENT TEXT</div>
+<div className="row"><GradientText style={{fontSize:28,fontWeight:700}}>Centralizá tu catálogo.</GradientText></div>
+<div className="lbl">CARD</div>
+<div className="row" style={{alignItems:'stretch'}}>
+<Card variant="visual" style={{width:300}}><GradientText as="h3" style={{fontSize:22,margin:'0 0 6px',fontWeight:600}}>Sincronización de stock</GradientText><p style={{fontSize:14,margin:0,color:'var(--color-text-secondary)'}}>Tus productos se actualizan solos.</p><CardVisual src="../../assets/illustrations/feature-sync-stock.png"/></Card>
+<Card variant="simple" style={{width:180}}><img src="../../assets/platforms/platform-shopify.png" style={{height:34,width:'auto'}}/>Shopify</Card>
+<Card style={{width:200}}><strong style={{color:'var(--g2o-black)'}}>Card base</strong><p style={{fontSize:14,margin:'6px 0 0',color:'var(--color-text-secondary)'}}>28/24 padding, 16px radius, shadow-sm.</p></Card>
+</div></>}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

@@ -1,0 +1,9 @@
+:root{
+  --radius-sm:6px;
+  --radius-md:10px;
+  --radius-lg:16px;
+  --radius-pill:999px;
+  --radius-chip:7px;   /* mega-menu logo chips */
+  --radius-panel:12px; /* inner animation panels */
+  --radius-sheet:20px; /* filter pills / mobile sheets */
+}

@@ -1,0 +1,16 @@
+<!-- @dsCard group="Brand" viewport="700x230" name="3D shapes" subtitle="Torus, bubbles and the orbit ring — the brand's rendered objects" -->
+<!doctype html><html lang="es"><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css">
+<style>body{margin:0;padding:16px;background:#fff;font-family:var(--font-family-base)}.r{display:flex;gap:16px;align-items:center}.r figure{margin:0;flex:1;text-align:center}.r img{width:100%;height:auto;max-height:150px;object-fit:contain}.r figcaption{font-family:var(--font-family-mono);font-size:10px;color:var(--g2o-gray-300);margin-top:6px}.spin{animation:g2o-spin var(--loop-spin) linear infinite}.float{animation:g2o-hero-float-y var(--loop-marquee) ease-in-out infinite}.spinfloat{animation:g2o-spin var(--loop-spin) linear infinite,g2o-hero-float-y var(--loop-marquee) ease-in-out infinite}
+.hubwrap{position:relative;width:100%;max-height:150px;aspect-ratio:1173/579;margin:0 auto}
+.hubwrap img{position:absolute;inset:0;width:100%;height:100%;max-height:none;object-fit:contain}
+.hubwrap .shine{position:absolute;inset:0;background:conic-gradient(from 0deg,transparent,#ffffffb0 6%,transparent 14%,transparent 100%);-webkit-mask-image:url(../assets/brand/platform-hub-center.png);mask-image:url(../assets/brand/platform-hub-center.png);-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-mask-size:contain;mask-size:contain;mix-blend-mode:overlay;animation:g2o-spin var(--loop-spin) linear infinite}
+@media(prefers-reduced-motion:reduce){.spin,.float,.spinfloat,.hubwrap .shine{animation:none}}</style>
+</head><body><div class="r">
+<figure><img class="spinfloat" src="../assets/brand/hero-graphic-funcionalidades.png"><figcaption>toroide + burbujas (spin + float)</figcaption></figure>
+<figure><img class="spin" src="../assets/brand/hero-graphic.png"><figcaption>anillo hero (spin 46s)</figcaption></figure>
+<figure><div class="hubwrap"><img src="../assets/brand/platform-hub-center.png"><div class="shine"></div></div><figcaption>anillo del hub (brillo giratorio 46s, logo fijo)</figcaption></figure>
+<figure><img class="float" src="../assets/brand/hero-graphic-integraciones.png"><figcaption>hero integraciones (float)</figcaption></figure>
+<figure><img class="float" src="../assets/illustrations/sos-erp-icon-hero.png"><figcaption>hero ERP (float)</figcaption></figure>
+</div>
+<div style="font-size:12px;color:var(--color-text-secondary);margin-top:12px">Objetos 3D renderizados, translúcidos, con degradado naranja→rosa→violeta y reflejos especulares. Siempre sobre blanco, sin sombra proyectada. Nunca se recolorean ni se redibujan como SVG.</div>
+</body></html>

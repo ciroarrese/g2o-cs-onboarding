@@ -1,0 +1,15 @@
+:root{
+  --space-4:16px;
+  --space-6:24px;
+  --space-8:32px;
+  --space-12:48px;
+  --space-16:64px;
+  --space-20:80px;
+
+  --container-max:1160px;
+  --section-pad-x:64px;
+  --section-pad-y:64px;
+  --grid-gap:24px;
+}
+@media(max-width:900px){:root{--section-pad-x:32px}}
+@media(max-width:600px){:root{--section-pad-x:20px}}
