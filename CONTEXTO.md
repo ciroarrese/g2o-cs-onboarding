@@ -97,7 +97,9 @@ Se recorrió con Playwright en solo lectura (bandeja propia, pestañas, No asign
 - **Efectos pedidos por el usuario:** Zoom Through, UI World (interfaces flotantes), Headline Wall, Chart Grow, Doodle Boil con la estética del design system y Digital Zoom. Se sumaron cursor con clic, vuelo con estela y morph de forma. El guion tiene una tabla que dice qué efecto va en cada escena.
 - 6 escenas, unos 2 min 25 s: apertura con muro de rótulos (0:00–0:10), asistente IA en el ticket (0:10–0:38), Sincropresta (0:38–1:06), Sincro Monitor y Teams (1:06–1:45, la escena aprobada con números emulados), Health Score (1:45–2:13) y cierre con "Hecho con Claude" (2:13–2:25). Una sola cámara que viaja entre escenas con Zoom Through.
 - Sin voz: la columna "narración" se reemplazó por "texto en pantalla", con rótulos propios de las herramientas.
-- Preguntas abiertas en el doc: título y firma, rótulos de los modos del panel IA, duración, música, formato, público.
+- Última revisión escrita por Claude: 289. El usuario respondió las preguntas como sugerencias en el doc; esas las acepta él, Claude no puede.
+- **Decisiones del usuario (11/11/2026):** título "Proyectos con IA"; cierre con "Hecho con Claude" aprobado; el panel de IA se recrea desde el panel real; la duración puede pasar de 2 min 25 s si hace falta (lo que importa es que se vea profesional y atractivo); música lo-fi suave de fondo; 16:9 a 1920 × 1080; público general: que se entienda qué hace cada proyecto, sin entrar en cómo.
+- **Pendiente del usuario:** (1) el `.user.js` del panel de IA o capturas, porque el userscript corre en su navegador y no acá; (2) la pista lo-fi, suya o una de uso libre con la licencia confirmada; (3) si cada escena abre con el nombre del proyecto y una línea de qué hace. Esto último lo recomendó Claude para el público general y cambia la regla de no usar textos explicativos.
 
 Después: aprobación del guion y producción de las escenas.
 
@@ -155,7 +157,7 @@ Después: aprobación del guion y producción de las escenas.
 
 ## Decisiones abiertas (preguntarle al usuario cuando llegue el momento)
 
-- Formato del video: se asume 16:9 a 1920×1080, sin confirmar.
-- Música: sin definir.
-- Público del video.
+- Formato del video: 16:9 a 1920×1080 (confirmado el 11/11/2026).
+- Música: lo-fi suave de fondo (decidido el 11/11/2026; falta la pista).
+- Público del video: presentación general (11/11/2026).
 - El zip del design system traía `uploads/Reporte Soporte y Onboarding (standalone).html` y 3 capturas. **No se usaron y no están en el repo.** Si son relevantes, hay que pedirle al usuario que los vuelva a subir.
