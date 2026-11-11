@@ -109,12 +109,15 @@ Se recorrió con Playwright en solo lectura (bandeja propia, pestañas, No asign
 | Escena | Composición | Archivo | Estado |
 |---|---|---|---|
 | 1. Apertura (10 s, 300 frames) | `Apertura` (carpeta "Video") | `video/src/scenes/Apertura.tsx` | **Aprobada** (11/11/2026) |
-| 2. Asistente IA (28 s, 840 frames) | `AsistenteIA` | `video/src/scenes/AsistenteIA.tsx` | Enviada al usuario, esperando aprobación |
-| 3. Sincropresta | | | Siguiente |
+| 2. Asistente IA (28 s, 840 frames) | `AsistenteIA` | `video/src/scenes/AsistenteIA.tsx` | **Aprobada** (11/11/2026) |
+| 3. Sincropresta (28 s, 840 frames) | `Sincropresta` | `video/src/scenes/Sincropresta.tsx` | Enviada al usuario, esperando aprobación |
+| 4. Sincro Monitor y Teams | `SincroMonitorDemo` (a adaptar) | `video/src/scenes/SincroMonitorDemo.tsx` | Siguiente: cambiar a números emulados, sumar el titular y la entrada |
 
 - `Apertura.tsx` exporta `PROJECTS` (los 4 titulares) y `DockedHeadline`, el titular chico arriba a la izquierda que usa cada escena de proyecto.
 - `video/src/brand/motion.tsx`: helpers compartidos (`k`, `OUT`, `IN_OUT`, `typed`, `Cursor`, `DoodleCircle`, `DoodleArrow` con efecto boil cada 3 frames, `Vignette`).
 - Escena 2: ticket ficticio #48190 de "Tienda 18", ticket interno #48231; el panel IA es oscuro como el real (colores de botones reales), con Dictar → texto dictado sin puntuación → "Con formato" lo ordena → CloudWatch con 4 familias (cantidades emuladas) → Reportar a Desarrollo → el ticket interno vuela al ticket original y una flecha a mano los une. Personas genéricas: "Agente de soporte", "Agente de guardia", "Guardia de Desarrollo".
+- Escena 3: mundo de 5 zonas que la cámara recorre en vuelo (A sincro en vivo tienda ↔ ERP, B versiones v2.0.0 → v2.9.4 y commits por semana, C barra de descuentos que antes se cortaba en el límite de 2:00 y ahora completa, D seis funciones de clientes al core con sus parámetros activados, E PDF de cuenta corriente con CAE y QR, que la cámara atraviesa). Todos los números son emulados. No se usó `platform-hub-center.png` porque es el logo de Grow2on, no de Sincropresta.
+- Música por escena: apertura 0:44, escena 2 0:54, escena 3 1:22; la escena 4 arranca en 1:50.
 - Para mostrar avances: render mudo con Remotion y mezcla de la música con ffmpeg (`-ss 44` sobre `music/766.mp3` del scratchpad). El audio definitivo se arma en la composición final.
 
 Después: aprobación del guion y producción de las escenas.
