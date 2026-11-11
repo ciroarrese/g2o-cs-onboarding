@@ -8,7 +8,7 @@ Hacer un **video personal de 2 minutos como máximo** que presente los proyectos
 
 El orden de trabajo es este:
 1. **Fichas por proyecto:** juntar la información de cada uno. **En curso.**
-2. **Informe:** un documento que resume todos los proyectos, en Claude Docs.
+2. **Informe:** un documento que resume todos los proyectos, en Claude Docs. **Borrador hecho el 11/11/2026**: [Avances con IA en Customer Success](https://claude.ai/artifact/Gwj7dETevNk8uakUin5N49).
 3. **Guion del video:** una tabla por escena con tiempo, narración, qué se ve y el dato que la respalda. El usuario lo aprueba antes de producir.
 4. **Video:** con Remotion, renderizado a MP4.
 
@@ -81,7 +81,15 @@ Se recorrió con Playwright en solo lectura (bandeja propia, pestañas, No asign
 - Ahora dura **1170 frames (39 s)**. Lo aprobado hasta el frame 700 no cambió.
 - **Pendiente: que el usuario apruebe el tramo de Teams.**
 
-Después: informe en Claude Docs, guion y escenas de los demás proyectos.
+## Informe en Claude Docs: borrador del 11/11/2026
+
+- Link: https://claude.ai/artifact/Gwj7dETevNk8uakUin5N49 (doc `811d3281-8d96-4c22-9073-b4d7c80618fa`, una sola pestaña).
+- Secciones: resumen, una por proyecto (1 a 4) y fuentes. Dos gráficos de barras dibujados a mano: tiendas del Sincro Monitor por estado y canales del Health Score por estado (los sanos en azul).
+- Sin riesgos, montos ni clientes. El Sincro Monitor usa las cifras del panel (315), no las del PDF (316).
+- El proyecto 1 no tiene cifras: la ficha no trae ninguna. Si el usuario tiene datos de uso, se suman.
+- Si el usuario edita el doc, leer con `sinceRev` antes de tocarlo (la última revisión escrita por Claude es la 7).
+
+Después: guion y escenas de los demás proyectos.
 
 ### Referencia de la tarea anterior (ficha 3)
 
