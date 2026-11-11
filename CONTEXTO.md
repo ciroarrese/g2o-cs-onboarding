@@ -43,6 +43,15 @@ Notas para la próxima sesión:
 - El panel tiene acciones que escriben (crear ticket, actualizar desde Cronicle, ejecutar sincro, relanzar). Al recorrerlo, solo lectura.
 - Las capturas quedaron en el scratchpad de la sesión (muestran dominios de clientes, no van al repo).
 
+## Intento del 11/11/2026: las dos herramientas quedaron bloqueadas
+
+No se cambió la ficha 4 ni la escena. Nada se escribió en Grafana ni en la mesa.
+
+- **Grafana:** `GRAFANA_URL` apunta a la ruta `/login`; hay que usar su origen. La API con Basic Auth y el formulario de login responden **401 "Invalid username or password"** (un solo intento por vía, para no bloquear la cuenta). El formato de las variables está bien (sin espacios ni comillas). **Falta que el usuario corrija `GRAFANA_USER` / `GRAFANA_PASS`** o confirme si el login es por SSO.
+- **Mesa de tickets (`MESATICKET_*`):** es una SPA ("Service Desk") que redirige a `/auth/login`. En Chromium la pantalla queda en blanco porque los módulos de login (`Login-*.js`, `LockOutlined-*.js`, la fuente Arboria) responden 404, en 4 intentos seguidos. Con curl esos mismos archivos dan 200. No se llegó al formulario, así que no hay capturas ni estructura relevada. El clasificador de permisos bloqueó seguir probando encabezados contra el servidor; no insistir por esa vía sin autorización del usuario.
+- **No usar el conector Mesa_Tickets como alternativa** sin que el usuario lo apruebe: devuelve tickets reales.
+- Al depurar, un error de Playwright mostró la URL de la mesa en la salida. Para evitarlo, envolver los scripts con un filtro que reemplace los valores y hosts de las variables antes de imprimir.
+
 ## Tarea siguiente: completar la ficha 4 (Health Score)
 
 - El borrador sale del documento "Health Score Grow2On: informe de funcionamiento" (v17 del tablero, 13/10/2026). Ese documento no está en el repo.
