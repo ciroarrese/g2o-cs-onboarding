@@ -108,10 +108,13 @@ Se recorrió con Playwright en solo lectura (bandeja propia, pestañas, No asign
 
 | Escena | Composición | Archivo | Estado |
 |---|---|---|---|
-| 1. Apertura (10 s, 300 frames) | `Apertura` (carpeta "Video") | `video/src/scenes/Apertura.tsx` | Enviada al usuario, esperando aprobación |
-| 2. Asistente IA | | | Siguiente |
+| 1. Apertura (10 s, 300 frames) | `Apertura` (carpeta "Video") | `video/src/scenes/Apertura.tsx` | **Aprobada** (11/11/2026) |
+| 2. Asistente IA (28 s, 840 frames) | `AsistenteIA` | `video/src/scenes/AsistenteIA.tsx` | Enviada al usuario, esperando aprobación |
+| 3. Sincropresta | | | Siguiente |
 
 - `Apertura.tsx` exporta `PROJECTS` (los 4 titulares) y `DockedHeadline`, el titular chico arriba a la izquierda que usa cada escena de proyecto.
+- `video/src/brand/motion.tsx`: helpers compartidos (`k`, `OUT`, `IN_OUT`, `typed`, `Cursor`, `DoodleCircle`, `DoodleArrow` con efecto boil cada 3 frames, `Vignette`).
+- Escena 2: ticket ficticio #48190 de "Tienda 18", ticket interno #48231; el panel IA es oscuro como el real (colores de botones reales), con Dictar → texto dictado sin puntuación → "Con formato" lo ordena → CloudWatch con 4 familias (cantidades emuladas) → Reportar a Desarrollo → el ticket interno vuela al ticket original y una flecha a mano los une. Personas genéricas: "Agente de soporte", "Agente de guardia", "Guardia de Desarrollo".
 - Para mostrar avances: render mudo con Remotion y mezcla de la música con ffmpeg (`-ss 44` sobre `music/766.mp3` del scratchpad). El audio definitivo se arma en la composición final.
 
 Después: aprobación del guion y producción de las escenas.

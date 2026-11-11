@@ -2,12 +2,14 @@ import { Composition, Folder } from "remotion";
 import { BrandCheck } from "./scenes/BrandCheck";
 import { SincroMonitorDemo } from "./scenes/SincroMonitorDemo";
 import { Apertura } from "./scenes/Apertura";
+import { AsistenteIA } from "./scenes/AsistenteIA";
 
 export const RemotionRoot: React.FC = () => {
   return (
     <>
     <Folder name="Video">
       <Composition id="Apertura" component={Apertura} durationInFrames={300} fps={30} width={1920} height={1080} />
+      <Composition id="AsistenteIA" component={AsistenteIA} durationInFrames={840} fps={30} width={1920} height={1080} />
     </Folder>
     <Folder name="Pruebas">
       <Composition
