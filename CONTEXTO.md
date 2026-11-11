@@ -9,7 +9,7 @@ Hacer un **video personal de 2 minutos como máximo** que presente los proyectos
 El orden de trabajo es este:
 1. **Fichas por proyecto:** juntar la información de cada uno. **En curso.**
 2. **Informe:** un documento que resume todos los proyectos, en Claude Docs. **Borrador hecho el 11/11/2026**: [Avances con IA en Customer Success](https://claude.ai/artifact/Gwj7dETevNk8uakUin5N49).
-3. **Guion del video:** una tabla por escena con tiempo, narración, qué se ve y el dato que la respalda. El usuario lo aprueba antes de producir.
+3. **Guion del video:** una tabla por escena con tiempo, narración, qué se ve y el dato que la respalda. El usuario lo aprueba antes de producir. **Borrador del 11/11/2026, esperando aprobación:** [Guion del video: Avances con IA](https://claude.ai/artifact/7WLNKbRP3RFRb8gNQdZPdF).
 4. **Video:** con Remotion, renderizado a MP4.
 
 ## Reglas acordadas con el usuario (respetarlas siempre)
@@ -91,7 +91,15 @@ Se recorrió con Playwright en solo lectura (bandeja propia, pestañas, No asign
 - Si el usuario edita el doc, leer con `sinceRev` antes de tocarlo (la última revisión escrita por Claude es la 13).
 - **Decisión del usuario (11/11/2026): el video usa números emulados**, no las cifras reales. Hoy la escena del Sincro Monitor todavía muestra las cifras reales del panel (315 tiendas: 146 / 73 / 17 / 12 / 67, en el tablero y en los 315 puntos de la dona). Hay que cambiarlas por valores inventados al armar el guion final. Los números de la tarjeta de Teams y de la mesa ya son ficticios.
 
-Después: guion y escenas de los demás proyectos.
+## Guion: borrador del 11/11/2026
+
+- Link: https://claude.ai/artifact/7WLNKbRP3RFRb8gNQdZPdF (doc `34af5645-5049-4f34-8c98-ffc108001dae`). Última revisión escrita por Claude: 10.
+- **Efectos pedidos por el usuario:** Zoom Through, UI World (interfaces flotantes), Headline Wall, Chart Grow, Doodle Boil con la estética del design system y Digital Zoom. Se sumaron cursor con clic, vuelo con estela y morph de forma. El guion tiene una tabla que dice qué efecto va en cada escena.
+- 6 escenas, unos 2 min 25 s: apertura con muro de rótulos (0:00–0:10), asistente IA en el ticket (0:10–0:38), Sincropresta (0:38–1:06), Sincro Monitor y Teams (1:06–1:45, la escena aprobada con números emulados), Health Score (1:45–2:13) y cierre con "Hecho con Claude" (2:13–2:25). Una sola cámara que viaja entre escenas con Zoom Through.
+- Sin voz: la columna "narración" se reemplazó por "texto en pantalla", con rótulos propios de las herramientas.
+- Preguntas abiertas en el doc: título y firma, rótulos de los modos del panel IA, duración, música, formato, público.
+
+Después: aprobación del guion y producción de las escenas.
 
 ### Referencia de la tarea anterior (ficha 3)
 
