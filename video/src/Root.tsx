@@ -1,5 +1,6 @@
 import { Composition, Folder } from "remotion";
 import { BrandCheck } from "./scenes/BrandCheck";
+import { SincroMonitorDemo } from "./scenes/SincroMonitorDemo";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -18,6 +19,14 @@ export const RemotionRoot: React.FC = () => {
           statValue: 80,
           statLabel: "Valor de ejemplo",
         }}
+      />
+      <Composition
+        id="SincroMonitorDemo"
+        component={SincroMonitorDemo}
+        durationInFrames={520}
+        fps={30}
+        width={1920}
+        height={1080}
       />
     </Folder>
   );
