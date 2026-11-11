@@ -84,10 +84,11 @@ Se recorrió con Playwright en solo lectura (bandeja propia, pestañas, No asign
 ## Informe en Claude Docs: borrador del 11/11/2026
 
 - Link: https://claude.ai/artifact/Gwj7dETevNk8uakUin5N49 (doc `811d3281-8d96-4c22-9073-b4d7c80618fa`, una sola pestaña).
-- Secciones: resumen, una por proyecto (1 a 4) y fuentes. Dos gráficos de barras dibujados a mano: tiendas del Sincro Monitor por estado y canales del Health Score por estado (los sanos en azul).
-- Sin riesgos, montos ni clientes. El Sincro Monitor usa las cifras del panel (315), no las del PDF (316).
-- El proyecto 1 no tiene cifras: la ficha no trae ninguna. Si el usuario tiene datos de uso, se suman.
-- Si el usuario edita el doc, leer con `sinceRev` antes de tocarlo (la última revisión escrita por Claude es la 7).
+- Secciones: resumen, una por proyecto (1 a 4) y fuentes.
+- **Decisión del usuario (11/11/2026): el informe es informativo, sin cifras, porcentajes ni gráficos.** Se sacaron las tablas de datos, los números y los dos gráficos (sus widgets quedan en el doc sin mostrarse; la herramienta no permite borrarlos). Las cifras siguen en las fichas.
+- Sin riesgos, montos ni clientes.
+- Si el usuario edita el doc, leer con `sinceRev` antes de tocarlo (la última revisión escrita por Claude es la 13).
+- **Abierto:** si el video también va sin cifras (hoy la escena muestra 315, 146, 73, etc.). Preguntarlo al armar el guion.
 
 Después: guion y escenas de los demás proyectos.
 
