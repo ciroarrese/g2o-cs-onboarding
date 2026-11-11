@@ -81,6 +81,26 @@ const MESA_NEW = {
   sla: [{ v: "0%", tone: "ok" }, { v: "0%", tone: "ok" }] as [Sla, Sla], pr: "Alta", inc: true,
 };
 
+// Teams chat window, to the right of the help desk. Structure copied from the
+// real "Sincro Monitor · novedades" card the monitor posts to the team chat
+// (screenshot from the user, 11/11/2026). Stores and figures are fictional.
+const TEAMS = { x: 3220, y: -40, w: 940, h: 1000 };
+const TEAMS_CX = TEAMS.x + TEAMS.w / 2;
+const TT = { win: 716, signal: [700, 760] as const, typing: 762, card: 792, rows: 806, inc: 876, fix: 936, hi: [960, 980, 1000] };
+const NOVEDADES: { l: string; n?: number; v: string }[] = [
+  { l: "Sitios afectados", n: 3, v: "" },
+  { l: "Incidentes abiertos", n: 6, v: " (1 nuevo, 1 recurrente)" },
+  { l: "Prioridad alta", n: 1, v: "" },
+  { l: "Arreglos por aprobar", n: 3, v: "" },
+  { l: "Resueltos desde el último aviso", n: 0, v: "" },
+  { l: "Más antiguo", v: "tienda-12.ejemplo.com.ar · Errores en el log · 15 h" },
+];
+const FIXES = [
+  "Reenviar al ERP los 3 pedidos sin nota de pedido",
+  "Relanzar la sincro de pedidos de la tienda",
+  "Reintentar la sincro con un timeout de 300 s",
+];
+
 // ---------- timing (frames, 30 fps) ----------
 const T = {
   filterClick: 218,
@@ -109,17 +129,17 @@ const hex = (a: number) => Math.round(Math.max(0, Math.min(1, a)) * 255).toStrin
 
 /** Camera: which world point sits at screen centre, how close, how tilted. */
 const camera = (f: number) => {
-  const t = [0, 112, 160, 190, 225, 270, 305, 410, 470, 520, 590, 640, 700, 760];
-  const s = [2.4, 2.4, 1, 1, 1.12, 1.12, 1.5, 1.5, 1.5, 0.56, 0.56, 1.0, 1.0, 0.56];
-  const fx = [300, 300, 820, 820, 760, 760, 1060, 1060, 1060, 1560, 1560, 2460, 2460, 1560];
-  const fy = [668, 668, 460, 460, 400, 400, 610, 610, 610, 470, 470, 400, 400, 470];
-  const tt = [0, 112, 136, 168, 470, 520, 590, 640, 700, 760, 820];
+  const t = [0, 112, 160, 190, 225, 270, 305, 410, 470, 520, 590, 640, 700, 712, 752, 900, 1030, 1080];
+  const s = [2.4, 2.4, 1, 1, 1.12, 1.12, 1.5, 1.5, 1.5, 0.56, 0.56, 1.0, 1.0, 1.0, 0.98, 1.0, 1.02, 0.42];
+  const fx = [300, 300, 820, 820, 760, 760, 1060, 1060, 1060, 1560, 1560, 2460, 2460, 2460, TEAMS_CX, TEAMS_CX, TEAMS_CX, 2090];
+  const fy = [668, 668, 460, 460, 400, 400, 610, 610, 610, 470, 470, 400, 400, 400, 460, 460, 470, 450];
+  const tt = [0, 112, 136, 168, 470, 520, 590, 640, 700, 712, 752, 800, 1030, 1080, 1140];
   return {
     s: k(f, t, s),
     fx: k(f, t, fx),
     fy: k(f, t, fy),
-    rx: k(f, tt, [0, 0, 12, 0, 0, 8, 6, 0, 0, 6, 4]),
-    ry: k(f, tt, [0, 0, -10, 0, 0, -6, -5, 0, 0, -5, -3]),
+    rx: k(f, tt, [0, 0, 12, 0, 0, 8, 6, 0, 0, 0, 5, 0, 0, 4, 3]),
+    ry: k(f, tt, [0, 0, -10, 0, 0, -6, -5, 0, 0, 0, -5, 0, 0, -3, -2]),
   };
 };
 
@@ -1153,6 +1173,210 @@ const Sweep: React.FC<{ f: number; from: number; w: number }> = ({ f, from, w })
   );
 };
 
+// ---------- Teams notification ----------
+const Dot: React.FC<{ c: string; size?: number }> = ({ c, size = 14 }) => (
+  <span style={{ display: "inline-block", width: size, height: size, borderRadius: size, background: c, flexShrink: 0, boxShadow: `inset 0 0 0 1.5px ${color.white}66` }} />
+);
+const WRENCH = "M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5z";
+
+const Teams: React.FC<{ f: number }> = ({ f }) => {
+  const appear = k(f, [TT.win, TT.win + 36], [0, 1], OUT);
+  if (appear <= 0) return null;
+  const typing = f >= TT.typing && f < TT.card;
+  const card = k(f, [TT.card, TT.card + 18], [0, 1], OUT);
+  const ping = k(f, [TT.card, TT.card + 24], [0, 1], OUT);
+  const rowIn = (i: number) => k(f, [TT.rows + i * 9, TT.rows + i * 9 + 14], [0, 1], OUT);
+  const incIn = (i: number) => k(f, [TT.inc + i * 14, TT.inc + i * 14 + 16], [0, 1], OUT);
+  const fixIn = (i: number) => k(f, [TT.fix + i * 10, TT.fix + i * 10 + 16], [0, 1], OUT);
+  const fixHi = (i: number) => k(f, [TT.hi[i], TT.hi[i] + 8, TT.hi[i] + 40], [0, 1, 0.25]);
+  const pad = 28;
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: TEAMS.x,
+        top: TEAMS.y,
+        width: TEAMS.w,
+        height: TEAMS.h,
+        borderRadius: 28,
+        background: color.gray50,
+        border: `1px solid ${color.gray200}`,
+        boxShadow: "0 40px 90px -30px rgba(26,26,28,.35)",
+        overflow: "hidden",
+        opacity: appear,
+        translate: `${(1 - appear) * 160}px 0`,
+      }}
+    >
+      {/* channel header */}
+      <div style={{ height: 76, background: color.white, borderBottom: `1px solid ${color.gray100}`, display: "flex", alignItems: "center", gap: 14, padding: `0 ${pad}px` }}>
+        <div style={{ position: "relative", width: 40, height: 40, borderRadius: 20, background: color.black, color: color.white, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: font.semibold }}>
+          S
+          <div style={{ position: "absolute", inset: -4, borderRadius: 24, border: `3px solid ${color.pink}`, scale: String(1 + ping * 0.6), opacity: ping > 0 && ping < 1 ? 1 - ping : 0 }} />
+        </div>
+        <div style={{ fontSize: 22, fontWeight: font.semibold, color: color.black }}>Sincro Presta Monitor</div>
+        {["Chat", "Compartida", "Notas"].map((tab, i) => (
+          <div key={tab} style={{ fontSize: 17, height: 76, display: "flex", alignItems: "center", color: i === 0 ? color.black : color.gray600, fontWeight: i === 0 ? font.semibold : font.regular, boxShadow: i === 0 ? `inset 0 -3px 0 ${color.pink}` : "none", marginLeft: i === 0 ? 10 : 0 }}>
+            {tab}
+          </div>
+        ))}
+        <div style={{ flex: 1 }} />
+        <div style={{ fontSize: 14, color: color.gray600, padding: "6px 12px", borderRadius: radius.pill, background: color.gray100 }}>Teams · chat del equipo</div>
+      </div>
+      {/* previous message, cut at the top */}
+      <div style={{ margin: `0 ${pad + 46}px`, padding: "18px 24px", background: color.white, border: `1px solid ${color.gray200}`, borderTop: "none", borderRadius: "0 0 12px 12px", opacity: 0.55 }}>
+        <div style={{ display: "inline-block", padding: "8px 16px", border: `1.5px solid ${color.gray300}`, borderRadius: radius.md, fontSize: 15, color: color.gray600 }}>Abrir Sincro Monitor</div>
+      </div>
+      {/* sender */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, margin: `22px ${pad}px 8px` }}>
+        <div style={{ width: 34, height: 34, borderRadius: 10, background: gradient.brand }} />
+        <div style={{ fontSize: 15, color: color.gray600 }}>
+          Flujos de trabajo <span style={{ marginLeft: 8 }}>23:20</span>
+        </div>
+      </div>
+      {typing && (
+        <div style={{ marginLeft: pad + 46, display: "flex", gap: 6, padding: "14px 18px", background: color.white, borderRadius: radius.panel, width: 74, border: `1px solid ${color.gray200}` }}>
+          {[0, 1, 2].map((i) => (
+            <span key={i} style={{ width: 9, height: 9, borderRadius: 5, background: color.gray300, translate: `0 ${-Math.max(0, Math.sin((f - TT.typing) / 3 - i)) * 5}px` }} />
+          ))}
+        </div>
+      )}
+      {/* the card */}
+      <div
+        style={{
+          margin: `0 ${pad}px 0 ${pad + 46}px`,
+          padding: "22px 26px 24px",
+          background: color.white,
+          border: `1px solid ${color.gray200}`,
+          borderRadius: radius.panel,
+          boxShadow: `0 ${18 * card}px 40px -16px rgba(231,0,126,${0.3 * card})`,
+          opacity: card,
+          scale: String(0.96 + card * 0.04),
+          translate: `0 ${(1 - card) * 24}px`,
+          transformOrigin: "0 0",
+          fontSize: 17,
+          color: color.black,
+          lineHeight: 1.35,
+        }}
+      >
+        <div style={{ fontSize: 21, fontWeight: font.semibold }}>Sincro Monitor · novedades</div>
+        <div style={{ fontSize: 15, color: color.gray600, marginBottom: 12 }}>10/11 23:20 (hora AR)</div>
+        {NOVEDADES.map((r, i) => {
+          const p = rowIn(i);
+          return (
+            <div key={r.l} style={{ display: "flex", padding: "5px 0", opacity: p, translate: `${(1 - p) * 20}px 0` }}>
+              <div style={{ width: 300, fontWeight: font.medium }}>{r.l}</div>
+              <div>
+                {r.n !== undefined && <CountUp to={r.n} delay={TT.rows + i * 9} duration={16} />}
+                {r.v}
+              </div>
+            </div>
+          );
+        })}
+        <div style={{ height: 1, background: color.gray100, margin: "14px 0" }} />
+        <div style={{ fontWeight: font.semibold, marginBottom: 8, opacity: incIn(0) }}>A. Incidentes abiertos</div>
+        <div style={{ display: "flex", gap: 10, alignItems: "baseline", opacity: incIn(0), color: color.error }}>
+          <Dot c={color.error} />
+          <div>
+            <b style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>tienda-07.ejemplo.com.ar</b> · prioridad alta · 2 incidentes · desde hace 1 h
+          </div>
+        </div>
+        {[
+          { c: color.error, b: "Error en servidor", m: " (#41, nuevo, 1 h): la tienda no respondió en 120 s · ticket # 48213" },
+          { c: color.orange, b: "Pedidos sin enviar al ERP", m: " (#36, persistente, 12 h): 3 sin nota de pedido · ", fix: "2 arreglos por aprobar" },
+        ].map((it, i) => {
+          const p = incIn(i + 1);
+          return (
+            <div key={it.b} style={{ display: "flex", gap: 10, alignItems: "baseline", margin: "8px 0 0 26px", opacity: p, translate: `${(1 - p) * 20}px 0` }}>
+              <span style={{ color: color.gray300 }}>◦</span>
+              <Dot c={it.c} size={12} />
+              <div>
+                <b>{it.b}</b>
+                {it.m}
+                {it.fix && (
+                  <span style={{ whiteSpace: "nowrap" }}>
+                    <span style={{ display: "inline-block", verticalAlign: -3, marginRight: 4 }}>
+                      <Icon d={WRENCH} c={color.pink} size={17} />
+                    </span>
+                    {it.fix}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        <div style={{ height: 1, background: color.gray100, margin: "16px 0 14px" }} />
+        <div style={{ fontWeight: font.semibold, marginBottom: 8, opacity: fixIn(0) }}>B. Arreglos por aprobar</div>
+        {FIXES.map((t, i) => {
+          const p = fixIn(i);
+          const h = fixHi(i);
+          return (
+            <div
+              key={t}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "9px 12px",
+                margin: "0 -12px",
+                borderRadius: radius.md,
+                background: `${color.pink}${hex(h * 0.1)}`,
+                opacity: p,
+                translate: `${(1 - p) * 20}px 0`,
+              }}
+            >
+              <Icon d={WRENCH} c={color.pink} size={20} />
+              <div style={{ flex: 1 }}>{t}</div>
+              <span style={{ fontSize: 14, fontWeight: font.medium, color: color.pink, padding: "4px 12px", borderRadius: radius.pill, background: color.pinkLight, scale: String(1 + h * 0.08) }}>
+                Por aprobar
+              </span>
+            </div>
+          );
+        })}
+        <div style={{ marginTop: 18, display: "inline-block", padding: "10px 18px", border: `1.5px solid ${color.black}`, borderRadius: radius.md, fontSize: 16, fontWeight: font.medium, opacity: fixIn(2) }}>
+          Abrir Sincro Monitor
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/** A signal leaves the monitor header and lands in the team chat. */
+const Signal: React.FC<{ f: number }> = ({ f }) => {
+  const [a, b] = TT.signal;
+  if (f < a || f > b + 4) return null;
+  const pos = (ff: number) => {
+    const p = k(ff, [a, b], [0, 1], Easing.bezier(0.5, 0, 0.2, 1));
+    return {
+      x: interpolate(p, [0, 1], [63, TEAMS.x + 45]),
+      y: interpolate(p, [0, 1], [56, TEAMS.y + 160]) - Math.sin(p * Math.PI) * 420,
+    };
+  };
+  return (
+    <>
+      {[10, 7, 4, 2, 0].map((lag, i) => {
+        const p = pos(f - lag);
+        const size = lag === 0 ? 26 : 18 - lag;
+        return (
+          <div
+            key={lag}
+            style={{
+              position: "absolute",
+              left: p.x - size / 2,
+              top: p.y - size / 2,
+              width: size,
+              height: size,
+              borderRadius: size,
+              background: lag === 0 ? gradient.brand : color.pink,
+              opacity: lag === 0 ? 1 : 0.12 + i * 0.08,
+              boxShadow: lag === 0 ? `0 0 30px 8px ${color.pink}55` : "none",
+            }}
+          />
+        );
+      })}
+    </>
+  );
+};
+
 export const SincroMonitorDemo: React.FC = () => {
   const f = useCurrentFrame();
   const cam = camera(f);
@@ -1192,11 +1416,13 @@ export const SincroMonitorDemo: React.FC = () => {
           <Cursor f={f} />
           <Mesa f={f} />
           <FlyingTicket f={f} />
+          <Teams f={f} />
+          <Signal f={f} />
           <div style={{ position: "absolute", left: MESA.x, top: MESA.y, width: MESA.w, height: MESA.h }}>
             <Sweep f={f} from={T.land + 2} w={MESA.w} />
           </div>
           <div style={{ position: "absolute", inset: 0 }}>
-            <Sweep f={f} from={770} w={MESA.x + MESA.w} />
+            <Sweep f={f} from={1086} w={TEAMS.x + TEAMS.w} />
           </div>
         </div>
       </AbsoluteFill>

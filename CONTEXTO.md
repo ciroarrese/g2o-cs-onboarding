@@ -70,7 +70,16 @@ Se recorrió con Playwright en solo lectura (bandeja propia, pestañas, No asign
 - La maqueta genérica se reemplazó por la estructura de "No asignados" en el estilo de Grow2on (Geist, rosa como acento, rail negro, ítem activo con el degradé de la marca). Datos ficticios: tickets # 48190–48213, empresas "Tienda NN", equipo "Soporte sincro", nivel "Nivel 03".
 - El ticket que vuela entra arriba como "Error en servidor", prioridad Alta, y los contadores pasan de 4 a 5.
 - La ventana de la mesa pasó a 1320 px de ancho; la cámara se ajustó (centro 2460, vista general 1560 con escala 0,56). Los tiempos aprobados no cambiaron (840 frames).
-- **Pendiente: que el usuario apruebe esta versión** (se le mandó el MP4).
+- El usuario aprobó la parte del ticket ("lo del ticket está bien").
+
+## Escena SincroMonitorDemo: aviso en Teams agregado el 11/11/2026
+
+- **Pedido del usuario:** mostrar que el monitor manda a Teams un mensaje con el inconveniente, el detalle del problema y las posibles soluciones. Ya está en la escena y en la ficha 3.
+- **Referencia:** una captura del chat "Sincro Presta Monitor" que pasó el usuario. Remitente "Flujos de trabajo"; tarjeta "Sincro Monitor · novedades" con fecha y hora AR, resumen en pares rótulo / valor (sitios afectados, incidentes abiertos, prioridad alta, arreglos por aprobar, resueltos desde el último aviso, más antiguo), "A. Incidentes abiertos" con un punto de color por tienda e incidente (número, persistente, horas, detalle, arreglos por aprobar) y botón "Abrir Sincro Monitor". La captura tiene clientes reales: no va al repo.
+- **En la escena:** tercera ventana a la derecha de la mesa (x 3220, 940 × 1000) en el estilo de Grow2on, sin logo ni colores de Microsoft; un rótulo "Teams · chat del equipo" la identifica. Una señal sale del encabezado del monitor y aterriza en el chat. Después aparece el indicador de escritura y se arma la tarjeta: resumen con contadores, incidente de tienda-07 (el mismo del ticket # 48213) y "B. Arreglos por aprobar" con 3 arreglos que se iluminan. Cierra con una vista general de las tres ventanas.
+- La sección "B. Arreglos por aprobar" es un agregado para mostrar las soluciones; en la tarjeta real los arreglos aparecen dentro de cada incidente. Si el usuario quiere una copia más literal, se saca.
+- Ahora dura **1170 frames (39 s)**. Lo aprobado hasta el frame 700 no cambió.
+- **Pendiente: que el usuario apruebe el tramo de Teams.**
 
 Después: informe en Claude Docs, guion y escenas de los demás proyectos.
 
