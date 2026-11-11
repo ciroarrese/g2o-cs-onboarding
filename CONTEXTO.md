@@ -32,6 +32,7 @@ El orden de trabajo es este:
 | 1 | Asistente IA dentro de cada ticket (userscript de Violentmonkey en la mesa de soporte): redacción con IA en 4 modos, dictado por voz, diagnóstico de pedidos y escalado en un clic | `01-panel-ia-tickets.md` | Listo |
 | 2 | Sincropresta, el módulo PrestaShop ↔ Flexxus renovado (PS 9, Hostinger, 6 funciones al core, precios incrementales, cuenta corriente, ~200 commits) | `02-sincropresta.md` | Listo |
 | 3 | Sincro Monitor: panel de monitoreo de las sincros PrestaShop (315 tiendas, más de 1,2 M de corridas clasificadas, control de salud en piloto) | `03-sincro-monitor.md` | Listo |
+| 4 | Health Score de clientes (tablero en Grafana, 7 estados por canal, 341 canales al pasar a producción) | `04-health-score.md` | **Borrador: faltan las cifras en vivo del tablero** |
 | … | Otros proyectos que el usuario pase | | |
 
 ## Ficha 3 (Sincro Monitor): hecha el 10/11/2026
@@ -42,9 +43,15 @@ Notas para la próxima sesión:
 - El panel tiene acciones que escriben (crear ticket, actualizar desde Cronicle, ejecutar sincro, relanzar). Al recorrerlo, solo lectura.
 - Las capturas quedaron en el scratchpad de la sesión (muestran dominios de clientes, no van al repo).
 
-## Tarea siguiente
+## Tarea siguiente: completar la ficha 4 (Health Score)
 
-Esperar el próximo proyecto que pase el usuario. Después: informe en Claude Docs, guion y video.
+- El borrador sale del documento "Health Score Grow2On: informe de funcionamiento" (v17 del tablero, 13/10/2026). Ese documento no está en el repo.
+- **Acceso:** variables de entorno `GRAFANA_URL`, `GRAFANA_USER` y `GRAFANA_PASS`. **Nunca imprimas sus valores.** El dashboard es `/d/healthscore-g2o`.
+- **Qué falta:** relevar en el tablero la distribución actual de canales por estado, la cola de atención, las transiciones de 30 días y los canales en activación. Solo cifras agregadas, sin nombres de clientes. Sacar capturas al scratchpad.
+- No poner en la ficha las limitaciones ni los pendientes del documento, por la regla de no incluir riesgos.
+- Solo lectura: no editar paneles, variables ni alertas.
+
+Después: informe en Claude Docs, guion y video.
 
 ### Referencia de la tarea anterior (ficha 3)
 
