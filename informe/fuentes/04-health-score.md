@@ -1,6 +1,6 @@
 # Idea 4: Health Score de clientes
 
-**Fecha:** versión del tablero del 13/10/2026. **Fuente:** documento "Health Score Grow2On: informe de funcionamiento" (10/11/2026). Las cifras del tablero en vivo están **pendientes** de relevar.
+**Fecha:** versión 17 del tablero. **Fuentes:** documento "Health Score Grow2On: informe de funcionamiento" (10/11/2026) y el tablero en vivo, relevado el 11/11/2026 con la base de producción. Las cifras están calculadas al **07/10/2026**, el último día con pedidos cargados en esa base.
 
 **Hecho con:** Claude.
 
@@ -35,12 +35,53 @@
 
 ## Cifras clave
 
+Tablero en vivo, base de producción, fecha de referencia 07/10/2026, base de 2 meses (la de la especificación).
+
 | Dato | Valor |
 |---|---|
-| Canales activos evaluados al pasar a producción | **341** |
+| Canales evaluados | **341** |
 | Estados posibles por canal | **7** |
-| Secciones del tablero | **7** |
-| Distribución actual por estado | *Pendiente: relevar en el tablero* |
+| Secciones del tablero | **7** (vista general, cola de atención, cartera sana, oportunidades y estancados, en activación, vista por cliente, detalle completo) |
+| Canales sanos (maduros + en crecimiento) | **92** |
+| Canales en activación (menos de 90 días) | **44** |
+| Canales que cambiaron de estado en 30 días | **147** |
+| Canales en la cola de atención (inactivos + en caída + operación detenida) | **196** |
+
+### Distribución por estado
+
+| Estado | Canales | % |
+|---|---|---|
+| Inactivo | 173 | 51 % |
+| En crecimiento | 58 | 17 % |
+| En activación | 44 | 13 % |
+| Maduro | 34 | 10 % |
+| En caída | 23 | 7 % |
+| Estancado | 9 | 3 % |
+| Operación detenida | 0 | 0 % |
+
+### Cola de atención
+
+| Panel | Canales |
+|---|---|
+| Inactivos (contacto urgente) | 173 |
+| En caída (contacto prioritario) | 23 |
+| Operación detenida (revisión técnica) | 0 |
+| Severidad alta | 141 |
+
+### Transiciones de 30 días (07/09 → 07/10/2026)
+
+| Hace 30 días ↓ / hoy → | Inactivo | En caída | En activación | Estancado | Maduro | En crecimiento |
+|---|---|---|---|---|---|---|
+| Inactivo (166) | 157 | 0 | 9 | 0 | 0 | 0 |
+| En activación (173) | 16 | 23 | 35 | 9 | 32 | 58 |
+| Maduro (2) | 0 | 0 | 0 | 0 | 2 | 0 |
+
+- De los 173 canales que estaban en activación, **122 pasaron a un estado operativo** (58 en crecimiento, 32 maduros, 23 en caída, 9 estancados).
+- **9 canales inactivos volvieron a activarse.**
+
+### Filtros del tablero
+
+Base de datos (DEV / Prod), Cliente, Meses de base (2, 3, 6, 12), Semanas de los gráficos (12, 26, 52, 104) y Fecha de referencia (cualquier día de los últimos 2 años). Las cifras de esta ficha usan 2 meses de base, el valor de la especificación.
 
 ## Qué se logró
 
@@ -52,6 +93,6 @@
 
 ## Ideas visuales para el video
 
-- **Semáforo de cartera:** 341 puntos que se acomodan en siete columnas de color, de inactivo a en crecimiento.
+- **Semáforo de cartera:** 341 puntos que se acomodan en la dona de estados (173 / 58 / 44 / 34 / 23 / 9).
 - **Cuatro preguntas, cuatro respuestas:** cada pregunta aparece y se ilumina el grupo de canales que la responde.
-- **Antes y hace 30 días:** puntos que cambian de color y de columna para mostrar las transiciones de estado.
+- **Hace 30 días y hoy:** 173 puntos azules de "en activación" que se reparten en verde, amarillo y rojo; 122 se gradúan a un estado operativo.

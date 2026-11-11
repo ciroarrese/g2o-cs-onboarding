@@ -62,15 +62,24 @@ const STEPS = [
 ];
 
 // Help desk window, to the right of the dashboard in the same world.
-const MESA = { x: 1800, y: 70, w: 1080, h: 780, head: 150, row: 72 };
-const MESA_ROWS = [
-  { id: "#48212", a: "Consulta sobre facturación", e: "Administración", st: "En curso" },
-  { id: "#48209", a: "Alta de usuario en el panel", e: "Soporte", st: "En curso" },
-  { id: "#48204", a: "Duda con costos de envío", e: "Soporte", st: "Esperando cliente" },
-  { id: "#48198", a: "Cambio masivo de precios", e: "Onboarding", st: "En curso" },
-  { id: "#48190", a: "Publicaciones pausadas en Mercado Libre", e: "Soporte", st: "Resuelto" },
-  { id: "#48187", a: "Configuración de medios de pago", e: "Onboarding", st: "Resuelto" },
+// Structure copied from the real ticket desk ("No asignados" view, 11/11/2026):
+// top bar with search, dark icon rail, page title + team, one tab with a
+// counter, "Total de tickets", and one card per ticket. Every ticket, company
+// and team below is fictional.
+const MESA = { x: 1800, y: 70, w: 1320, h: 780, top: 64, rail: 64, pad: 40, head: 272, row: 90, card: 78 };
+type Sla = { v: string; tone: "ok" | "warn" | "bad"; done?: boolean };
+const MESA_ROWS: {
+  id: string; a: string; e: string; date: string; sla: [Sla, Sla]; pr: string; inc?: boolean; off?: boolean;
+}[] = [
+  { id: "# 48209", a: "Consulta de facturación", e: "Tienda 14", date: "10/11/26", sla: [{ v: "2%", tone: "ok" }, { v: "1%", tone: "ok" }], pr: "Media" },
+  { id: "# 48204", a: "Artículo sin stock", e: "Tienda 22", date: "10/11/26", sla: [{ v: "3%", tone: "ok" }, { v: "1%", tone: "ok" }], pr: "Media", inc: true },
+  { id: "# 48198", a: "Stock de combo", e: "Tienda 31", date: "09/11/26", sla: [{ v: "12%", tone: "ok" }, { v: "6%", tone: "ok" }], pr: "Media", inc: true },
+  { id: "# 48190", a: "Publicaciones pausadas", e: "Tienda 45", date: "05/11/26", sla: [{ v: "0%", tone: "ok", done: true }, { v: "51%", tone: "warn" }], pr: "Media", off: true },
 ];
+const MESA_NEW = {
+  id: "# 48213", a: "Error en servidor", e: "Tienda 07", date: "10/11/26",
+  sla: [{ v: "0%", tone: "ok" }, { v: "0%", tone: "ok" }] as [Sla, Sla], pr: "Alta", inc: true,
+};
 
 // ---------- timing (frames, 30 fps) ----------
 const T = {
@@ -101,8 +110,8 @@ const hex = (a: number) => Math.round(Math.max(0, Math.min(1, a)) * 255).toStrin
 /** Camera: which world point sits at screen centre, how close, how tilted. */
 const camera = (f: number) => {
   const t = [0, 112, 160, 190, 225, 270, 305, 410, 470, 520, 590, 640, 700, 760];
-  const s = [2.4, 2.4, 1, 1, 1.12, 1.12, 1.5, 1.5, 1.5, 0.6, 0.6, 1.08, 1.08, 0.6];
-  const fx = [300, 300, 820, 820, 760, 760, 1060, 1060, 1060, 1470, 1470, 2340, 2340, 1470];
+  const s = [2.4, 2.4, 1, 1, 1.12, 1.12, 1.5, 1.5, 1.5, 0.56, 0.56, 1.0, 1.0, 0.56];
+  const fx = [300, 300, 820, 820, 760, 760, 1060, 1060, 1060, 1560, 1560, 2460, 2460, 1560];
   const fy = [668, 668, 460, 460, 400, 400, 610, 610, 610, 470, 470, 400, 400, 470];
   const tt = [0, 112, 136, 168, 470, 520, 590, 640, 700, 760, 820];
   return {
@@ -633,7 +642,8 @@ const Table: React.FC<{ f: number; filterOn: number }> = ({ f, filterOn }) => {
 // Where things are, in world coordinates.
 const firstRowY = TABLE.y + TABLE.head + TABLE.row / 2;
 const BTN = { x: TABLE.x + TABLE.w - 20 - 22 - 110, y: TABLE.y + TABLE.head + TABLE.row + DETAIL_H - 16 - 22 - 25 };
-const MESA_SLOT = { x: MESA.x + 40, y: MESA.y + MESA.head };
+const MESA_SLOT = { x: MESA.x + MESA.rail + MESA.pad, y: MESA.y + MESA.head };
+const CARD_W = MESA.w - MESA.rail - MESA.pad * 2;
 
 const Cursor: React.FC<{ f: number }> = ({ f }) => {
   const chip = { x: chipX(FOCUS_STATUS) + CHIP.w[FOCUS_STATUS] / 2, y: CHIP.y + CHIP.h / 2 };
@@ -683,50 +693,179 @@ const Cursor: React.FC<{ f: number }> = ({ f }) => {
 };
 
 // ---------- help desk ----------
-const NewTicketRow: React.FC<{ highlight: number }> = ({ highlight }) => (
+const Icon: React.FC<{ d: string; c?: string; size?: number; w?: number }> = ({ d, c = color.gray600, size = 22, w = 1.8 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+    <path d={d} fill="none" stroke={c} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const ICON = {
+  search: "M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4",
+  plus: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8v8M8 12h8",
+  alert: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7.5v5.5M12 16.2v.3",
+  bell: "M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20.5h4",
+  chart: "M4 4v16h16M7 15l4-4 3 3 5-6",
+  tag: "M3 12V4h8l10 10-8 8zM7.5 8.2v.1",
+  swap: "M4 8h14l-3-3M20 16H6l3 3",
+  team: "M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2.5 20a6.5 6.5 0 0 1 13 0M16 4.3a3.5 3.5 0 0 1 0 6.4M18 14a6.5 6.5 0 0 1 3.5 6",
+  userAdd: "M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM3 21a7 7 0 0 1 12.5-4.3M19 14v6M16 17h6",
+  company: "M6 21V8l6-4 6 4v13M4 21h16M10 21v-5h4v5",
+  calendar: "M4 6h16v14H4zM4 10h16M8 3v4M16 3v4",
+  chevron: "M7 10l5 5 5-5",
+  dots: "M12 5v.1M12 12v.1M12 19v.1",
+} as const;
+
+/** Red warning triangle for incidents, green gear for queries (as in the real desk). */
+const TypeIcon: React.FC<{ inc?: boolean }> = ({ inc }) =>
+  inc ? (
+    <svg width={24} height={24} viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+      <circle cx={12} cy={12} r={11} fill={color.error} />
+      <path d="M12 6.5l5 9h-10z" fill="none" stroke="#fff" strokeWidth={1.8} strokeLinejoin="round" />
+      <path d="M12 10.2v2.6M12 14.4v.1" stroke="#fff" strokeWidth={1.6} strokeLinecap="round" />
+    </svg>
+  ) : (
+    <Icon d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zM12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8" c={color.success} size={22} />
+  );
+
+const SlaPill: React.FC<{ s: Sla }> = ({ s }) => {
+  const c = s.tone === "ok" ? color.success : s.tone === "warn" ? color.warning : color.error;
+  return (
+    <div
+      style={{
+        height: 30,
+        padding: "0 10px",
+        borderRadius: radius.pill,
+        background: `${c}1c`,
+        color: c,
+        fontSize: 15,
+        fontWeight: font.medium,
+        display: "flex",
+        alignItems: "center",
+        gap: 5,
+      }}
+    >
+      {s.v}
+      {s.done && (
+        <svg width={15} height={15} viewBox="0 0 16 16">
+          <circle cx={8} cy={8} r={8} fill={color.success} />
+          <path d="M4.5 8.2l2.3 2.2 4.6-4.6" stroke="#fff" strokeWidth={1.8} fill="none" />
+        </svg>
+      )}
+    </div>
+  );
+};
+
+const Divider = () => <div style={{ width: 1, alignSelf: "stretch", margin: "16px 0", background: color.gray100 }} />;
+
+const TicketCard: React.FC<{ r: typeof MESA_ROWS[number]; highlight?: number; isNew?: boolean }> = ({ r, highlight = 0, isNew }) => (
   <div
     style={{
-      height: MESA.row,
+      height: MESA.card,
+      width: CARD_W,
       display: "flex",
       alignItems: "center",
-      gap: 20,
-      padding: "0 40px",
-      borderBottom: `1px solid ${color.gray100}`,
-      background: `${color.pink}${hex(0.04 + highlight * 0.1)}`,
-      boxShadow: `inset 5px 0 0 ${color.pink}`,
-      fontSize: 19,
+      gap: 14,
+      padding: "0 16px 0 20px",
+      borderRadius: radius.panel,
+      background: isNew ? `${color.pink}${hex(0.03 + highlight * 0.08)}` : color.white,
+      border: `1px solid ${isNew ? color.pink + "55" : color.gray200}`,
+      boxShadow: isNew ? `inset 5px 0 0 ${color.pink}, ${shadow.md}` : shadow.sm,
+      fontSize: 17,
+      color: color.black,
       whiteSpace: "nowrap",
     }}
   >
-    <div style={{ width: 90, fontWeight: font.semibold, color: color.pink }}>{TICKET}</div>
-    <div style={{ flex: 1, overflow: "hidden" }}>
-      <div style={{ fontWeight: font.semibold, color: color.black }}>
-        Error en servidor · {STORE}
+    <div style={{ width: 70, color: color.gray600 }}>{r.id}</div>
+    <Divider />
+    <TypeIcon inc={r.inc} />
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ fontWeight: isNew ? font.semibold : font.medium, textDecoration: "underline", textUnderlineOffset: 3, overflow: "hidden", textOverflow: "ellipsis" }}>
+        {r.a}
       </div>
-      <div style={{ fontSize: 15, color: color.gray600 }}>Creado desde Sincro Monitor · ticket interno</div>
+      <div style={{ fontSize: 13, color: color.gray600, marginTop: 3 }}>Soporte sincro</div>
     </div>
-    <div style={{ width: 170, color: color.gray600 }}>Soporte sincro</div>
-    <div style={{ width: 170 }}>
-      <span
-        style={{
-          padding: "6px 14px",
-          borderRadius: radius.pill,
-          background: gradient.brand,
-          color: color.white,
-          fontSize: 15,
-          fontWeight: font.semibold,
-        }}
-      >
-        Nuevo
-      </span>
+    <Divider />
+    <div style={{ width: 150, display: "flex", alignItems: "center", gap: 10 }}>
+      <Icon d={ICON.company} size={20} />
+      <div>
+        <div style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>{r.e}</div>
+        <div style={{ fontSize: 13, color: color.gray600, marginTop: 3, textDecoration: "underline" }}>Nivel 03</div>
+      </div>
+    </div>
+    <Divider />
+    <div style={{ width: 108, display: "flex", alignItems: "center", gap: 8, color: color.black }}>
+      <Icon d={ICON.calendar} size={18} />
+      {r.date}
+    </div>
+    <Divider />
+    <div style={{ width: 128, display: "flex", gap: 8 }}>
+      <SlaPill s={r.sla[0]} />
+      <SlaPill s={r.sla[1]} />
+    </div>
+    <Divider />
+    <div
+      style={{
+        height: 40,
+        padding: "0 18px",
+        borderRadius: radius.md,
+        border: `1.5px solid ${color.black}`,
+        display: "flex",
+        alignItems: "center",
+        fontSize: 16,
+        fontWeight: font.medium,
+      }}
+    >
+      Asignar ticket
+    </div>
+    <div
+      style={{
+        width: 86,
+        height: 40,
+        borderRadius: radius.md,
+        border: r.off ? "none" : `1.5px solid ${isNew ? color.error : color.black}`,
+        background: r.off ? color.gray100 : "transparent",
+        color: r.off ? color.gray300 : isNew ? color.error : color.black,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 4,
+        fontSize: 16,
+        fontWeight: font.medium,
+      }}
+    >
+      {r.pr}
+      <Icon d={ICON.chevron} size={14} c={r.off ? color.gray300 : isNew ? color.error : color.black} w={2.2} />
     </div>
   </div>
+);
+
+const Badge: React.FC<{ n: number; c?: string }> = ({ n, c = color.pink }) => (
+  <span
+    style={{
+      minWidth: 24,
+      height: 24,
+      padding: "0 7px",
+      borderRadius: 12,
+      background: c,
+      color: color.white,
+      fontSize: 14,
+      fontWeight: font.semibold,
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
+    {n}
+  </span>
 );
 
 const Mesa: React.FC<{ f: number }> = ({ f }) => {
   const appear = k(f, [478, 520], [0, 1], OUT);
   const insert = k(f, [T.land - 4, T.land + 16], [0, 1], OUT);
   const glow = k(f, [T.land, T.land + 10, T.land + 70], [0, 1, 0.35]);
+  const landed = f >= T.land;
+  const n = landed ? 5 : 4;
+  const bump = k(f, [T.land, T.land + 6, T.land + 16], [1, 1.35, 1]);
+  const railIcons = [ICON.chart, ICON.tag, ICON.swap, ICON.team, ICON.userAdd];
   return (
     <div
       style={{
@@ -736,7 +875,7 @@ const Mesa: React.FC<{ f: number }> = ({ f }) => {
         width: MESA.w,
         height: MESA.h,
         borderRadius: 28,
-        background: color.white,
+        background: color.gray50,
         border: `1px solid ${color.gray200}`,
         boxShadow: "0 40px 90px -30px rgba(26,26,28,.35)",
         overflow: "hidden",
@@ -744,70 +883,137 @@ const Mesa: React.FC<{ f: number }> = ({ f }) => {
         translate: `${(1 - appear) * 160}px 0`,
       }}
     >
-      <div style={{ padding: "30px 40px 0", display: "flex", alignItems: "center", gap: 16 }}>
-        <div
-          style={{
-            width: 46,
-            height: 46,
-            borderRadius: 14,
-            background: color.black,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <svg width={24} height={24} viewBox="0 0 24 24">
-            <path d="M4 7h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4z" fill="none" stroke="#fff" strokeWidth={2} />
-          </svg>
-        </div>
-        <div style={{ fontSize: 30, fontWeight: font.semibold, color: color.black }}>Mesa de ayuda</div>
-        <div style={{ flex: 1 }} />
-        <div style={{ fontSize: 18, color: color.gray600 }}>
-          Abiertos{" "}
-          <b style={{ color: color.black }}>{f >= T.land ? 24 : 23}</b>
-        </div>
-      </div>
+      {/* top bar */}
       <div
         style={{
-          display: "flex",
-          gap: 20,
-          padding: "0 40px",
-          height: 56,
-          marginTop: 22,
-          alignItems: "center",
+          height: MESA.top,
+          background: color.white,
           borderBottom: `1px solid ${color.gray100}`,
-          ...label,
+          display: "flex",
+          alignItems: "center",
+          gap: 22,
+          padding: "0 30px 0 22px",
         }}
       >
-        <div style={{ width: 90 }}>N.º</div>
-        <div style={{ flex: 1 }}>Asunto</div>
-        <div style={{ width: 170 }}>Equipo</div>
-        <div style={{ width: 170 }}>Estado</div>
-      </div>
-      <div style={{ height: insert * MESA.row, overflow: "hidden", opacity: insert }}>
-        <NewTicketRow highlight={glow} />
-      </div>
-      {MESA_ROWS.map((r) => (
+        <div style={{ width: 28, height: 28, borderRadius: 8, background: gradient.brand }} />
+        <div style={{ fontSize: 20, fontWeight: font.semibold, color: color.black }}>Mesa de ayuda</div>
+        <div style={{ flex: 1 }} />
         <div
-          key={r.id}
           style={{
-            height: MESA.row,
+            width: 330,
+            height: 38,
+            borderRadius: radius.md,
+            background: color.gray50,
+            border: `1px solid ${color.gray100}`,
             display: "flex",
             alignItems: "center",
-            gap: 20,
-            padding: "0 40px",
-            borderBottom: `1px solid ${color.gray100}`,
-            fontSize: 19,
-            color: color.black,
-            whiteSpace: "nowrap",
+            justifyContent: "space-between",
+            padding: "0 14px",
+            fontSize: 15,
+            color: color.gray300,
           }}
         >
-          <div style={{ width: 90, color: color.gray600 }}>{r.id}</div>
-          <div style={{ flex: 1 }}>{r.a}</div>
-          <div style={{ width: 170, color: color.gray600 }}>{r.e}</div>
-          <div style={{ width: 170, color: r.st === "Resuelto" ? color.success : color.gray600 }}>{r.st}</div>
+          Buscar por ticket o empresa
+          <Icon d={ICON.search} size={18} />
         </div>
-      ))}
+        <Icon d={ICON.plus} c={color.pink} />
+        <Icon d={ICON.alert} />
+        <Icon d={ICON.bell} />
+      </div>
+      {/* icon rail */}
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          top: MESA.top,
+          bottom: 0,
+          width: MESA.rail,
+          background: color.black,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 14,
+          paddingTop: 24,
+        }}
+      >
+        {railIcons.map((d, i) => (
+          <div
+            key={d}
+            style={{
+              position: "relative",
+              width: 44,
+              height: 44,
+              borderRadius: radius.md,
+              background: i === 2 ? gradient.brand : "transparent",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Icon d={d} c={color.white} size={22} />
+            {i === 2 && (
+              <div style={{ position: "absolute", right: -6, top: -6, scale: String(bump) }}>
+                <Badge n={n} c={color.error} />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      {/* page header */}
+      <div style={{ position: "absolute", left: MESA.rail + MESA.pad, top: MESA.top + 26 }}>
+        <div style={{ fontSize: 30, fontWeight: font.medium, color: color.black }}>No asignados</div>
+        <div style={{ fontSize: 17, color: color.pink, marginTop: 6 }}>Agente responsable / Equipo Soporte Sincro</div>
+      </div>
+      {/* tab bar */}
+      <div
+        style={{
+          position: "absolute",
+          left: MESA.rail + MESA.pad,
+          top: MESA.top + 118,
+          width: CARD_W,
+          height: 44,
+          borderBottom: `1px solid ${color.gray200}`,
+          display: "flex",
+          alignItems: "flex-start",
+        }}
+      >
+        <div
+          style={{
+            height: 44,
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 8,
+            fontSize: 18,
+            fontWeight: font.medium,
+            color: color.pink,
+            boxShadow: `inset 0 -3px 0 ${color.pink}`,
+            paddingRight: 4,
+          }}
+        >
+          No asignados
+          <span style={{ scale: String(bump) }}>
+            <Badge n={n} />
+          </span>
+        </div>
+        <div style={{ flex: 1 }} />
+        <Icon d={ICON.search} size={20} />
+        <div style={{ width: 1, height: 22, background: color.gray200, margin: "0 14px" }} />
+        <Icon d={ICON.dots} size={20} w={2.6} />
+      </div>
+      <div style={{ position: "absolute", left: MESA.rail + MESA.pad, top: MESA.top + 178, fontSize: 15, color: color.gray600 }}>
+        Total de tickets: {n}
+      </div>
+      {/* ticket cards */}
+      <div style={{ position: "absolute", left: MESA.rail + MESA.pad, top: MESA.head }}>
+        <div style={{ height: insert * MESA.row, opacity: insert }}>
+          <TicketCard r={MESA_NEW} highlight={glow} isNew />
+        </div>
+        {MESA_ROWS.map((r) => (
+          <div key={r.id} style={{ height: MESA.row }}>
+            <TicketCard r={r} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
@@ -825,7 +1031,7 @@ const FlyingTicket: React.FC<{ f: number }> = ({ f }) => {
     return {
       x: interpolate(p, [0, 1], [sx, ex]),
       y: interpolate(p, [0, 1], [sy, ey]) - Math.sin(p * Math.PI) * 260,
-      w: interpolate(p, [0, 1], [220, MESA.w - 80]),
+      w: interpolate(p, [0, 1], [220, CARD_W]),
       r: Math.sin(p * Math.PI) * -6,
       lift: k(ff, [a - 6, a + 6], [0, 1], OUT),
     };
@@ -844,8 +1050,8 @@ const FlyingTicket: React.FC<{ f: number }> = ({ f }) => {
               left: p.x,
               top: p.y,
               width: p.w,
-              height: MESA.row - 8,
-              borderRadius: radius.lg,
+              height: MESA.card,
+              borderRadius: radius.panel,
               background: main ? color.white : color.pink,
               border: main ? `2px solid ${color.pink}` : "none",
               boxShadow: main ? `0 ${20 * p.lift}px 40px -10px rgba(231,0,126,.45)` : "none",
@@ -990,7 +1196,7 @@ export const SincroMonitorDemo: React.FC = () => {
             <Sweep f={f} from={T.land + 2} w={MESA.w} />
           </div>
           <div style={{ position: "absolute", inset: 0 }}>
-            <Sweep f={f} from={770} w={CW + MESA.w} />
+            <Sweep f={f} from={770} w={MESA.x + MESA.w} />
           </div>
         </div>
       </AbsoluteFill>

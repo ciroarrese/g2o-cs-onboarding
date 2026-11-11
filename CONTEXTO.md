@@ -32,7 +32,7 @@ El orden de trabajo es este:
 | 1 | Asistente IA dentro de cada ticket (userscript de Violentmonkey en la mesa de soporte): redacción con IA en 4 modos, dictado por voz, diagnóstico de pedidos y escalado en un clic | `01-panel-ia-tickets.md` | Listo |
 | 2 | Sincropresta, el módulo PrestaShop ↔ Flexxus renovado (PS 9, Hostinger, 6 funciones al core, precios incrementales, cuenta corriente, ~200 commits) | `02-sincropresta.md` | Listo |
 | 3 | Sincro Monitor: panel de monitoreo de las sincros PrestaShop (315 tiendas, más de 1,2 M de corridas clasificadas, control de salud en piloto) | `03-sincro-monitor.md` | Listo |
-| 4 | Health Score de clientes (tablero en Grafana, 7 estados por canal, 341 canales al pasar a producción) | `04-health-score.md` | **Borrador: faltan las cifras en vivo del tablero** |
+| 4 | Health Score de clientes (tablero en Grafana, 7 estados por canal, 341 canales, 92 sanos, 147 cambios de estado en 30 días) | `04-health-score.md` | Listo |
 | … | Otros proyectos que el usuario pase | | |
 
 ## Ficha 3 (Sincro Monitor): hecha el 10/11/2026
@@ -43,30 +43,34 @@ Notas para la próxima sesión:
 - El panel tiene acciones que escriben (crear ticket, actualizar desde Cronicle, ejecutar sincro, relanzar). Al recorrerlo, solo lectura.
 - Las capturas quedaron en el scratchpad de la sesión (muestran dominios de clientes, no van al repo).
 
-## Intento del 11/11/2026: las dos herramientas quedaron bloqueadas
+## Ficha 4 (Health Score): hecha el 11/11/2026
 
-No se cambió la ficha 4 ni la escena. Nada se escribió en Grafana ni en la mesa.
+Cómo se relevó, para repetirlo:
+- `GRAFANA_URL` apunta a `/login`: usar su origen. Login por formulario con Playwright (`input[name=user]`, `input[name=password]`); la API acepta Basic Auth. El email de `GRAFANA_USER` estaba mal y el usuario lo corrigió.
+- **El tablero guardado abre con la base "DB DEV"** (datos de prueba: 9 canales, último pedido el 02/09/2026). Las cifras reales salen de **"DB Prod"**: pasar `&var-ds=DB%20Prod` en la URL. No se guardó nada.
+- **En producción el último pedido cargado es del 07/10/2026.** Con la fecha de referencia "Hoy", 319 de 341 canales salen como inactivos por el corte de datos, no por la cartera. Por eso la ficha usa `&var-fecha_ref=2026-10-07`. **Avisarle al usuario si quiere cifras con datos al día:** hay que revisar la carga de pedidos en la base de producción.
+- La base de 2 meses es la de la especificación. Con 3, 6 o 12 meses la distribución cambia bastante (por ejemplo, en caída pasa de 23 a 53), así que no afirmar que el cálculo es estable.
+- Las capturas quedaron en el scratchpad (muestran nombres de clientes).
 
-- **Grafana:** `GRAFANA_URL` apunta a la ruta `/login`; hay que usar su origen. La API con Basic Auth y el formulario de login responden **401 "Invalid username or password"** (un solo intento por vía, para no bloquear la cuenta). El formato de las variables está bien (sin espacios ni comillas). **Falta que el usuario corrija `GRAFANA_USER` / `GRAFANA_PASS`** o confirme si el login es por SSO.
-- **Mesa de tickets (`MESATICKET_*`):** es una SPA ("Service Desk") que redirige a `/auth/login`. En Chromium la pantalla queda en blanco porque los módulos de login (`Login-*.js`, `LockOutlined-*.js`, la fuente Arboria) responden 404, en 4 intentos seguidos. Con curl esos mismos archivos dan 200. No se llegó al formulario, así que no hay capturas ni estructura relevada. El clasificador de permisos bloqueó seguir probando encabezados contra el servidor; no insistir por esa vía sin autorización del usuario.
-- **No usar el conector Mesa_Tickets como alternativa** sin que el usuario lo apruebe: devuelve tickets reales.
-- Al depurar, un error de Playwright mostró la URL de la mesa en la salida. Para evitarlo, envolver los scripts con un filtro que reemplace los valores y hosts de las variables antes de imprimir.
+## Mesa de tickets: estructura relevada el 11/11/2026
 
-## Tarea siguiente: completar la ficha 4 (Health Score)
+Se recorrió con Playwright en solo lectura (bandeja propia, pestañas, No asignados, Mi equipo y la vista de un ticket). No se abrieron Indicadores, Nuevo ticket ni Alta de usuarios, y no se tocó ningún botón de acción. La primera carga puede quedar en blanco (los módulos del login a veces dan 404 en el navegador): reintentar.
 
-- El borrador sale del documento "Health Score Grow2On: informe de funcionamiento" (v17 del tablero, 13/10/2026). Ese documento no está en el repo.
-- **Acceso:** variables de entorno `GRAFANA_URL`, `GRAFANA_USER` y `GRAFANA_PASS`. **Nunca imprimas sus valores.** El dashboard es `/d/healthscore-g2o`.
-- **Qué falta:** relevar en el tablero la distribución actual de canales por estado, la cola de atención, las transiciones de 30 días y los canales en activación. Solo cifras agregadas, sin nombres de clientes. Sacar capturas al scratchpad.
-- No poner en la ficha las limitaciones ni los pendientes del documento, por la regla de no incluir riesgos.
-- Solo lectura: no editar paneles, variables ni alertas.
+- **Barra superior:** logo, buscador "Buscar por ticket o empresa", íconos de nuevo ticket (+), avisos (!) y campana.
+- **Barra lateral oscura:** indicadores, tickets, no asignados (con contador rojo), mi equipo y alta de usuarios. El ítem activo va en un cuadro de color.
+- **Cabecera de la bandeja:** nombre del agente o "No asignados", subtítulo "Agente responsable / <equipo>" en color de enlace. En la bandeja propia, a la derecha, tres tarjetas de métricas (puntuación, asignados, cerrados): **no van en el video**.
+- **Aviso** en franja celeste: "Revisión de prioridad en la primera respuesta".
+- **Pestañas con contador:** Asignados, Pendientes, Solucionados, Derivados, Cerrados, Internos, Observados (en No asignados hay una sola pestaña). Debajo, "Total de tickets: N".
+- **Cada ticket es una tarjeta en fila:** "# número" | ícono de tipo (triángulo rojo = incidente, engranaje verde = consulta) + asunto subrayado + equipo debajo | ícono de empresa + empresa subrayada + nivel de soporte debajo | calendario + fecha dd/mm/aa | dos pastillas de SLA en % (primera respuesta y resolución; verde, amarillo o rojo, con tilde o cruz) | estado con punto de color ("Esperando al agente" rojo, "Esperando al cliente" verde) o, en No asignados, el botón "Asignar Ticket" | selector de prioridad (Baja, Media) con borde, gris si está deshabilitado. Una tarjeta destacada lleva una barra de color a la izquierda.
+- **Vista de un ticket:** título con ícono de etiqueta; migas "Tickets / <agente> / #número" + punto de estado; arriba a la derecha "Reasignar Ticket" y una tarjeta "Prioridad". Columna principal: mensaje inicial en tarjeta (avatar, autor, rol > equipo, fecha, número en pestaña), "Más opciones", "Derivar", botón "Responder"; sección "Comentarios" con "Total de comentarios" y respuestas encadenadas ("En respuesta al comentario #N"). Columna derecha: Empresa asociada, Participantes (agente responsable y agente), Observadores con buscador y "Agregar observador", SLA con dos barras (1° respuesta y resolución, con vencimiento), Categorización. Rail derecho con íconos. Sirve para la escena del proyecto 1.
+- Las capturas están en el scratchpad y muestran clientes y agentes reales: no van al repo.
 
-### Después: recrear la mesa de tickets en el video
+## Escena SincroMonitorDemo: mesa reemplazada el 11/11/2026
 
-- El usuario agregó al entorno la URL, el usuario y la contraseña de la mesa de tickets. Buscá los nombres de esas variables con `env | cut -d= -f1`. **Nunca imprimas sus valores.**
-- Es **solo una referencia visual**: recorrerla con Playwright en modo lectura, sacar capturas al scratchpad y copiar su estructura (columnas, estados, colores, rótulos) en la escena.
-- **No crear, responder ni modificar tickets.** No sacar métricas de ahí: sigue vigente la regla de no usar la Mesa de Tickets para cifras.
-- En el video no puede aparecer ningún cliente, agente ni ticket real: datos ficticios.
-- Sirve también para el proyecto 1 (asistente IA dentro de cada ticket), que vive en esa mesa.
+- La maqueta genérica se reemplazó por la estructura de "No asignados" en el estilo de Grow2on (Geist, rosa como acento, rail negro, ítem activo con el degradé de la marca). Datos ficticios: tickets # 48190–48213, empresas "Tienda NN", equipo "Soporte sincro", nivel "Nivel 03".
+- El ticket que vuela entra arriba como "Error en servidor", prioridad Alta, y los contadores pasan de 4 a 5.
+- La ventana de la mesa pasó a 1320 px de ancho; la cámara se ajustó (centro 2460, vista general 1560 con escala 0,56). Los tiempos aprobados no cambiaron (840 frames).
+- **Pendiente: que el usuario apruebe esta versión** (se le mandó el MP4).
 
 Después: informe en Claude Docs, guion y escenas de los demás proyectos.
 
