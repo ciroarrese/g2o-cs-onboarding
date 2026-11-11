@@ -51,7 +51,15 @@ Notas para la próxima sesión:
 - No poner en la ficha las limitaciones ni los pendientes del documento, por la regla de no incluir riesgos.
 - Solo lectura: no editar paneles, variables ni alertas.
 
-Después: informe en Claude Docs, guion y video.
+### Después: recrear la mesa de tickets en el video
+
+- El usuario agregó al entorno la URL, el usuario y la contraseña de la mesa de tickets. Buscá los nombres de esas variables con `env | cut -d= -f1`. **Nunca imprimas sus valores.**
+- Es **solo una referencia visual**: recorrerla con Playwright en modo lectura, sacar capturas al scratchpad y copiar su estructura (columnas, estados, colores, rótulos) en la escena.
+- **No crear, responder ni modificar tickets.** No sacar métricas de ahí: sigue vigente la regla de no usar la Mesa de Tickets para cifras.
+- En el video no puede aparecer ningún cliente, agente ni ticket real: datos ficticios.
+- Sirve también para el proyecto 1 (asistente IA dentro de cada ticket), que vive en esa mesa.
+
+Después: informe en Claude Docs, guion y escenas de los demás proyectos.
 
 ### Referencia de la tarea anterior (ficha 3)
 
@@ -89,9 +97,25 @@ Después: informe en Claude Docs, guion y video.
 - `.claude/skills/remotion-*`: las Agent Skills oficiales de Remotion. Están enlazadas a `.agents/skills/`. Empezá por `remotion-best-practices`.
 - Para el informe usá la skill `docs` (Claude Docs). Para gráficos, la skill `dataviz`.
 
+## Decisiones de video ya tomadas (11/11/2026)
+
+- **Sin voz en off ni textos explicativos.** Todo se cuenta con imágenes y movimiento ("mostrar, no decir").
+- **Los textos propios de cada herramienta sí van** (rótulos, filtros, columnas, botones), recreados con datos ficticios: dominios `tienda-NN.ejemplo.com.ar`, sin clientes reales.
+- **Las herramientas se recrean en el estilo de Grow2on**, manteniendo la estructura reconocible. No se usan capturas ni grabaciones.
+- **El video puede pasar de 2 minutos** si hace falta.
+- **Escena aprobada por el usuario ("está perfecto"):** `video/src/scenes/SincroMonitorDemo.tsx`, composición `SincroMonitorDemo`, 840 frames a 30 fps (28 s). Recorrido:
+  1. 315 puntos que se juntan en una dona.
+  2. La cámara se abre al tablero completo.
+  3. Clic en el filtro "Error en servidor".
+  4. Se abre una fila con el log y las etapas.
+  5. Clic en "Crear ticket": el ticket vuela a la mesa de ayuda y entra como "Nuevo".
+- **Ese enfoque es la base para los demás proyectos:** cámara virtual, inclinación 3D, cursor con clics, contadores, estelas y brillos. Todo depende del frame.
+- **La mesa de ayuda de esa escena es una maqueta genérica.** Hay que reemplazarla por una copia fiel de la mesa real (ver la tarea siguiente).
+- Para mostrarle avances al usuario: renderizar el MP4 al scratchpad y mandarlo, porque no ve Remotion Studio.
+
 ## Decisiones abiertas (preguntarle al usuario cuando llegue el momento)
 
 - Formato del video: se asume 16:9 a 1920×1080, sin confirmar.
-- Voz en off (ElevenLabs en español) o solo texto con música.
+- Música: sin definir.
 - Público del video.
 - El zip del design system traía `uploads/Reporte Soporte y Onboarding (standalone).html` y 3 capturas. **No se usaron y no están en el repo.** Si son relevantes, hay que pedirle al usuario que los vuelva a subir.
