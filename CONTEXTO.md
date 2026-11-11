@@ -15,6 +15,7 @@ El orden de trabajo es este:
 ## Reglas acordadas con el usuario (respetarlas siempre)
 
 - **Contenido:**
+  - **Video: números emulados** (inventados), no cifras reales. **Informe: sin cifras.**
   - Es una presentación de **todas las ideas o proyectos, sin entrar en detalle**. Va un resumen de alto nivel, no análisis técnicos.
   - **No se muestran montos ni nombres de clientes.** Solo cifras agregadas, por ejemplo "12 clientes con mejoras".
   - **Todo se hizo con Claude.** Se puede afirmar en el informe y en el video.
@@ -88,7 +89,7 @@ Se recorrió con Playwright en solo lectura (bandeja propia, pestañas, No asign
 - **Decisión del usuario (11/11/2026): el informe es informativo, sin cifras, porcentajes ni gráficos.** Se sacaron las tablas de datos, los números y los dos gráficos (sus widgets quedan en el doc sin mostrarse; la herramienta no permite borrarlos). Las cifras siguen en las fichas.
 - Sin riesgos, montos ni clientes.
 - Si el usuario edita el doc, leer con `sinceRev` antes de tocarlo (la última revisión escrita por Claude es la 13).
-- **Abierto:** si el video también va sin cifras (hoy la escena muestra 315, 146, 73, etc.). Preguntarlo al armar el guion.
+- **Decisión del usuario (11/11/2026): el video usa números emulados**, no las cifras reales. Hoy la escena del Sincro Monitor todavía muestra las cifras reales del panel (315 tiendas: 146 / 73 / 17 / 12 / 67, en el tablero y en los 315 puntos de la dona). Hay que cambiarlas por valores inventados al armar el guion final. Los números de la tarjeta de Teams y de la mesa ya son ficticios.
 
 Después: guion y escenas de los demás proyectos.
 
