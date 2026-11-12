@@ -10,6 +10,7 @@ import "../brand/fonts";
 import { CloudBackground, CountUp } from "../brand/primitives";
 import { color, font, gradient, radius, shadow } from "../brand/theme";
 import { DockedHeadline } from "./Apertura";
+import { Cursor as MCursor, DoodleCircle } from "../brand/motion";
 
 /**
  * Sincro Monitor, rebuilt in the Grow2on style. No narration: the story is
@@ -85,9 +86,9 @@ const MESA_NEW = {
 // Teams chat window, to the right of the help desk. Structure copied from the
 // real "Sincro Monitor · novedades" card the monitor posts to the team chat
 // (screenshot from the user, 11/11/2026). Stores and figures are fictional.
-const TEAMS = { x: 3220, y: -40, w: 940, h: 1000 };
+const TEAMS = { x: 350, y: 1160, w: 940, h: 1000 };
 const TEAMS_CX = TEAMS.x + TEAMS.w / 2;
-const TT = { win: 716, signal: [700, 760] as const, typing: 762, card: 792, rows: 806, inc: 876, fix: 936, hi: [960, 980, 1000] };
+const TT = { win: 744, signal: [732, 790] as const, typing: 796, card: 818, rows: 832, inc: 898, fix: 952, hi: [974, 992, 1010] };
 const NOVEDADES: { l: string; n?: number; v: string }[] = [
   { l: "Sitios afectados", n: 3, v: "" },
   { l: "Incidentes abiertos", n: 6, v: " (1 nuevo, 1 recurrente)" },
@@ -108,9 +109,29 @@ const T = {
   rowClick: 300,
   ticketClick: 440,
   ticketDone: 466,
-  fly: [480, 556] as const,
-  land: 556,
+  fly: [480, 546] as const,
+  land: 546,
+  // back on the panel: the alert, which folds into a bell that flies to Teams
+  alert: 642,
+  fold: [700, 730] as const,
+  // back to the help desk: open the ticket, type the answer and send it
+  openRow: 1112,
+  opened: [1116, 1140] as const,
+  responder: 1144,
+  typeFrom: 1158,
+  send: 1272,
+  through: [1404, 1440] as const,
 };
+
+const ALERT = { x: 1080, y: 150, w: 520, h: 124 };
+const BELL_HOME = { x: 1170, y: 56 };
+const BELL_LAND = { x: TEAMS.x + 48, y: TEAMS.y + 38 };
+// The opened ticket covers the help desk window.
+const TV = { x: 1800, y: 70, w: 1320, h: 780 };
+const TVX = TV.x + 64 + 40;
+const ED = { x: TVX, y: 546, w: 720, h: 220 };
+const REPLY =
+  "Hola, ¿cómo están? Detectamos un error de servidor en la sincronización de la tienda. Ya reintentamos la sincro con más tiempo de espera y quedó funcionando. Cualquier cosa, nos avisan.";
 
 // ---------- helpers ----------
 const OUT = Easing.bezier(0.16, 1, 0.3, 1);
@@ -128,19 +149,50 @@ const k = (
   });
 const hex = (a: number) => Math.round(Math.max(0, Math.min(1, a)) * 255).toString(16).padStart(2, "0");
 
-/** Camera: which world point sits at screen centre, how close, how tilted. */
+/** Camera keyframes [frame, focusX, focusY, scale]: which world point sits at screen centre. */
+const KEYS: [number, number, number, number][] = [
+  [0, 300, 668, 2.4], [112, 300, 668, 2.4], [160, 820, 410, 1], [190, 820, 410, 1],
+  [225, 760, 400, 1.12], [270, 760, 400, 1.12], [305, 1060, 610, 1.5], [470, 1060, 610, 1.5],
+  // follow the ticket to the right, into the help desk
+  [500, 1700, 470, 0.7], [546, 2460, 420, 1.0], [560, 2460, 420, 1.0], [576, 2400, 350, 1.55], [600, 2400, 350, 1.55],
+  // whip back to the panel: the alert drops from the bell
+  [630, 820, 410, 1.0], [644, 820, 410, 1.0], [658, 1340, 220, 1.7], [700, 1340, 220, 1.7], [730, 1340, 240, 1.35],
+  // follow the bell down to Teams
+  [762, 900, 860, 0.75], [792, TEAMS_CX, TEAMS.y + 500, 0.98], [998, TEAMS_CX, TEAMS.y + 500, 0.98],
+  [1012, TEAMS_CX, TEAMS.y + 740, 1.45], [1042, TEAMS_CX, TEAMS.y + 740, 1.45],
+  // fly to the help desk and open the ticket
+  [1068, 2200, 900, 0.45], [1092, 2460, 420, 1.0], [1106, 2400, 381, 1.3], [1118, 2400, 381, 1.3],
+  [1140, 2460, 460, 1.0], [1150, 2460, 460, 1.0], [1166, ED.x + 360, 640, 1.6], [1268, ED.x + 360, 640, 1.6],
+  [1292, 2460, 460, 1.0], [1320, 2460, 460, 1.0],
+  // everything at once, then out through the sent reply
+  [1352, 1560, 1080, 0.42], [1396, 1560, 1080, 0.42], [1404, 1560, 1080, 0.42],
+];
+const camAt = (f: number) => {
+  const t = KEYS.map((q) => q[0]);
+  let c = { fx: k(f, t, KEYS.map((q) => q[1])), fy: k(f, t, KEYS.map((q) => q[2])), s: k(f, t, KEYS.map((q) => q[3])) };
+  const p = k(f, [T.through[0], T.through[1]], [0, 1], Easing.bezier(0.7, 0, 0.84, 0));
+  if (p > 0) {
+    c = {
+      fx: k(f, [T.through[0], T.through[0] + 12], [c.fx, ED.x + 330]),
+      fy: k(f, [T.through[0], T.through[0] + 12], [c.fy, ED.y + 70]),
+      s: c.s * Math.pow(60, p),
+    };
+  }
+  return c;
+};
 const camera = (f: number) => {
-  const t = [0, 112, 160, 190, 225, 270, 305, 410, 470, 520, 590, 640, 700, 712, 752, 900, 1030, 1080];
-  const s = [2.4, 2.4, 1, 1, 1.12, 1.12, 1.5, 1.5, 1.5, 0.56, 0.56, 1.0, 1.0, 1.0, 0.98, 1.0, 1.02, 0.42];
-  const fx = [300, 300, 820, 820, 760, 760, 1060, 1060, 1060, 1560, 1560, 2460, 2460, 2460, TEAMS_CX, TEAMS_CX, TEAMS_CX, 2090];
-  const fy = [668, 668, 410, 410, 400, 400, 610, 610, 610, 470, 470, 400, 400, 400, 460, 460, 470, 450];
-  const tt = [0, 112, 136, 168, 470, 520, 590, 640, 700, 712, 752, 800, 1030, 1080, 1140];
+  const c = camAt(f);
+  const prev = camAt(f - 1);
+  // velocity in screen pixels per frame drives the tilt and the motion blur
+  const vx = (c.fx - prev.fx) * c.s;
+  const vy = (c.fy - prev.fy) * c.s;
+  const v = Math.hypot(vx, vy);
+  const tt = [0, 112, 136, 168, 470, 520];
   return {
-    s: k(f, t, s),
-    fx: k(f, t, fx),
-    fy: k(f, t, fy),
-    rx: k(f, tt, [0, 0, 12, 0, 0, 8, 6, 0, 0, 0, 5, 0, 0, 4, 3]),
-    ry: k(f, tt, [0, 0, -10, 0, 0, -6, -5, 0, 0, 0, -5, 0, 0, -3, -2]),
+    ...c,
+    rx: k(f, tt, [0, 0, 12, 0, 0, 4]) + Math.max(-8, Math.min(8, vy * 0.06)),
+    ry: k(f, tt, [0, 0, -10, 0, 0, -3]) - Math.max(-10, Math.min(10, vx * 0.05)),
+    blur: f >= T.through[0] ? 0 : Math.min(7, Math.max(0, (v - 12) / 14)),
   };
 };
 
@@ -880,7 +932,7 @@ const Badge: React.FC<{ n: number; c?: string }> = ({ n, c = color.pink }) => (
 );
 
 const Mesa: React.FC<{ f: number }> = ({ f }) => {
-  const appear = k(f, [478, 520], [0, 1], OUT);
+  const appear = k(f, [468, 504], [0, 1], OUT);
   const insert = k(f, [T.land - 4, T.land + 16], [0, 1], OUT);
   const glow = k(f, [T.land, T.land + 10, T.land + 70], [0, 1, 0.35]);
   const landed = f >= T.land;
@@ -1341,40 +1393,203 @@ const Teams: React.FC<{ f: number }> = ({ f }) => {
   );
 };
 
-/** A signal leaves the monitor header and lands in the team chat. */
-const Signal: React.FC<{ f: number }> = ({ f }) => {
+// ---------- alert on the panel, folding into a bell that flies to Teams ----------
+const BELL_D = "M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20.5h4";
+
+/** Bell in the panel header; rings and shows a badge when the alert arrives. */
+const HeaderBell: React.FC<{ f: number }> = ({ f }) => {
+  const on = f >= T.alert;
+  const ring = on ? Math.sin((f - T.alert) * 0.9) * 18 * Math.max(0, 1 - (f - T.alert) / 40) : 0;
+  const pop = k(f, [T.alert, T.alert + 6, T.alert + 14], [0, 1.3, 1]);
+  return (
+    <div style={{ position: "absolute", left: BELL_HOME.x - 22, top: BELL_HOME.y - 22, width: 44, height: 44, borderRadius: 22, background: on ? `${color.pink}14` : "transparent", display: "flex", alignItems: "center", justifyContent: "center", opacity: k(f, [128, 150], [0, 1]) }}>
+      <svg width={26} height={26} viewBox="0 0 24 24" style={{ rotate: `${ring}deg`, transformOrigin: "50% 10%" }}>
+        <path d={BELL_D} fill="none" stroke={on ? color.pink : color.gray600} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      {on && (
+        <span style={{ position: "absolute", right: -4, top: -4, minWidth: 22, height: 22, borderRadius: 11, background: color.error, color: "#fff", fontSize: 13, fontWeight: font.semibold, display: "flex", alignItems: "center", justifyContent: "center", scale: String(pop) }}>1</span>
+      )}
+    </div>
+  );
+};
+
+/** The incident alert: drops from the bell, then folds into a round bell. */
+const AlertToast: React.FC<{ f: number }> = ({ f }) => {
+  if (f < T.alert || f > T.fold[1] + 2) return null;
+  const drop = k(f, [T.alert, T.alert + 16], [0, 1], OUT);
+  const fold = k(f, [T.fold[0], T.fold[1]], [0, 1], Easing.bezier(0.6, 0, 0.3, 1));
+  const w = ALERT.w + (96 - ALERT.w) * fold;
+  const h = ALERT.h + (96 - ALERT.h) * fold;
+  const cx = ALERT.x + ALERT.w / 2, cy = ALERT.y + ALERT.h / 2;
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: cx - w / 2,
+        top: cy - h / 2 - (1 - drop) * 70,
+        width: w,
+        height: h,
+        borderRadius: 18 + fold * 30,
+        background: fold > 0.6 ? gradient.brand : color.white,
+        border: `1.5px solid ${color.pink}55`,
+        boxShadow: `inset ${6 * (1 - fold)}px 0 0 ${color.error}, 0 24px 50px -16px rgba(231,0,126,.45)`,
+        opacity: drop,
+        overflow: "hidden",
+        zIndex: 30,
+      }}
+    >
+      <div style={{ padding: "16px 22px", opacity: 1 - fold * 2, display: "flex", gap: 14 }}>
+        <div style={{ width: 44, height: 44, borderRadius: 22, background: `${color.error}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <svg width={24} height={24} viewBox="0 0 24 24">
+            <path d={BELL_D} fill="none" stroke={color.error} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        <div style={{ whiteSpace: "nowrap" }}>
+          <div style={{ fontSize: 20, fontWeight: font.semibold, color: color.black }}>Nuevo incidente · prioridad alta</div>
+          <div style={{ fontSize: 16, color: color.gray600, marginTop: 2 }}>{STORE} · Error en servidor</div>
+          <div style={{ fontSize: 15, color: color.pink, marginTop: 6 }}>Avisando al equipo en Teams…</div>
+        </div>
+      </div>
+      <svg width={40} height={40} viewBox="0 0 24 24" style={{ position: "absolute", left: w / 2 - 20, top: h / 2 - 20, opacity: Math.max(0, fold * 2 - 1) }}>
+        <path d={BELL_D} fill="none" stroke="#fff" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </div>
+  );
+};
+
+/** The bell flies with a trail from the panel to the Teams channel. */
+const BellFlight: React.FC<{ f: number }> = ({ f }) => {
   const [a, b] = TT.signal;
-  if (f < a || f > b + 4) return null;
+  if (f < a - 2 || f > b + 26) return null;
+  const sx = ALERT.x + ALERT.w / 2, sy = ALERT.y + ALERT.h / 2;
   const pos = (ff: number) => {
-    const p = k(ff, [a, b], [0, 1], Easing.bezier(0.5, 0, 0.2, 1));
+    const p = k(ff, [a, b], [0, 1], Easing.bezier(0.45, 0, 0.2, 1));
+    const mx = (sx + BELL_LAND.x) / 2 + 380, my = (sy + BELL_LAND.y) / 2 - 120;
     return {
-      x: interpolate(p, [0, 1], [63, TEAMS.x + 45]),
-      y: interpolate(p, [0, 1], [56, TEAMS.y + 160]) - Math.sin(p * Math.PI) * 420,
+      x: (1 - p) * (1 - p) * sx + 2 * (1 - p) * p * mx + p * p * BELL_LAND.x,
+      y: (1 - p) * (1 - p) * sy + 2 * (1 - p) * p * my + p * p * BELL_LAND.y,
+      size: 96 - p * 44,
+      p,
     };
   };
+  const now = pos(f);
+  const landed = f >= b;
+  const ping = k(f, [b, b + 24], [0, 1], OUT);
   return (
     <>
-      {[10, 7, 4, 2, 0].map((lag, i) => {
-        const p = pos(f - lag);
-        const size = lag === 0 ? 26 : 18 - lag;
-        return (
-          <div
-            key={lag}
-            style={{
-              position: "absolute",
-              left: p.x - size / 2,
-              top: p.y - size / 2,
-              width: size,
-              height: size,
-              borderRadius: size,
-              background: lag === 0 ? gradient.brand : color.pink,
-              opacity: lag === 0 ? 1 : 0.12 + i * 0.08,
-              boxShadow: lag === 0 ? `0 0 30px 8px ${color.pink}55` : "none",
-            }}
-          />
-        );
-      })}
+      {!landed &&
+        [14, 11, 8, 5, 2].map((lag, i) => {
+          const q = pos(f - lag);
+          const sz = q.size * (0.35 + i * 0.1);
+          return <div key={lag} style={{ position: "absolute", left: q.x - sz / 2, top: q.y - sz / 2, width: sz, height: sz, borderRadius: sz, background: color.pink, opacity: 0.08 + i * 0.06, zIndex: 31 }} />;
+        })}
+      {!landed && (
+        <div style={{ position: "absolute", left: now.x - now.size / 2, top: now.y - now.size / 2, width: now.size, height: now.size, borderRadius: now.size, background: gradient.brand, boxShadow: `0 0 40px 10px ${color.pink}55`, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 32 }}>
+          <svg width={now.size * 0.45} height={now.size * 0.45} viewBox="0 0 24 24" style={{ rotate: `${Math.sin(f * 0.8) * 16}deg` }}>
+            <path d={BELL_D} fill="none" stroke="#fff" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+      )}
+      {landed &&
+        [0, 1].map((r) => (
+          <div key={r} style={{ position: "absolute", left: BELL_LAND.x - 40, top: BELL_LAND.y - 40, width: 80, height: 80, borderRadius: 40, border: `3px solid ${color.pink}`, scale: String(0.6 + (ping + r * 0.3) * 1.6), opacity: Math.max(0, 1 - ping - r * 0.3), zIndex: 32 }} />
+        ))}
     </>
+  );
+};
+
+// ---------- the opened ticket: write the answer and send it ----------
+const TicketView: React.FC<{ f: number }> = ({ f }) => {
+  const open = k(f, [T.opened[0], T.opened[1]], [0, 1], Easing.bezier(0.3, 0, 0.2, 1));
+  if (open <= 0) return null;
+  // grows from the new ticket row of the help desk
+  const r0 = { x: MESA_SLOT.x, y: MESA_SLOT.y, w: CARD_W, h: MESA.card };
+  const x = r0.x + (TV.x - r0.x) * open, y = r0.y + (TV.y - r0.y) * open;
+  const w = r0.w + (TV.w - r0.w) * open, h = r0.h + (TV.h - r0.h) * open;
+  const editor = k(f, [T.responder + 2, T.responder + 16], [0, 1], OUT);
+  const sent = k(f, [T.send + 2, T.send + 18], [0, 1], OUT);
+  const text = typed(REPLY, f, T.typeFrom, 1.75);
+  const caret = Math.floor(f / 10) % 2 === 0 && f < T.send;
+  const waiting = f >= T.send + 10;
+  const inner = (dx: number, dy: number) => ({ position: "absolute" as const, left: dx - TV.x, top: dy - TV.y });
+  return (
+    <div style={{ position: "absolute", left: x, top: y, width: w, height: h, borderRadius: 28, background: color.gray50, border: `1px solid ${color.gray200}`, boxShadow: "0 40px 90px -30px rgba(26,26,28,.4)", overflow: "hidden", zIndex: 20 }}>
+      <div style={{ width: TV.w, height: TV.h, transformOrigin: "0 0", scale: `${w / TV.w} ${h / TV.h}`, opacity: k(f, [T.opened[0] + 8, T.opened[1]], [0, 1]) }}>
+        <div style={{ height: 64, background: color.white, borderBottom: `1px solid ${color.gray100}`, display: "flex", alignItems: "center", gap: 18, padding: "0 30px 0 22px" }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: gradient.brand }} />
+          <div style={{ fontSize: 20, fontWeight: font.semibold, color: color.black }}>Mesa de ayuda</div>
+        </div>
+        <div style={{ position: "absolute", left: 0, top: 64, bottom: 0, width: 64, background: color.black }} />
+        <div style={{ ...inner(TVX, TV.y + 64 + 24), display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 30, fontWeight: font.medium, color: color.black }}>Error en servidor · {STORE}</span>
+        </div>
+        <div style={{ ...inner(TVX, TV.y + 64 + 70), display: "flex", alignItems: "center", gap: 12, fontSize: 16 }}>
+          <span style={{ color: color.pink }}>Tickets / No asignados / {TICKET}</span>
+          <span style={{ width: 9, height: 9, borderRadius: 5, background: waiting ? color.success : color.error }} />
+          <span style={{ color: color.gray600 }}>{waiting ? "Esperando al cliente" : "Esperando al agente"}</span>
+        </div>
+        {/* first message: the ticket created by the monitor */}
+        <div style={{ ...inner(TVX, 300), width: 720, height: 172, boxSizing: "border-box", padding: "16px 22px", background: color.white, borderRadius: radius.panel, border: `1px solid ${color.gray200}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: color.gray600 }}>
+            <span style={{ width: 28, height: 28, borderRadius: 14, background: gradient.brand, color: "#fff", fontSize: 11, fontWeight: font.semibold, display: "flex", alignItems: "center", justifyContent: "center" }}>SM</span>
+            Sincro Monitor · ticket interno
+            <span style={{ marginLeft: "auto", color: color.pink, fontWeight: font.semibold }}>{TICKET}</span>
+          </div>
+          <div style={{ fontSize: 16, lineHeight: 1.55, color: color.black, marginTop: 10 }}>
+            {LOG}. Falló en "Sincronizando productos".
+            <br />
+            <span style={{ color: color.gray600 }}>Arreglo sugerido: reintentar la sincro con un timeout de 300 s.</span>
+          </div>
+        </div>
+        <div style={{ ...inner(TVX, 488), width: 720, height: 40, display: "flex", alignItems: "center", fontSize: 16 }}>
+          <span>Más opciones ⌄</span>
+          <span style={{ marginLeft: "auto", color: color.pink, marginRight: 20 }}>Derivar</span>
+          <span style={{ padding: "9px 20px", borderRadius: radius.md, background: color.pink, color: "#fff", fontWeight: font.medium, scale: String(1 - k(f, [T.responder - 3, T.responder + 1, T.responder + 8], [0, 0.08, 0])) }}>Responder</span>
+        </div>
+        {/* editor, then the sent reply */}
+        <div style={{ ...inner(ED.x, ED.y), width: ED.w, height: ED.h * editor * (1 - sent), opacity: editor * (1 - sent), overflow: "hidden", background: color.white, borderRadius: radius.panel, border: `1.5px solid ${color.pink}66`, boxShadow: `0 14px 30px -14px rgba(231,0,126,${0.3 * editor})` }}>
+          <div style={{ height: 38, display: "flex", alignItems: "center", gap: 18, padding: "0 16px", borderBottom: `1px solid ${color.gray100}`, fontSize: 16, color: color.gray600 }}>
+            <b>B</b>
+            <i>I</i>
+            <u>U</u>
+            <span>•≡</span>
+          </div>
+          <div style={{ padding: "14px 18px", fontSize: 18, lineHeight: 1.55, color: color.black }}>
+            {text}
+            {caret && <span style={{ color: color.pink }}>|</span>}
+          </div>
+          <span style={{ position: "absolute", right: 16, bottom: 12, padding: "8px 20px", borderRadius: radius.md, background: color.pink, color: "#fff", fontSize: 16, fontWeight: font.medium, scale: String(1 - k(f, [T.send - 3, T.send + 1, T.send + 8], [0, 0.08, 0])) }}>Enviar</span>
+        </div>
+        <div style={{ ...inner(ED.x, ED.y), width: ED.w, boxSizing: "border-box", padding: "14px 20px", background: color.white, borderRadius: radius.panel, border: `1.5px solid ${color.success}55`, boxShadow: `inset 5px 0 0 ${color.success}, 0 16px 34px -14px rgba(31,162,90,${0.4 * sent})`, opacity: sent, translate: `0 ${(1 - sent) * 30}px` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: color.gray600 }}>
+            <span style={{ width: 26, height: 26, borderRadius: 13, background: color.black, color: "#fff", fontSize: 11, fontWeight: font.semibold, display: "flex", alignItems: "center", justifyContent: "center" }}>AS</span>
+            Agente de soporte · hace un momento
+            <span style={{ marginLeft: "auto", color: color.success, fontWeight: font.semibold }}>Enviado ✓</span>
+          </div>
+          <div style={{ fontSize: 16, lineHeight: 1.5, color: color.black, marginTop: 8 }}>{REPLY}</div>
+        </div>
+        {/* right column */}
+        <div style={{ ...inner(TVX + 760, 300), width: 380, fontSize: 15, color: color.black }}>
+          {[["Empresa asociada", "Tienda 07"], ["Participantes", "Agente de soporte"], ["Categorización", "Integraciones"]].map(([l, v]) => (
+            <div key={l} style={{ marginBottom: 24 }}>
+              <div style={{ paddingBottom: 8, borderBottom: `1px solid ${color.gray200}`, fontSize: 16 }}>{l}</div>
+              <div style={{ marginTop: 10, height: 36, borderRadius: radius.md, border: `1px solid ${color.gray200}`, background: color.white, display: "flex", alignItems: "center", padding: "0 12px" }}>{v}</div>
+            </div>
+          ))}
+          <div style={{ paddingBottom: 8, borderBottom: `1px solid ${color.gray200}`, fontSize: 16 }}>SLA</div>
+          <div style={{ display: "flex", gap: 20, marginTop: 12 }}>
+            {[["1° Respuesta", waiting ? 1 : 0.3, color.success], ["Resolución", 0.12, color.success]].map(([l, v, c]) => (
+              <div key={l as string} style={{ flex: 1, fontSize: 14 }}>
+                {l as string}
+                <div style={{ height: 6, borderRadius: 3, background: color.gray100, marginTop: 8 }}>
+                  <div style={{ height: 6, borderRadius: 3, width: `${(v as number) * 100}%`, background: c as string }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -1396,6 +1611,7 @@ export const SincroMonitorDemo: React.FC = () => {
             height: CH,
             transformOrigin: "0 0",
             transform: `translate(960px, 540px) rotateX(${cam.rx}deg) rotateY(${cam.ry}deg) scale(${cam.s}) translate(${-cam.fx}px, ${-cam.fy}px)`,
+            filter: cam.blur > 0.3 ? `blur(${cam.blur.toFixed(1)}px)` : undefined,
           }}
         >
           <div
@@ -1417,18 +1633,33 @@ export const SincroMonitorDemo: React.FC = () => {
           <Cursor f={f} />
           <Mesa f={f} />
           <FlyingTicket f={f} />
-          <Teams f={f} />
-          <Signal f={f} />
           <div style={{ position: "absolute", left: MESA.x, top: MESA.y, width: MESA.w, height: MESA.h }}>
             <Sweep f={f} from={T.land + 2} w={MESA.w} />
           </div>
-          <div style={{ position: "absolute", inset: 0 }}>
-            <Sweep f={f} from={1086} w={TEAMS.x + TEAMS.w} />
-          </div>
+          <TicketView f={f} />
+          <Teams f={f} />
+          <HeaderBell f={f} />
+          <AlertToast f={f} />
+          <BellFlight f={f} />
+          <DoodleCircle f={f} start={TT.hi[0] + 4} end={1046} cx={TEAMS_CX + 20} cy={TEAMS.y + 742} rx={440} ry={90} id="dc-fixes" />
+          <MCursor
+            f={f}
+            show={[1094, 1296]}
+            clicks={[T.openRow, T.responder, T.send]}
+            keys={[
+              [1094, 2700, 700],
+              [T.openRow - 8, 2420, 381],
+              [T.responder - 10, TVX + 720 - 60, 508],
+              [T.typeFrom, TVX + 720 - 60, 508],
+              [T.send - 10, ED.x + ED.w - 70, ED.y + ED.h - 26],
+              [1296, 2700, 800],
+            ]}
+          />
         </div>
       </AbsoluteFill>
       <DotField f={f} s={cam.s} />
-      <DockedHeadline i={2} f={f} start={150} hide={(cam.s - 1.0) / 0.08} />
+      <DockedHeadline i={2} f={f} start={150} hide={Math.max((cam.s - 1.0) / 0.08, k(f, [744, 770, 1050, 1070], [0, 1, 1, 0]))} />
+      <AbsoluteFill style={{ background: color.gray50, opacity: k(f, [T.through[1] - 14, T.through[1]], [0, 1], Easing.linear) }} />
     </AbsoluteFill>
   );
 };
