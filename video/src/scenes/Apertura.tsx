@@ -89,8 +89,8 @@ const Headline: React.FC<{ i: number; f: number; small?: boolean }> = ({ i, f, s
 };
 
 /** Small docked headline, top-left; reused by every project scene. */
-export const DockedHeadline: React.FC<{ i: number; f: number; start: number }> = ({ i, f, start }) => {
-  const a = k(f, [start, start + 18], [0, 1], OUT);
+export const DockedHeadline: React.FC<{ i: number; f: number; start: number; hide?: number }> = ({ i, f, start, hide = 0 }) => {
+  const a = k(f, [start, start + 18], [0, 1], OUT) * (1 - Math.max(0, Math.min(1, hide)));
   return (
     <div
       style={{

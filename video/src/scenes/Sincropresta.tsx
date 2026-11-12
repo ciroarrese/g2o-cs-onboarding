@@ -3,7 +3,7 @@ import { AbsoluteFill, Easing, random, useCurrentFrame } from "remotion";
 import "../brand/fonts";
 import { CloudBackground, GradientText } from "../brand/primitives";
 import { color, font, gradient, radius } from "../brand/theme";
-import { Cursor, DoodleArrow, DoodleCircle, OUT, Subtitles, Vignette, k } from "../brand/motion";
+import { Cursor, DoodleArrow, DoodleCircle, OUT, Vignette, k } from "../brand/motion";
 import { DockedHeadline } from "./Apertura";
 
 /**
@@ -23,11 +23,9 @@ import { DockedHeadline } from "./Apertura";
 const NAME = "Módulo Sincro Presta";
 
 // ---------- zones (world centres) ----------
-const ZA = { x: 960, y: 540 };
 const ZB = { x: 3200, y: 540 };
 const ZC = { x: 3200, y: 1900 };
 const ZD = { x: 960, y: 1900 };
-const ZE = { x: 960, y: 3200 };
 
 // ---------- timing ----------
 const T = {
@@ -35,7 +33,7 @@ const T = {
   erpPrice: 34, chipPrice: [46, 86] as const,
   erpStock: 72, chipStock: [86, 126] as const,
   erpNew: 104, chipCat: [118, 158] as const,
-  cart: 168, chipOrder: [176, 214] as const,
+  cart: 146, chipOrder: [152, 188] as const,
   // B
   weeks: 268,
   // C
@@ -48,18 +46,40 @@ const T = {
 };
 
 // ---------- camera ----------
+// Keyframes [frame, focusX, focusY, scale]. Overviews sit at 0.88; the
+// Digital Zoom moments snap in (1.3–1.7) on the action that matters.
+const camKeys = (): [number, number, number, number][] => [
+  [0, 960, 520, 0.93], [28, 960, 520, 0.93],
+  [40, EW.x + 640, EW.y + 240, 1.6], [62, EW.x + 640, EW.y + 240, 1.6], // ERP price edit
+  [76, SW.x + 300, SW.y + 300, 1.6], [104, SW.x + 300, SW.y + 300, 1.6], // price lands in the store
+  [118, 960, 520, 0.93], [184, 960, 520, 0.93],
+  [198, EW.x + 680, EW.y + 640, 1.9], [228, EW.x + 680, EW.y + 640, 1.9], // web order reaches the ERP
+  [242, 2080, 540, 0.5], [258, ZB.x, 500, 0.9], [384, ZB.x, 500, 0.9],
+  [396, 3564, 590, 1.55], [434, 3564, 590, 1.55], // a full week of fixes and improvements
+  [446, ZB.x, 500, 0.9], [460, ZB.x, 1220, 0.5], [474, ZC.x, 1870, 0.88], [540, ZC.x, 1870, 0.88],
+  [550, 3330, 1690, 1.55], [572, 3330, 1690, 1.55], // the wall cuts the sync
+  [584, ZC.x, 1870, 0.88], [624, ZC.x, 1870, 0.88],
+  [634, 3288, 2140, 1.6], [664, 3288, 2140, 1.6], // the server run passes 2:00
+  [676, ZC.x, 1870, 0.88], [716, ZC.x, 1870, 0.88],
+  [730, 2080, 1900, 0.5], [744, ZD.x, 1880, 0.88], [858, ZD.x, 1880, 0.88],
+  [866, 1600, 1740, 1.5], [904, 1600, 1740, 1.5], // switches turned on
+  [912, 1640, 1960, 1.25], [926, 1640, 1960, 1.25],
+  [940, ZD.x, 2550, 0.5], [954, 630, 3180, 0.88], [1000, 630, 3180, 0.88],
+  [1010, 980, 3300, 1.35], [1042, 980, 3300, 1.35], // movement detail
+  [1060, 1500, 3200, 0.95], [1086, 1500, 3200, 0.95],
+  [1098, 1800, 3220, 0.95], [1116, 1800, 3220, 0.95],
+  [1126, PHONE.x + 190, PHONE.y + 390, 1.3], [1166, PHONE.x + 190, PHONE.y + 390, 1.3], // ARCA on the phone
+];
+
 const camera = (f: number) => {
-  const t = [0, 226, 242, 258, 446, 460, 474, 716, 730, 744, 926, 940, 954, 1052, 1080, 1104, 1124, 1148, 1162];
-  const fx = [ZA.x, ZA.x, 2080, ZB.x, ZB.x, ZB.x, ZC.x, ZC.x, 2080, ZD.x, ZD.x, ZD.x, 640, 640, 1540, 1540, 1980, 1980, ARCA.x + 430];
-  const fy = [ZA.y, ZA.y, 540, ZB.y, ZB.y, 1220, ZC.y, ZC.y, 1900, ZD.y, ZD.y, 2550, ZE.y, ZE.y, ZE.y + 30, ZE.y + 30, ZE.y, ZE.y, ZE.y];
-  const s = [0.95, 0.98, 0.5, 0.95, 1.0, 0.5, 0.95, 1.0, 0.5, 0.95, 1.0, 0.5, 1.0, 1.0, 0.98, 0.98, 0.78, 0.78, 1.0];
-  // leave room for the subtitle strip: frame a bit smaller and higher
-  let cam = { fx: k(f, t, fx), fy: k(f, t, fy) + 70, s: k(f, t, s) * 0.92 };
+  const K = camKeys();
+  const t = K.map((q) => q[0]);
+  let cam = { fx: k(f, t, K.map((q) => q[1])), fy: k(f, t, K.map((q) => q[2])), s: k(f, t, K.map((q) => q[3])) };
   const p = k(f, [T.through[0], T.through[1]], [0, 1], Easing.bezier(0.7, 0, 0.84, 0));
   if (p > 0) {
     cam = {
-      fx: k(f, [T.through[0], T.through[0] + 10], [cam.fx, ARCA.x + 430]),
-      fy: k(f, [T.through[0], T.through[0] + 10], [cam.fy, ARCA.y + 520]),
+      fx: k(f, [T.through[0], T.through[0] + 10], [cam.fx, PHONE.x + 190]),
+      fy: k(f, [T.through[0], T.through[0] + 10], [cam.fy, PHONE.y + 300]),
       s: cam.s * Math.pow(40, p),
     };
   }
@@ -541,7 +561,7 @@ const ZoneD: React.FC<{ f: number }> = ({ f }) => {
 const SE = { x: 60, y: 2760, w: 1140, h: 880 };
 const PDF = { x: 1290, y: 2780, w: 560, h: 840 };
 const QR = { x: PDF.x + PDF.w - 176, y: PDF.y + PDF.h - 196, size: 136 };
-const ARCA = { x: 1960, y: 2860, w: 860, h: 680 };
+const PHONE = { x: 1980, y: 2840, w: 380, h: 780 };
 const MOVES = [
   ["05/11/26", "Factura A 0004-00012873", 184500, 0],
   ["12/11/26", "Factura A 0004-00012911", 96200, 0],
@@ -575,13 +595,81 @@ const QrCode: React.FC<{ x: number; y: number; size: number }> = ({ x, y, size }
   );
 };
 
+// A phone scans the QR printed on the PDF and opens the ARCA verification.
+const Phone: React.FC<{ f: number }> = ({ f }) => {
+  const inP = k(f, [T.pdfFly[1] + 8, T.scan[0]], [0, 1], OUT);
+  if (inP <= 0) return null;
+  const scan = k(f, [T.scan[0], T.scan[1]], [0, 1], Easing.linear);
+  const found = f >= T.scan[1] - 2;
+  const toArca = k(f, [T.arca, T.arca + 12], [0, 1], OUT);
+  const ok = k(f, [T.arca + 16, T.arca + 26], [0, 1], OUT);
+  const link = k(f, [T.scan[1] - 2, T.scan[1] + 6], [0, 1], OUT) * (1 - toArca);
+  const W = PHONE.w - 24, H = PHONE.h - 24;
+  return (
+    <div style={{ position: "absolute", left: PHONE.x + (1 - inP) * 260, top: PHONE.y + (1 - inP) * 120, width: PHONE.w, height: PHONE.h, borderRadius: 58, background: "#111", boxShadow: "0 50px 90px -30px rgba(0,0,0,.55)", padding: 12, boxSizing: "border-box", opacity: inP, rotate: `${-6 + inP * 4}deg`, transform: "translateZ(120px)" }}>
+      <div style={{ position: "relative", width: W, height: H, borderRadius: 46, overflow: "hidden", background: "#1d1d1f" }}>
+        {/* camera viewfinder */}
+        <div style={{ position: "absolute", inset: 0, opacity: 1 - toArca }}>
+          <div style={{ position: "absolute", left: 40, top: 150, width: W - 80, height: 420, background: "#f2f2f2", borderRadius: 6, rotate: "3deg", filter: "blur(0.4px)" }} />
+          <QrCode x={(W - 180) / 2} y={270} size={180} />
+          {[[0, 0], [1, 0], [0, 1], [1, 1]].map(([cx, cy]) => (
+            <div key={`${cx}${cy}`} style={{ position: "absolute", left: (W - 230) / 2 + cx * 186, top: 245 + cy * 186, width: 44, height: 44, borderColor: found ? color.success : "#fff", borderStyle: "solid", borderWidth: `${cy ? 0 : 5}px ${cx ? 5 : 0}px ${cy ? 5 : 0}px ${cx ? 0 : 5}px`, borderRadius: 8 }} />
+          ))}
+          {scan > 0 && scan < 1 && <div style={{ position: "absolute", left: (W - 200) / 2, top: 262 + scan * 196, width: 200, height: 3, background: color.pink, boxShadow: `0 0 14px 4px ${color.pink}88` }} />}
+          <div style={{ position: "absolute", left: 18, right: 18, top: 60, padding: "12px 16px", borderRadius: 16, background: "rgba(255,255,255,.92)", fontSize: 15, color: color.black, opacity: link, translate: `0 ${(1 - link) * -20}px` }}>
+            <b>afip.gob.ar</b>
+            <div style={{ color: color.gray600, fontSize: 13 }}>Abrir el enlace del código QR</div>
+          </div>
+          <div style={{ position: "absolute", bottom: 36, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
+            <span style={{ width: 64, height: 64, borderRadius: 32, border: "4px solid #fff" }} />
+          </div>
+        </div>
+        {/* ARCA verification page, mobile */}
+        <div style={{ position: "absolute", inset: 0, background: color.white, opacity: toArca, translate: `0 ${(1 - toArca) * 40}px` }}>
+          <div style={{ height: 50 }} />
+          <div style={{ margin: "0 16px 10px", height: 32, borderRadius: 10, background: color.gray100, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 13, color: color.gray600 }}>
+            <Icon d="M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z" size={13} />
+            afip.gob.ar/fe/qr/?p=eyJ2ZXIiOjEs…
+          </div>
+          <div style={{ height: 52, background: "#0d3a6b", color: "#fff", display: "flex", alignItems: "center", padding: "0 20px", fontSize: 19, fontWeight: font.semibold, letterSpacing: "0.04em" }}>ARCA</div>
+          <div style={{ padding: "18px 20px" }}>
+            <div style={{ fontSize: 22, fontWeight: font.semibold, color: color.black }}>Consulta de comprobante</div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 12, padding: "8px 14px", borderRadius: 10, background: `${color.success}1a`, color: color.success, fontSize: 17, fontWeight: font.semibold, opacity: ok, scale: String(0.9 + ok * 0.1) }}>
+              <Icon d="M5 12l4 4 10-10" c={color.success} size={18} w={2.6} />
+              Comprobante autorizado
+            </div>
+            <div style={{ marginTop: 16 }}>
+              {[
+                ["CUIT emisor", "30-71234567-8"],
+                ["Tipo de comprobante", "Factura A"],
+                ["Punto de venta", "0004"],
+                ["Número", "00012911"],
+                ["Fecha de emisión", "12/11/2026"],
+                ["Importe total", money(96200)],
+                ["CAE", "76451238904512"],
+              ].map(([l, v], i) => {
+                const a = k(f, [T.arca + 14 + i * 3, T.arca + 24 + i * 3], [0, 1], OUT);
+                return (
+                  <div key={l} style={{ padding: "8px 0", borderBottom: `1px solid ${color.gray100}`, opacity: a }}>
+                    <div style={{ fontSize: 12, color: color.gray600 }}>{l}</div>
+                    <div style={{ fontSize: 16, color: color.black, fontWeight: font.medium }}>{v}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+        <div style={{ position: "absolute", top: 10, left: (W - 110) / 2, width: 110, height: 30, borderRadius: 16, background: "#000" }} />
+      </div>
+    </div>
+  );
+};
+
 const ZoneE: React.FC<{ f: number }> = ({ f }) => {
   const winIn = k(f, [T.rows - 20, T.rows], [0, 1], OUT);
   const detail = k(f, [T.detail + 2, T.detail + 22], [0, 1], OUT);
   const pdfIn = k(f, [T.pdfFly[0], T.pdfFly[1]], [0, 1], Easing.bezier(0.3, 0, 0.2, 1));
   const scan = k(f, [T.scan[0], T.scan[1]], [0, 1], Easing.linear);
-  const arcaIn = k(f, [T.arca, T.arca + 20], [0, 1], OUT);
-  const ok = k(f, [T.arca + 22, T.arca + 32], [0, 1], OUT);
   let saldo = 0;
   return (
     <>
@@ -697,44 +785,7 @@ const ZoneE: React.FC<{ f: number }> = ({ f }) => {
         </div>
       )}
 
-      {/* ARCA verification page (emulated) */}
-      {arcaIn > 0 && (
-        <div style={{ position: "absolute", left: ARCA.x, top: ARCA.y, width: ARCA.w, height: ARCA.h, borderRadius: 18, background: color.white, boxShadow: "0 40px 90px -30px rgba(26,26,28,.4)", overflow: "hidden", opacity: arcaIn, translate: `${(1 - arcaIn) * 80}px 0`, transform: "translateZ(60px)" }}>
-          <div style={{ height: 40, background: "#eceef1", display: "flex", alignItems: "center", gap: 8, padding: "0 16px" }}>
-            {["#ff5f57", "#febc2e", "#28c840"].map((c) => (
-              <span key={c} style={{ width: 11, height: 11, borderRadius: 6, background: c }} />
-            ))}
-            <div style={{ marginLeft: 14, flex: 1, height: 26, borderRadius: 8, background: color.white, fontSize: 13, color: PS.muted, display: "flex", alignItems: "center", padding: "0 12px", whiteSpace: "nowrap", overflow: "hidden" }}>www.afip.gob.ar/fe/qr/?p=eyJ2ZXIiOjEsImZlY2hhIjoiMjAyNi0xMS0xMiIsImN1aXQiOjMwNzEyMzQ1Njc4…</div>
-          </div>
-          <div style={{ height: 64, background: "#0d3a6b", color: "#fff", display: "flex", alignItems: "center", padding: "0 28px", fontSize: 22, fontWeight: font.semibold, letterSpacing: "0.04em" }}>ARCA</div>
-          <div style={{ padding: "26px 34px" }}>
-            <div style={{ fontSize: 26, fontWeight: font.semibold, color: color.black }}>Consulta de comprobante</div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 10, marginTop: 14, padding: "10px 18px", borderRadius: 10, background: `${color.success}1a`, color: color.success, fontSize: 21, fontWeight: font.semibold, opacity: ok, scale: String(0.9 + ok * 0.1) }}>
-              <Icon d="M5 12l4 4 10-10" c={color.success} size={22} w={2.6} />
-              Comprobante autorizado
-            </div>
-            <div style={{ marginTop: 20, display: "grid", gridTemplateColumns: "220px 1fr", rowGap: 12, fontSize: 18 }}>
-              {[
-                ["CUIT emisor", "30-71234567-8"],
-                ["Tipo de comprobante", "Factura A"],
-                ["Punto de venta", "0004"],
-                ["Número", "00012911"],
-                ["Fecha de emisión", "12/11/2026"],
-                ["Importe total", money(96200)],
-                ["CAE", "76451238904512"],
-              ].map(([l, v], i) => {
-                const a = k(f, [T.arca + 16 + i * 3, T.arca + 26 + i * 3], [0, 1], OUT);
-                return (
-                  <React.Fragment key={l}>
-                    <span style={{ color: color.gray600, opacity: a }}>{l}</span>
-                    <span style={{ color: color.black, fontWeight: font.medium, opacity: a }}>{v}</span>
-                  </React.Fragment>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
+      <Phone f={f} />
     </>
   );
 };
@@ -742,7 +793,7 @@ const ZoneE: React.FC<{ f: number }> = ({ f }) => {
 export const Sincropresta: React.FC = () => {
   const f = useCurrentFrame();
   const cam = camera(f);
-  const zoomIn = Math.max(0, Math.min(1, (cam.s - 1.02) / 0.15));
+  const zoomIn = Math.max(0, Math.min(1, (cam.s - 1.05) / 0.4));
   const wash = k(f, [T.through[1] - 14, T.through[1]], [0, 1], Easing.linear);
   const rowY = (i: number) => SE.y + 266 + 18 + 44 + i * 47 + 22;
   return (
@@ -772,7 +823,7 @@ export const Sincropresta: React.FC = () => {
           <DoodleCircle f={f} start={T.srv[0] + 34} end={T.srv[1] + 20} cx={ZC.x - 760 + 330 + 1080 * 0.48} cy={ZC.y + 40 + 198} rx={72} ry={84} id="dc-nolimit" />
           <DoodleCircle f={f} start={T.click2 + 10} end={T.save + 20} cx={CFG.x + CFG.w - 130} cy={CFG.y + CFG.rowY + 3 * CFG.rowH - 50 + 42} rx={90} ry={34} id="dc-switch" />
           <DoodleCircle f={f} start={T.scan[0] - 10} end={T.arca + 20} cx={QR.x + QR.size / 2} cy={QR.y + QR.size / 2} rx={98} ry={98} id="dc-qr" />
-          <DoodleArrow f={f} start={T.arca - 4} end={T.through[0] + 6} x1={QR.x + QR.size + 20} y1={QR.y + 30} x2={ARCA.x - 20} y2={ARCA.y + 200} bend={-0.25} id="da-arca" />
+          <DoodleArrow f={f} start={T.scan[0] - 8} end={T.arca + 10} x1={QR.x + QR.size + 24} y1={QR.y + 40} x2={PHONE.x - 16} y2={PHONE.y + 330} bend={-0.2} id="da-phone" />
           <Cursor
             f={f}
             show={[852, 930]}
@@ -799,19 +850,7 @@ export const Sincropresta: React.FC = () => {
         </div>
       </AbsoluteFill>
       <Vignette amount={zoomIn * (1 - k(f, [T.through[0], T.through[0] + 10], [0, 1]))} />
-      <DockedHeadline i={1} f={f} start={-30} />
-      <Subtitles
-        f={f}
-        cues={[
-          [8, 232, "El Módulo Sincro Presta conecta la tienda online con el ERP Flexxus: catálogo, precios, stock y pedidos se sincronizan solos."],
-          [256, 452, "Cada semana salió una versión nueva: mejoras y correcciones que fueron haciendo crecer el producto."],
-          [474, 572, "Antes, la sincro corría dentro de la página web y el hosting la cortaba a los 2 minutos: se revertía todo."],
-          [576, 720, "Ahora se ejecuta como un proceso interno del servidor, sin ese límite: termina completa."],
-          [742, 932, "Funciones que se hicieron para un cliente ahora son parte del módulo: cada tienda las activa o desactiva desde la configuración."],
-          [954, 1046, "Cada cliente ve su cuenta corriente en la tienda y entra al detalle de cada movimiento."],
-          [1050, 1196, "Descarga la factura en PDF: el QR con el CAE lleva a ARCA, que valida el comprobante."],
-        ]}
-      />
+      <DockedHeadline i={1} f={f} start={-30} hide={(cam.s - 1.0) / 0.25} />
       <AbsoluteFill style={{ background: color.gray50, opacity: wash }} />
     </AbsoluteFill>
   );

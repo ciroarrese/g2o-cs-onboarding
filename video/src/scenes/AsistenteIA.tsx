@@ -685,7 +685,7 @@ export const AsistenteIA: React.FC = () => {
         </div>
       </AbsoluteFill>
       <Vignette amount={zoomIn * (1 - through)} />
-      <DockedHeadline i={0} f={f} start={-30} />
+      <DockedHeadline i={0} f={f} start={-30} hide={(cam.s - 1.0) / 0.25} />
       <AbsoluteFill style={{ background: color.gray50, opacity: wash }} />
     </AbsoluteFill>
   );
