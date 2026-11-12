@@ -4,6 +4,7 @@ import { SincroMonitorDemo } from "./scenes/SincroMonitorDemo";
 import { Apertura } from "./scenes/Apertura";
 import { AsistenteIA } from "./scenes/AsistenteIA";
 import { Sincropresta } from "./scenes/Sincropresta";
+import { HealthScore } from "./scenes/HealthScore";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -13,6 +14,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition id="AsistenteIA" component={AsistenteIA} durationInFrames={840} fps={30} width={1920} height={1080} />
       <Composition id="Sincropresta" component={Sincropresta} durationInFrames={1200} fps={30} width={1920} height={1080} />
       <Composition id="SincroMonitor" component={SincroMonitorDemo} durationInFrames={1440} fps={30} width={1920} height={1080} />
+      <Composition id="HealthScore" component={HealthScore} durationInFrames={1080} fps={30} width={1920} height={1080} />
     </Folder>
     <Folder name="Pruebas">
       <Composition
