@@ -1,4 +1,4 @@
-# Idea 2: Sincropresta, el módulo PrestaShop ↔ Flexxus renovado
+# Idea 2: Módulo Sincro Presta, el módulo PrestaShop ↔ Flexxus renovado
 
 **Período:** del 1/10 al 4/11/2026. **Fuente:** documento "Sincropresta: mejoras de octubre y noviembre 2026" (21 páginas).
 
