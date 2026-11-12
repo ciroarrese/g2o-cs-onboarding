@@ -13,7 +13,7 @@ import { color, font, gradient, radius } from "../brand/theme";
 
 export const PROJECTS = [
   { name: "Asistente IA", line: "responde, dicta y escala sin salir del ticket" },
-  { name: "Sincropresta", line: "la tienda y el ERP, siempre sincronizados" },
+  { name: "Módulo Sincro Presta", line: "la tienda y el ERP, siempre sincronizados" },
   { name: "Sincro Monitor", line: "avisa antes de que el cliente reclame" },
   { name: "Health Score", line: "a quién contactar primero" },
 ] as const;

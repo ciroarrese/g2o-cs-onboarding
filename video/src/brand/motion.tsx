@@ -187,3 +187,36 @@ export const Vignette: React.FC<{ amount: number }> = ({ amount }) => (
     }}
   />
 );
+
+/**
+ * Subtitles: a dark caption strip at the bottom, no voice. `cues` are
+ * [startFrame, endFrame, text]; each fades in and out over 8 frames.
+ */
+export const Subtitles: React.FC<{ f: number; cues: [number, number, string][] }> = ({ f, cues }) => {
+  const cue = cues.find(([a, b]) => f >= a && f <= b);
+  if (!cue) return null;
+  const [a, b, text] = cue;
+  const o = k(f, [a, a + 8, b - 8, b], [0, 1, 1, 0], Easing.linear);
+  return (
+    <AbsoluteFill style={{ justifyContent: "flex-end", alignItems: "center", paddingBottom: 54, pointerEvents: "none" }}>
+      <div
+        style={{
+          maxWidth: 1460,
+          padding: "16px 34px",
+          borderRadius: 20,
+          background: "rgba(26,26,28,.86)",
+          color: "#fff",
+          fontSize: 36,
+          fontWeight: 500,
+          lineHeight: 1.3,
+          textAlign: "center",
+          opacity: o,
+          translate: `0 ${(1 - o) * 14}px`,
+          boxShadow: "0 18px 40px -18px rgba(0,0,0,.5)",
+        }}
+      >
+        {text}
+      </div>
+    </AbsoluteFill>
+  );
+};

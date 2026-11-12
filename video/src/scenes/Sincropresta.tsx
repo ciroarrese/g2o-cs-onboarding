@@ -3,211 +3,319 @@ import { AbsoluteFill, Easing, random, useCurrentFrame } from "remotion";
 import "../brand/fonts";
 import { CloudBackground, GradientText } from "../brand/primitives";
 import { color, font, gradient, radius } from "../brand/theme";
-import { DoodleCircle, DoodleArrow, OUT, Vignette, hex, k } from "../brand/motion";
+import { Cursor, DoodleArrow, DoodleCircle, OUT, Subtitles, Vignette, k } from "../brand/motion";
 import { DockedHeadline } from "./Apertura";
 
 /**
- * Scene 3: Sincropresta, the PrestaShop <-> ERP module. A world of five zones
- * the camera flies through: the live sync (UI World), versions (Chart Grow),
- * the time limit that is no longer a limit (Chart Grow + Doodle), features
- * moving from one client to the core (UI World), and the account statement PDF,
- * whose QR the camera flies through. All numbers are emulated.
- * 840 frames at 30 fps.
+ * Scene 3: Módulo Sincro Presta (PrestaShop <-> ERP Flexxus). Five zones the
+ * camera flies through, each with a subtitle (no voice):
+ *  A. a home-goods PrestaShop store (Classic theme look) and the Flexxus ERP
+ *     "Artículos" grid, synced live;
+ *  B. weekly versions built from stacked "Mejora" / "Fix" items;
+ *  C. the 2-minute hosting limit vs. the sync running inside the server;
+ *  D. client features merging into the module's configuration screen;
+ *  E. the account statement: history, movement detail, PDF invoice whose QR
+ *     (with the CAE) opens the ARCA verification.
+ * Every store, client, number and document is fictional.
+ * 1200 frames at 30 fps.
  */
 
+const NAME = "Módulo Sincro Presta";
+
 // ---------- zones (world centres) ----------
-const ZA = { x: 960, y: 550 };
-const ZB = { x: 3060, y: 540 };
-const ZC = { x: 3060, y: 1800 };
-const ZD = { x: 960, y: 1800 };
-const ZE = { x: 960, y: 3060 };
+const ZA = { x: 960, y: 540 };
+const ZB = { x: 3200, y: 540 };
+const ZC = { x: 3200, y: 1900 };
+const ZD = { x: 960, y: 1900 };
+const ZE = { x: 960, y: 3200 };
 
 // ---------- timing ----------
 const T = {
-  flow: [30, 185] as const,
-  ver: [214, 286] as const,
-  try1: [336, 396] as const,
-  revert: [400, 426] as const,
-  try2: [432, 496] as const,
-  fly: [560, 650] as const,
-  toggles: 646,
-  pdf: 700,
-  through: [800, 840] as const,
+  // A
+  erpPrice: 34, chipPrice: [46, 86] as const,
+  erpStock: 72, chipStock: [86, 126] as const,
+  erpNew: 104, chipCat: [118, 158] as const,
+  cart: 168, chipOrder: [176, 214] as const,
+  // B
+  weeks: 268,
+  // C
+  web: [482, 546] as const, fail: 546, move: [574, 604] as const, srv: [606, 690] as const,
+  // D
+  cards: 748, merge: 782, click1: 872, click2: 896, save: 918,
+  // E
+  rows: 960, detail: 1004, pdfClick: 1046, pdfFly: [1050, 1078] as const, scan: [1098, 1114] as const, arca: 1116,
+  through: [1166, 1200] as const,
 };
 
 // ---------- camera ----------
 const camera = (f: number) => {
-  const t = [0, 175, 190, 205, 295, 312, 330, 505, 522, 540, 690, 705, 722, 790];
-  const fx = [ZA.x, ZA.x, 2010, ZB.x, ZB.x, ZB.x, ZC.x, ZC.x, 2010, ZD.x, ZD.x, ZD.x, ZE.x, ZE.x];
-  const fy = [ZA.y, ZA.y, 545, ZB.y, ZB.y, 1170, ZC.y, ZC.y, 1800, ZD.y, ZD.y, 2430, ZE.y, ZE.y];
-  const s = [0.95, 1.0, 0.5, 1.0, 1.05, 0.55, 1.0, 1.05, 0.5, 0.9, 0.95, 0.55, 1.0, 1.15];
-  let cam = { fx: k(f, t, fx), fy: k(f, t, fy), s: k(f, t, s) };
+  const t = [0, 226, 242, 258, 446, 460, 474, 716, 730, 744, 926, 940, 954, 1052, 1080, 1104, 1124, 1148, 1162];
+  const fx = [ZA.x, ZA.x, 2080, ZB.x, ZB.x, ZB.x, ZC.x, ZC.x, 2080, ZD.x, ZD.x, ZD.x, 640, 640, 1540, 1540, 1980, 1980, ARCA.x + 430];
+  const fy = [ZA.y, ZA.y, 540, ZB.y, ZB.y, 1220, ZC.y, ZC.y, 1900, ZD.y, ZD.y, 2550, ZE.y, ZE.y, ZE.y + 30, ZE.y + 30, ZE.y, ZE.y, ZE.y];
+  const s = [0.95, 0.98, 0.5, 0.95, 1.0, 0.5, 0.95, 1.0, 0.5, 0.95, 1.0, 0.5, 1.0, 1.0, 0.98, 0.98, 0.78, 0.78, 1.0];
+  // leave room for the subtitle strip: frame a bit smaller and higher
+  let cam = { fx: k(f, t, fx), fy: k(f, t, fy) + 70, s: k(f, t, s) * 0.92 };
   const p = k(f, [T.through[0], T.through[1]], [0, 1], Easing.bezier(0.7, 0, 0.84, 0));
   if (p > 0) {
     cam = {
-      fx: k(f, [T.through[0], T.through[0] + 10], [cam.fx, QR.x + QR.size / 2]),
-      fy: k(f, [T.through[0], T.through[0] + 10], [cam.fy, QR.y + QR.size / 2]),
-      s: cam.s * Math.pow(45, p),
+      fx: k(f, [T.through[0], T.through[0] + 10], [cam.fx, ARCA.x + 430]),
+      fy: k(f, [T.through[0], T.through[0] + 10], [cam.fy, ARCA.y + 520]),
+      s: cam.s * Math.pow(40, p),
     };
   }
-  const tt = [0, 175, 205, 330, 540, 722, 800];
+  const tt = [0, 226, 258, 474, 744, 954, 1080, 1124, 1166];
   return {
     ...cam,
-    rx: k(f, tt, [6, 3, 4, 3, 5, 3, 0]),
-    ry: k(f, tt, [-10, 4, -6, 4, -6, 4, 0]) + Math.sin(f / 40) * 1.5,
+    rx: k(f, tt, [5, 3, 4, 3, 4, 3, 2, 3, 0]),
+    ry: k(f, tt, [-8, 3, -5, 4, -5, 4, -3, 3, 0]) + Math.sin(f / 40) * 1.2,
   };
 };
 
-// ---------- shared bits ----------
-const Win: React.FC<{ x: number; y: number; w: number; h: number; title: React.ReactNode; z?: number; children: React.ReactNode; dark?: boolean }> = ({ x, y, w, h, title, z = 0, children, dark }) => (
-  <div
-    style={{
-      position: "absolute",
-      left: x,
-      top: y,
-      width: w,
-      height: h,
-      borderRadius: 24,
-      background: dark ? "#1f1f22" : color.white,
-      border: `1px solid ${dark ? "#333" : color.gray200}`,
-      boxShadow: "0 40px 90px -30px rgba(26,26,28,.4)",
-      overflow: "hidden",
-      transform: `translateZ(${z}px)`,
-    }}
-  >
-    <div style={{ height: 52, display: "flex", alignItems: "center", gap: 10, padding: "0 20px", borderBottom: `1px solid ${dark ? "#333" : color.gray100}`, background: dark ? "#18181b" : color.white }}>
-      {[color.error, color.warning, color.success].map((c) => (
-        <span key={c} style={{ width: 11, height: 11, borderRadius: 6, background: c, opacity: 0.8 }} />
-      ))}
-      <div style={{ marginLeft: 12, fontSize: 17, color: dark ? "#ddd" : color.gray600 }}>{title}</div>
-    </div>
-    {children}
-  </div>
-);
-
-const Pill: React.FC<{ children: React.ReactNode; c?: string; style?: React.CSSProperties }> = ({ children, c = color.pink, style }) => (
-  <span style={{ padding: "8px 16px", borderRadius: radius.pill, background: color.white, border: `2px solid ${c}`, color: c, fontSize: 18, fontWeight: font.semibold, whiteSpace: "nowrap", boxShadow: `0 10px 24px -10px ${c}99`, ...style }}>
-    {children}
-  </span>
-);
-
-// ---------- zone A: the live sync ----------
-const SW = { x: 120, y: 290, w: 660, h: 540 };
-const EW = { x: 1140, y: 290, w: 660, h: 540 };
-const HUB = { x: 960, y: 300 };
-const PRODUCTS = [
-  { n: "Taladro 650 W", p: [48900, 51200], s: [12, 9] },
-  { n: "Amoladora 115 mm", p: [36500, 38300], s: [4, 7] },
-  { n: "Set de mechas", p: [9800, 10300], s: [30, 26] },
-  { n: "Lijadora orbital", p: [42700, 44800], s: [0, 6] },
-];
+// ---------- shared ----------
 const money = (v: number) => "$ " + v.toLocaleString("es-AR");
-const LANES = [
-  { label: "Catálogo", dir: -1, y0: 470, y1: 470, c: color.purple, off: 0 },
-  { label: "Precios", dir: -1, y0: 560, y1: 560, c: color.pink, off: 12 },
-  { label: "Stock", dir: -1, y0: 650, y1: 650, c: color.orange, off: 24 },
-  { label: "Pedidos", dir: 1, y0: 740, y1: 740, c: color.success, off: 36 },
-];
-const LOOP = 48;
+const Icon: React.FC<{ d: string; c?: string; size?: number; w?: number }> = ({ d, c = color.gray600, size = 20, w = 1.8 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+    <path d={d} fill="none" stroke={c} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const Tag: React.FC<{ children: React.ReactNode; c: string; style?: React.CSSProperties }> = ({ children, c, style }) => (
+  <span style={{ padding: "3px 10px", borderRadius: radius.pill, background: `${c}1f`, color: c, fontSize: 14, fontWeight: font.semibold, whiteSpace: "nowrap", ...style }}>{children}</span>
+);
+const Chip: React.FC<{ children: React.ReactNode; c: string }> = ({ children, c }) => (
+  <span style={{ padding: "9px 18px", borderRadius: radius.pill, background: color.white, border: `2px solid ${c}`, color: c, fontSize: 19, fontWeight: font.semibold, whiteSpace: "nowrap", boxShadow: `0 12px 26px -10px ${c}aa` }}>{children}</span>
+);
 
-const laneProgress = (f: number, off: number) => {
-  if (f < T.flow[0] + off) return -1;
-  return ((f - T.flow[0] - off) % LOOP) / LOOP;
+// PrestaShop Classic theme accent
+const PS = { accent: "#24b9d7", text: "#232323", muted: "#7a7a7a", line: "#e5e5e5", bg: "#f6f6f6" };
+// Flexxus ERP 4.0 accent
+const FX = { red: "#e5313d", rail: "#3a3a3d", grid: "#f3f3f3", line: "#dcdcdc" };
+
+// ---------- product art (simple line icons on pastel tiles) ----------
+const ART: Record<string, string> = {
+  ollas: "M4 10h16v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4zM2 10h2M20 10h2M9 6h6M12 6V4",
+  cafetera: "M7 4h10l-1 5H8zM8 9h8v9a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2zM16 12h2a2 2 0 0 1 0 4h-2",
+  sabanas: "M3 8h18v10H3zM3 12h18M7 8V6h10v2",
+  toallon: "M6 3h12v14H6zM6 17l2 4M18 17l-2 4M6 7h12",
+  lampara: "M8 3h8l3 8H5zM12 11v9M8 20h8",
+  almohadon: "M4 6c3 1 13 1 16 0-1 4-1 8 0 12-3-1-13-1-16 0 1-4 1-8 0-12z",
 };
-const arrivals = (f: number, off: number) => (f < T.flow[0] + off ? 0 : Math.floor((f - T.flow[0] - off) / LOOP));
+const TILE = ["#fde7f1", "#fff0e2", "#ece6ff", "#e3f4ff", "#fff6d9", "#e6f7ee"];
+const PRODUCTS = [
+  { id: "ollas", n: "Set de ollas 5 piezas", code: "HG-1021", rubro: "Cocina", p: [48900, 51200], s: [12, 12] },
+  { id: "cafetera", n: "Cafetera de filtro", code: "HG-1034", rubro: "Cocina", p: [36500, 36500], s: [4, 4] },
+  { id: "sabanas", n: "Juego de sábanas 2 plazas", code: "HG-2010", rubro: "Dormitorio", p: [29800, 29800], s: [20, 20] },
+  { id: "toallon", n: "Toallón de algodón", code: "HG-3005", rubro: "Baño", p: [12700, 12700], s: [0, 6] },
+  { id: "almohadon", n: "Almohadón decorativo", code: "HG-4120", rubro: "Decoración", p: [9800, 9800], s: [30, 30] },
+  { id: "lampara", n: "Lámpara de pie nórdica", code: "HG-5002", rubro: "Iluminación", p: [64500, 64500], s: [8, 8] },
+];
 
-const ZoneA: React.FC<{ f: number }> = ({ f }) => {
-  const appear = k(f, [0, 30], [0, 1], OUT);
-  const priceHits = arrivals(f, LANES[1].off);
-  const stockHits = arrivals(f, LANES[2].off);
-  const orders = arrivals(f, LANES[3].off);
-  const pricePulse = (() => {
-    const q = laneProgress(f, LANES[1].off);
-    return q >= 0 && q < 0.2 && priceHits > 0 ? 1 - q / 0.2 : 0;
-  })();
+// ---------- zone A: store + ERP ----------
+const SW = { x: 60, y: 130, w: 860, h: 800 };
+const EW = { x: 1000, y: 170, w: 860, h: 700 };
+const HUB = { x: 960, y: 90 };
+
+const Store: React.FC<{ f: number }> = ({ f }) => {
+  const priceOk = f >= T.chipPrice[1];
+  const stockOk = f >= T.chipStock[1];
+  const newIn = k(f, [T.chipCat[1], T.chipCat[1] + 14], [0, 1], OUT);
+  const pulse = (at: number) => k(f, [at, at + 6, at + 30], [0, 1, 0]);
+  const cartN = f >= T.cart ? 1 : 0;
   return (
-    <div style={{ opacity: appear }}>
-      <Win x={SW.x} y={SW.y} w={SW.w} h={SW.h} title={<span>tienda-07.ejemplo.com.ar · PrestaShop</span>} z={40}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, padding: 24 }}>
+    <div style={{ position: "absolute", left: SW.x, top: SW.y, width: SW.w, height: SW.h, borderRadius: 18, background: color.white, boxShadow: "0 40px 90px -30px rgba(26,26,28,.4)", overflow: "hidden", transform: "translateZ(40px)", fontFamily: font.family, color: PS.text }}>
+      {/* browser bar */}
+      <div style={{ height: 40, background: "#eceef1", display: "flex", alignItems: "center", gap: 8, padding: "0 16px" }}>
+        {["#ff5f57", "#febc2e", "#28c840"].map((c) => (
+          <span key={c} style={{ width: 11, height: 11, borderRadius: 6, background: c }} />
+        ))}
+        <div style={{ marginLeft: 14, flex: 1, height: 26, borderRadius: 8, background: color.white, fontSize: 14, color: PS.muted, display: "flex", alignItems: "center", padding: "0 12px" }}>tienda-07.ejemplo.com.ar/cocina</div>
+      </div>
+      {/* Classic: top nav */}
+      <div style={{ height: 32, background: PS.bg, display: "flex", alignItems: "center", padding: "0 22px", fontSize: 13, color: PS.muted, gap: 18 }}>
+        <span>Contáctenos</span>
+        <span style={{ marginLeft: "auto" }}>Iniciar sesión</span>
+        <span style={{ color: PS.text, fontWeight: font.medium, display: "flex", alignItems: "center", gap: 6 }}>
+          <Icon d="M3 4h2l2 12h11l2-8H6M9 20h.1M17 20h.1" size={16} c={PS.text} />
+          Carrito ({cartN})
+          {cartN > 0 && <span style={{ width: 8, height: 8, borderRadius: 4, background: PS.accent, scale: String(1 + pulse(T.cart) * 0.8) }} />}
+        </span>
+      </div>
+      {/* Classic: header with logo, menu, search */}
+      <div style={{ height: 64, display: "flex", alignItems: "center", padding: "0 22px", gap: 26, borderBottom: `1px solid ${PS.line}` }}>
+        <div style={{ fontSize: 24, fontWeight: font.semibold, letterSpacing: "-0.02em" }}>
+          hogar<span style={{ color: PS.accent }}>nova</span>
+        </div>
+        {["COCINA", "BAÑO", "DORMITORIO", "DECORACIÓN", "ILUMINACIÓN"].map((m, i) => (
+          <span key={m} style={{ fontSize: 13, fontWeight: font.semibold, color: i === 0 ? PS.accent : PS.text }}>{m}</span>
+        ))}
+        <div style={{ marginLeft: "auto", width: 190, height: 32, borderRadius: 4, background: PS.bg, fontSize: 12, color: PS.muted, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 10px" }}>
+          Buscar en nuestro catálogo
+          <Icon d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4" size={15} />
+        </div>
+      </div>
+      <div style={{ padding: "10px 22px", fontSize: 13, color: PS.muted }}>Inicio / Cocina</div>
+      <div style={{ display: "flex", gap: 18, padding: "0 22px" }}>
+        {/* filters */}
+        <div style={{ width: 150, fontSize: 13 }}>
+          <div style={{ fontWeight: font.semibold, marginBottom: 10, fontSize: 14 }}>Filtrar por</div>
+          <div style={{ color: PS.muted, marginBottom: 6 }}>Categorías</div>
+          {["Cocina", "Baño", "Dormitorio", "Decoración"].map((c, i) => (
+            <div key={c} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <span style={{ width: 13, height: 13, border: `1px solid ${PS.muted}`, borderRadius: 2, background: i === 0 ? PS.accent : "transparent" }} />
+              {c}
+            </div>
+          ))}
+          <div style={{ color: PS.muted, margin: "14px 0 6px" }}>Precio</div>
+          <div style={{ height: 4, borderRadius: 2, background: PS.line, position: "relative" }}>
+            <div style={{ position: "absolute", left: "10%", right: "25%", height: 4, background: PS.accent }} />
+          </div>
+        </div>
+        {/* product grid */}
+        <div style={{ flex: 1, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
           {PRODUCTS.map((pr, i) => {
-            const updated = priceHits >= 1 + (i % 2);
-            const stock = stockHits >= 1 + (i % 2) ? pr.s[1] : pr.s[0];
+            const isNew = i === 5;
+            const vis = isNew ? newIn : 1;
+            const price = i === 0 && priceOk ? pr.p[1] : pr.p[0];
+            const stock = i === 3 && stockOk ? pr.s[1] : pr.s[0];
+            const glow = i === 0 ? pulse(T.chipPrice[1]) : i === 3 ? pulse(T.chipStock[1]) : isNew ? pulse(T.chipCat[1]) : i === 1 ? pulse(T.cart) : 0;
             return (
-              <div key={pr.n} style={{ borderRadius: 16, border: `1px solid ${color.gray200}`, overflow: "hidden", boxShadow: updated ? `0 0 0 ${pricePulse * 6}px ${color.pink}33` : "none" }}>
-                <div style={{ height: 140, background: gradient.thumb3, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 54, color: "#ffffffcc", fontWeight: font.semibold }}>{pr.n[0]}</div>
-                <div style={{ padding: "12px 14px", fontSize: 17, color: color.black }}>
-                  <div style={{ fontWeight: font.medium }}>{pr.n}</div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-                    <span style={{ color: updated ? color.pink : color.black, fontWeight: font.semibold }}>{money(updated ? pr.p[1] : pr.p[0])}</span>
-                    <span style={{ fontSize: 14, color: stock > 0 ? color.success : color.error }}>{stock > 0 ? `Stock ${stock}` : "Sin stock"}</span>
+              <div key={pr.id} style={{ opacity: vis, scale: String(0.9 + vis * 0.1), background: color.white, boxShadow: `0 2px 6px rgba(0,0,0,.08), 0 0 0 ${glow * 5}px ${PS.accent}55`, position: "relative" }}>
+                <div style={{ height: 150, background: TILE[i], display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Icon d={ART[pr.id]} size={78} c="#00000055" w={1.4} />
+                </div>
+                {isNew && <span style={{ position: "absolute", left: 0, top: 10, background: PS.accent, color: "#fff", fontSize: 11, fontWeight: font.semibold, padding: "3px 8px" }}>NUEVO</span>}
+                <div style={{ padding: "10px 10px 12px", textAlign: "center" }}>
+                  <div style={{ fontSize: 14, height: 36, lineHeight: 1.25 }}>{pr.n}</div>
+                  <div style={{ fontSize: 18, fontWeight: font.semibold, color: i === 0 && priceOk ? PS.accent : PS.text }}>{money(price)}</div>
+                  <div style={{ fontSize: 11, color: stock > 0 ? "#4cbb6c" : "#ff4c4c", margin: "4px 0 8px" }}>{stock > 0 ? "En stock" : "Sin stock"}</div>
+                  <div style={{ height: 30, background: stock > 0 ? PS.accent : "#cfd6d9", color: "#fff", fontSize: 12, fontWeight: font.semibold, display: "flex", alignItems: "center", justifyContent: "center", scale: String(1 - (i === 1 ? k(f, [T.cart - 3, T.cart + 1, T.cart + 8], [0, 0.1, 0]) : 0)) }}>
+                    AÑADIR AL CARRITO
                   </div>
                 </div>
               </div>
             );
           })}
         </div>
-      </Win>
-      <Win x={EW.x} y={EW.y} w={EW.w} h={EW.h} title="ERP Flexxus" z={40} dark>
-        <div style={{ padding: "18px 22px", fontSize: 16, color: "#ddd" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "90px 1fr 120px 70px", padding: "8px 0", color: "#888", borderBottom: "1px solid #333" }}>
-            <span>Código</span>
-            <span>Artículo</span>
-            <span>Precio</span>
-            <span>Stock</span>
+      </div>
+    </div>
+  );
+};
+
+const ERP: React.FC<{ f: number }> = ({ f }) => {
+  const flash = (at: number) => k(f, [at, at + 4, at + 34], [0, 1, 0]);
+  const rows = PRODUCTS.filter((_, i) => i !== 5 || f >= T.erpNew);
+  const toast = k(f, [T.chipOrder[1], T.chipOrder[1] + 12], [0, 1], OUT);
+  const tabs = ["Inicio", "Archivos", "Ventas", "Compras", "Fondos", "Contabilidad", "Stock", "Informes"];
+  const ribbon = [
+    ["Artículos", "M3 7l9-4 9 4-9 4zM3 7v10l9 4 9-4V7"],
+    ["Características", "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"],
+    ["Listas de precios", "M12 3v18M17 7H9.5a3 3 0 0 0 0 6h5a3 3 0 0 1 0 6H6"],
+    ["Clientes", "M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0"],
+    ["Proveedores", "M3 7h13v9H3zM16 10h4l1 3v3h-5M7 19h.1M17 19h.1"],
+    ["Depósitos", "M3 21V9l9-5 9 5v12M8 21v-6h8v6"],
+  ];
+  return (
+    <div style={{ position: "absolute", left: EW.x, top: EW.y, width: EW.w, height: EW.h, borderRadius: 14, background: color.white, boxShadow: "0 40px 90px -30px rgba(26,26,28,.4)", overflow: "hidden", transform: "translateZ(40px)", fontFamily: font.family, color: "#333" }}>
+      <div style={{ height: 34, background: FX.red, color: "#fff", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+        -Flexxus-
+        <span style={{ position: "absolute", right: 16, letterSpacing: 14, fontSize: 14 }}>— ▢ ✕</span>
+      </div>
+      <div style={{ display: "flex", gap: 26, padding: "8px 22px 0", fontSize: 13 }}>
+        {tabs.map((t) => (
+          <span key={t} style={{ paddingBottom: 6, fontWeight: t === "Archivos" ? font.semibold : font.regular, borderBottom: t === "Archivos" ? `2px solid ${FX.red}` : "2px solid transparent" }}>{t}</span>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 26, padding: "10px 22px 10px", borderBottom: `1px solid ${FX.line}`, fontSize: 12 }}>
+        {ribbon.map(([l, d], i) => (
+          <div key={l} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "4px 8px", borderRadius: 6, background: i === 0 ? "#fde8e9" : "transparent" }}>
+            <Icon d={d} size={24} c={i === 0 ? FX.red : "#555"} w={1.5} />
+            {l}
           </div>
-          {PRODUCTS.map((pr, i) => (
-            <div key={pr.n} style={{ display: "grid", gridTemplateColumns: "90px 1fr 120px 70px", padding: "12px 0", borderBottom: "1px solid #2a2a2a" }}>
-              <span>10-{2231 + i * 7}</span>
-              <span>{pr.n}</span>
-              <span>{money(pr.p[1])}</span>
-              <span>{pr.s[1]}</span>
-            </div>
-          ))}
-          <div style={{ marginTop: 22, color: "#888" }}>Pedidos recibidos</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
-            {Array.from({ length: Math.min(orders, 3) }).map((_, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 14px", borderRadius: 10, background: "#26262a", borderLeft: `4px solid ${color.success}` }}>
-                <span>Pedido #{3104 + i}</span>
-                <span style={{ color: color.success }}>Recibido</span>
-              </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", height: EW.h - 34 - 34 - 70 }}>
+        <div style={{ width: 40, background: FX.rail, display: "flex", flexDirection: "column", alignItems: "center", gap: 14, paddingTop: 12 }}>
+          <Icon d="M4 6h16M4 12h16M4 18h16" c="#fff" size={18} />
+          <Icon d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4" c="#fff" size={18} />
+        </div>
+        <div style={{ flex: 1, padding: "14px 18px", background: "#fafafa", position: "relative" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+            <span style={{ fontSize: 18, fontWeight: font.semibold }}>Artículos</span>
+            {["Nuevo", "Modificar", "Buscar", "Exportar"].map((b) => (
+              <span key={b} style={{ fontSize: 12, padding: "5px 12px", border: `1px solid ${FX.line}`, borderRadius: 4, background: "#fff" }}>{b}</span>
             ))}
           </div>
+          <div style={{ border: `1px solid ${FX.line}`, background: "#fff", fontSize: 13 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "90px 1fr 110px 110px 70px", background: FX.grid, fontWeight: font.semibold, padding: "8px 10px", borderBottom: `1px solid ${FX.line}` }}>
+              <span>Código</span>
+              <span>Descripción</span>
+              <span>Rubro</span>
+              <span>Precio L1</span>
+              <span>Stock</span>
+            </div>
+            {rows.map((pr) => {
+              const i = PRODUCTS.indexOf(pr);
+              const pf = i === 0 ? flash(T.erpPrice) : 0;
+              const sf = i === 3 ? flash(T.erpStock) : 0;
+              const nf = i === 5 ? flash(T.erpNew) : 0;
+              const price = i === 0 && f >= T.erpPrice ? pr.p[1] : pr.p[0];
+              const stock = i === 3 && f >= T.erpStock ? pr.s[1] : pr.s[0];
+              return (
+                <div key={pr.id} style={{ display: "grid", gridTemplateColumns: "90px 1fr 110px 110px 70px", padding: "9px 10px", borderBottom: `1px solid ${FX.grid}`, background: nf > 0 ? `rgba(255,214,102,${nf * 0.6})` : "transparent" }}>
+                  <span>{pr.code}</span>
+                  <span>{pr.n}</span>
+                  <span>{pr.rubro}</span>
+                  <span style={{ background: pf > 0 ? `rgba(255,214,102,${pf * 0.8})` : "transparent" }}>{money(price)}</span>
+                  <span style={{ background: sf > 0 ? `rgba(255,214,102,${sf * 0.8})` : "transparent" }}>{stock}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ fontSize: 12, color: "#888", marginTop: 8 }}>{rows.length} registros</div>
+          <div style={{ position: "absolute", right: 18, bottom: 18, width: 330, padding: "12px 16px", background: "#fff", borderLeft: `4px solid ${color.success}`, boxShadow: "0 10px 26px -10px rgba(0,0,0,.3)", fontSize: 14, opacity: toast, translate: `${(1 - toast) * 40}px 0` }}>
+            <b>Pedido web #3104</b> recibido
+            <div style={{ color: "#888", fontSize: 12 }}>Cafetera de filtro · 1 unidad</div>
+          </div>
         </div>
-      </Win>
+      </div>
+    </div>
+  );
+};
 
-      {/* hub */}
-      <div style={{ position: "absolute", left: HUB.x - 80, top: HUB.y - 80, width: 160, height: 160, borderRadius: 80, background: color.white, boxShadow: "0 20px 50px -14px rgba(231,0,126,.5)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", transform: "translateZ(120px)" }}>
-        <svg width={56} height={56} viewBox="0 0 24 24" style={{ rotate: `${f * 4}deg` }}>
+const LANES = [
+  { label: "Precios", c: color.pink, t: T.chipPrice, from: [EW.x + 600, EW.y + 210], to: [SW.x + 260, SW.y + 300] },
+  { label: "Stock", c: color.orange, t: T.chipStock, from: [EW.x + 760, EW.y + 300], to: [SW.x + 700, SW.y + 560] },
+  { label: "Catálogo", c: color.purple, t: T.chipCat, from: [EW.x + 300, EW.y + 360], to: [SW.x + 700, SW.y + 560] },
+  { label: "Pedidos", c: color.success, t: T.chipOrder, from: [SW.x + 480, SW.y + 320], to: [EW.x + 680, EW.y + 620] },
+];
+
+const ZoneA: React.FC<{ f: number }> = ({ f }) => {
+  const appear = k(f, [0, 26], [0, 1], OUT);
+  return (
+    <div style={{ opacity: appear }}>
+      <Store f={f} />
+      <ERP f={f} />
+      <div style={{ position: "absolute", left: HUB.x - 190, top: HUB.y - 34, width: 380, height: 68, borderRadius: radius.pill, background: color.white, boxShadow: "0 18px 40px -14px rgba(231,0,126,.5)", display: "flex", alignItems: "center", justifyContent: "center", gap: 12, transform: "translateZ(120px)" }}>
+        <svg width={34} height={34} viewBox="0 0 24 24" style={{ rotate: `${f * 4}deg` }}>
           <defs>
             <linearGradient id="hubg" x1="0" x2="1">
               <stop offset="0" stopColor={color.pink} />
               <stop offset="1" stopColor={color.orange} />
             </linearGradient>
           </defs>
-          <path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3M18 3v4h-4M6 21v-4h4" fill="none" stroke="url(#hubg)" strokeWidth={2.2} strokeLinecap="round" />
+          <path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3M18 3v4h-4M6 21v-4h4" fill="none" stroke="url(#hubg)" strokeWidth={2.4} strokeLinecap="round" />
         </svg>
-        <div style={{ fontSize: 16, fontWeight: font.semibold, color: color.black, marginTop: 6 }}>Sincropresta</div>
+        <span style={{ fontSize: 22, fontWeight: font.semibold, color: color.black }}>{NAME}</span>
       </div>
-
-      <svg style={{ position: "absolute", left: 0, top: 0, overflow: "visible" }} width={1} height={1}>
-        <line x1={HUB.x} y1={HUB.y + 80} x2={HUB.x} y2={780} stroke={color.pink} strokeOpacity={0.35} strokeWidth={3} strokeDasharray="2 10" strokeLinecap="round" />
-        {LANES.map((l) => (
-          <line key={l.label} x1={SW.x + SW.w} y1={l.y0} x2={EW.x} y2={l.y0} stroke={l.c} strokeOpacity={0.18} strokeWidth={2} />
-        ))}
-      </svg>
-      {/* lanes */}
       {LANES.map((l) => {
-        const q = laneProgress(f, l.off);
-        if (q < 0 || f > T.flow[1] + 20) return null;
-        const t = l.dir < 0 ? q : q;
-        const sx = l.dir < 0 ? EW.x : SW.x + SW.w;
-        const ex = l.dir < 0 ? SW.x + SW.w : EW.x;
-        const x = sx + (ex - sx) * t;
-        const y = l.y0 - Math.sin(t * Math.PI) * 40;
-        const a = Math.min(1, q * 8, (1 - q) * 8);
+        const q = k(f, [l.t[0], l.t[1]], [0, 1], Easing.bezier(0.45, 0, 0.25, 1));
+        if (f < l.t[0] || f > l.t[1] + 2) return null;
+        const [sx, sy] = l.from;
+        const [ex, ey] = l.to;
+        const x = (1 - q) * (1 - q) * sx + 2 * (1 - q) * q * HUB.x + q * q * ex;
+        const y = (1 - q) * (1 - q) * sy + 2 * (1 - q) * q * (HUB.y + 40) + q * q * ey;
         return (
-          <div key={l.label} style={{ position: "absolute", left: x, top: y, translate: "-50% -50%", opacity: a, transform: "translateZ(160px)" }}>
-            <Pill c={l.c}>{l.label}</Pill>
+          <div key={l.label} style={{ position: "absolute", left: x, top: y, translate: "-50% -50%", transform: "translateZ(160px)" }}>
+            <Chip c={l.c}>{l.label}</Chip>
           </div>
         );
       })}
@@ -215,245 +323,428 @@ const ZoneA: React.FC<{ f: number }> = ({ f }) => {
   );
 };
 
-// ---------- zone B: versions ----------
-const WEEKS = [34, 47, 39, 55, 42];
-const ZoneB: React.FC<{ f: number }> = ({ f }) => {
-  const v = k(f, [T.ver[0], T.ver[1]], [0, 1], Easing.bezier(0.3, 0, 0.2, 1));
-  const minor = Math.floor(v * 9);
-  const patch = Math.floor((v * 9 - minor) * 9) + (minor === 9 ? 4 : 0);
-  const label = `v2.${Math.min(minor, 9)}.${minor >= 9 ? 4 : patch}`;
-  const max = Math.max(...WEEKS);
-  return (
-    <div style={{ position: "absolute", left: ZB.x - 760, top: ZB.y - 430, width: 1520, height: 860 }}>
-      <div style={{ textAlign: "center", fontSize: 26, color: color.gray600, fontWeight: font.medium }}>Sincropresta core</div>
-      <div style={{ textAlign: "center", fontSize: 190, fontWeight: font.stat, letterSpacing: "-0.03em", lineHeight: 1.05 }}>
-        <GradientText>{label}</GradientText>
-      </div>
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-end", gap: 70, height: 380, marginTop: 30 }}>
-        {WEEKS.map((n, i) => {
-          const s = T.ver[0] + 6 + i * 11;
-          const g = k(f, [s, s + 26], [0, 1], OUT);
-          const val = Math.round(n * g);
-          const rel = f >= s + 14;
-          return (
-            <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-              <div style={{ fontSize: 26, fontWeight: font.stat, color: color.black, opacity: g }}>{val}</div>
-              <div style={{ width: 150, height: (n / max) * 260 * g, borderRadius: "14px 14px 4px 4px", background: i === WEEKS.length - 1 ? gradient.brand : `${color.pink}${hex(0.25 + i * 0.12)}` }} />
-              <div style={{ fontSize: 20, color: color.gray600 }}>Semana {i + 1}</div>
-              <div style={{ opacity: rel ? 1 : 0, scale: String(rel ? 1 : 0.6), transition: "none" }}>
-                <Pill c={color.purple} style={{ fontSize: 15, padding: "4px 12px" }}>
-                  v2.{1 + i * 2}
-                </Pill>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-// ---------- zone C: the time limit ----------
-const LIMIT = 0.68;
-const ZoneC: React.FC<{ f: number }> = ({ f }) => {
-  const second = f >= T.revert[1] + 2;
-  const p1 = k(f, [T.try1[0], T.try1[1]], [0, LIMIT], Easing.linear);
-  const failed = f >= T.try1[1] && !second;
-  const revert = k(f, [T.revert[0], T.revert[1]], [0, 1], Easing.bezier(0.5, 0, 0.2, 1));
-  const p2 = k(f, [T.try2[0], T.try2[1]], [0, 1], Easing.bezier(0.3, 0, 0.3, 1));
-  const prog = second ? p2 : p1 * (1 - revert);
-  const done = second && f >= T.try2[1];
-  const secs = Math.round((second ? p2 * 151 : p1 * (120 / LIMIT)) * (second ? 1 : 1));
-  const shownSecs = !second ? Math.min(120, Math.round(p1 / LIMIT * 120)) : secs;
-  const mm = `${Math.floor(shownSecs / 60)}:${String(shownSecs % 60).padStart(2, "0")}`;
-  const count = Math.round((second ? p2 : p1 * (1 - revert)) * 486250);
-  const barC = failed ? color.error : done ? color.success : gradient.brand;
-  const shake = failed && f < T.try1[1] + 10 ? Math.sin(f * 2.4) * 8 * (1 - (f - T.try1[1]) / 10) : 0;
-  const L = { x: ZC.x - 650, y: ZC.y - 260, w: 1300, h: 520 };
-  const trackX = 70, trackW = 1160;
-  return (
-    <div style={{ position: "absolute", left: L.x + shake, top: L.y, width: L.w, height: L.h, borderRadius: 28, background: color.white, border: `1px solid ${color.gray200}`, boxShadow: "0 40px 90px -30px rgba(26,26,28,.35)" }}>
-      <div style={{ position: "absolute", left: 50, top: 40, display: "flex", alignItems: "center", gap: 16 }}>
-        <Pill c={second ? color.success : color.gray600}>{second ? "Ahora" : "Antes"}</Pill>
-        <span style={{ fontSize: 34, fontWeight: font.semibold, color: color.black }}>Sincronizando descuentos</span>
-      </div>
-      <div style={{ position: "absolute", right: 50, top: 36, fontSize: 52, fontWeight: font.stat, color: failed ? color.error : color.black, fontVariantNumeric: "tabular-nums" }}>{mm}</div>
-      {/* track */}
-      <div style={{ position: "absolute", left: trackX, top: 230, width: trackW, height: 46, borderRadius: 23, background: color.gray100, overflow: "hidden" }}>
-        <div style={{ width: `${prog * 100}%`, height: "100%", borderRadius: 23, background: barC }} />
-      </div>
-      {/* limit marker */}
-      <div style={{ position: "absolute", left: trackX + trackW * LIMIT - 2, top: 200, width: 4, height: 106, borderRadius: 2, background: color.black }} />
-      <div style={{ position: "absolute", left: trackX + trackW * LIMIT - 150, top: 316, width: 300, textAlign: "center", fontSize: 20, color: color.gray600 }}>Límite del servidor · 2:00</div>
-      {/* status */}
-      <div style={{ position: "absolute", left: trackX, top: 140, fontSize: 24, color: color.gray600 }}>
-        {count.toLocaleString("es-AR")} descuentos
-      </div>
-      <div style={{ position: "absolute", left: trackX, top: 400, fontSize: 28, fontWeight: font.semibold, color: failed ? color.error : done ? color.success : color.gray600 }}>
-        {failed ? "Tiempo agotado · la sincro se revierte" : done ? "Completo" : second || f >= T.try1[0] ? "Procesando…" : ""}
-      </div>
-    </div>
-  );
-};
-
-// ---------- zone D: from one client to the core ----------
-const FEATURES = [
-  "Control de crédito",
-  "Pre-venta por orden de compra",
-  "Productos sustitutos",
-  "Familias ocultas",
-  "Precios incrementales",
-  "Cuenta corriente",
+// ---------- zone B: versions built from improvements and fixes ----------
+type Item = [("Mejora" | "Fix"), string];
+const WEEKS: Item[][] = [
+  [["Mejora", "Compatible con PrestaShop 9"], ["Fix", "Packs sin productos"], ["Mejora", "Soporte PHP 8"]],
+  [["Mejora", "Precios incrementales"], ["Fix", "Pedidos perdidos"], ["Mejora", "Logs de cada sincro"]],
+  [["Mejora", "Control de crédito"], ["Fix", "Catálogo apagado"], ["Mejora", "Pre-venta por OC"], ["Fix", "Descuentos duplicados"]],
+  [["Mejora", "Cuenta corriente"], ["Mejora", "Productos sustitutos"], ["Fix", "Stock negativo"], ["Mejora", "Familias ocultas"], ["Fix", "Corte en Hostinger"]],
+  [["Mejora", "Sincro interna en servidor"], ["Fix", "Imágenes repetidas"], ["Mejora", "PDF con CAE y QR"]],
 ];
-const ZoneD: React.FC<{ f: number }> = ({ f }) => {
-  const coreGlow = k(f, [T.fly[1] - 10, T.fly[1] + 10, T.fly[1] + 60], [0, 1, 0.4]);
+const VERS = ["v2.1", "v2.3", "v2.5", "v2.7", "v2.9"];
+const ZoneB: React.FC<{ f: number }> = ({ f }) => {
+  const colW = 340, gap = 24, chipH = 50, chipGap = 8;
+  const total = WEEKS.length * colW + (WEEKS.length - 1) * gap;
+  const left = ZB.x - total / 2;
+  const base = ZB.y + 200;
+  const landed = WEEKS.map((items, w) => items.filter((_, j) => f >= T.weeks + w * 30 + j * 7 + 14).length);
+  const lastWeek = landed.reduce((a, n, i) => (n > 0 ? i : a), -1);
   return (
     <>
-      {/* ring core */}
-      <svg style={{ position: "absolute", left: ZD.x - 330, top: ZD.y - 200, overflow: "visible" }} width={660} height={400}>
-        <defs>
-          <linearGradient id="ringg" x1="0" x2="1">
-            <stop offset="0" stopColor={color.pink} />
-            <stop offset="0.6" stopColor={color.purple} />
-            <stop offset="1" stopColor={color.orange} />
-          </linearGradient>
-        </defs>
-        <ellipse cx={330} cy={200} rx={320} ry={120} fill="none" stroke="url(#ringg)" strokeWidth={30} transform={`rotate(${-14 + Math.sin(f / 30) * 3} 330 200)`} opacity={0.9} />
-      </svg>
-      <div style={{ position: "absolute", left: ZD.x - 150, top: ZD.y - 150, width: 300, height: 300, borderRadius: 150, background: color.white, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", boxShadow: `0 30px 70px -20px rgba(231,0,126,${0.3 + coreGlow * 0.4}), 0 0 0 ${coreGlow * 20}px ${color.pink}22` }}>
-        <div style={{ fontSize: 40, fontWeight: font.semibold, color: color.black }}>Sincropresta</div>
-        <div style={{ fontSize: 22, color: color.gray600 }}>core</div>
+      <div style={{ position: "absolute", left: ZB.x - 600, top: ZB.y - 420, width: 1200, textAlign: "center" }}>
+        <div style={{ fontSize: 26, color: color.gray600, fontWeight: font.medium }}>{NAME}</div>
+        <div style={{ fontSize: 150, fontWeight: font.stat, letterSpacing: "-0.03em", lineHeight: 1.05 }}>
+          <GradientText>{lastWeek >= 0 ? VERS[lastWeek] : "v2.0"}</GradientText>
+        </div>
+        <div style={{ display: "flex", justifyContent: "center", gap: 18, marginTop: 4 }}>
+          <Tag c={color.success} style={{ fontSize: 18 }}>Mejora</Tag>
+          <Tag c={color.orange} style={{ fontSize: 18 }}>Fix</Tag>
+        </div>
       </div>
-
-      {FEATURES.map((ft, i) => {
-        const ang = -Math.PI / 2 + (i / FEATURES.length) * Math.PI * 2 + 0.3;
-        const ox = ZD.x + Math.cos(ang) * 760;
-        const oy = ZD.y + Math.sin(ang) * 400;
-        const s = T.fly[0] + i * 14;
-        const p = k(f, [s, s + 34], [0, 1], Easing.bezier(0.5, 0, 0.2, 1));
-        const appear = k(f, [520 + i * 4, 540 + i * 4], [0, 1], OUT);
-        const x = ox + (ZD.x - ox) * p;
-        const y = oy + (ZD.y - oy) * p - Math.sin(p * Math.PI) * 120;
-        const gone = p >= 1;
+      {WEEKS.map((items, w) => {
+        const x = left + w * (colW + gap);
+        const done = landed[w] === items.length;
         return (
-          <React.Fragment key={ft}>
-            <div style={{ position: "absolute", left: ox - 110, top: oy + 40, width: 220, textAlign: "center", fontSize: 18, color: color.gray600, opacity: appear * (1 - p * 0.6) }}>
-              Tienda {String(3 + i * 7).padStart(2, "0")}
-            </div>
-            {!gone && (
-              <div style={{ position: "absolute", left: x, top: y, translate: "-50% -50%", opacity: appear, scale: String(1 - p * 0.5) }}>
-                <Pill c={color.pink} style={{ fontSize: 22, padding: "12px 22px" }}>
-                  {ft}
-                </Pill>
+          <React.Fragment key={w}>
+            {items.map(([kind, title], j) => {
+              const s = T.weeks + w * 30 + j * 7;
+              const p = k(f, [s, s + 16], [0, 1], Easing.bezier(0.3, 0, 0.2, 1.2));
+              if (p <= 0) return null;
+              const y = base - (j + 1) * (chipH + chipGap);
+              const c = kind === "Mejora" ? color.success : color.orange;
+              return (
+                <div key={title} style={{ position: "absolute", left: x, top: y - (1 - p) * 420, width: colW, height: chipH, borderRadius: 12, background: color.white, border: `1.5px solid ${c}55`, boxShadow: `inset 5px 0 0 ${c}, 0 8px 18px -10px rgba(0,0,0,.25)`, display: "flex", alignItems: "center", gap: 10, padding: "0 12px 0 16px", opacity: Math.min(1, p * 2), fontSize: 17, color: color.black, whiteSpace: "nowrap", overflow: "hidden", boxSizing: "border-box" }}>
+                  <Tag c={c}>{kind}</Tag>
+                  {title}
+                </div>
+              );
+            })}
+            <div style={{ position: "absolute", left: x, top: base + 12, width: colW, textAlign: "center" }}>
+              <div style={{ fontSize: 20, color: color.gray600 }}>Semana {w + 1}</div>
+              <div style={{ marginTop: 8, opacity: done ? 1 : 0.2, scale: String(done ? 1 : 0.85) }}>
+                <span style={{ padding: "6px 16px", borderRadius: radius.pill, background: done ? gradient.brand : color.gray200, color: "#fff", fontSize: 18, fontWeight: font.semibold }}>{VERS[w]}</span>
               </div>
-            )}
+            </div>
           </React.Fragment>
         );
       })}
-
-      {/* parameters list: each feature switches on for the whole portfolio */}
-      <div style={{ position: "absolute", left: ZD.x + 420, top: ZD.y - 230, width: 420, borderRadius: 22, background: color.white, border: `1px solid ${color.gray200}`, boxShadow: "0 30px 70px -30px rgba(26,26,28,.35)", padding: "20px 24px", opacity: k(f, [T.toggles - 30, T.toggles], [0, 1], OUT), translate: `${(1 - k(f, [T.toggles - 30, T.toggles], [0, 1], OUT)) * 60}px 0` }}>
-        <div style={{ fontSize: 20, fontWeight: font.semibold, color: color.black, marginBottom: 10 }}>Parámetros</div>
-        {FEATURES.map((ft, i) => {
-          const on = k(f, [T.toggles + i * 5, T.toggles + i * 5 + 8], [0, 1], OUT);
-          return (
-            <div key={ft} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", fontSize: 18, color: color.black, borderTop: i ? `1px solid ${color.gray100}` : "none" }}>
-              {ft}
-              <span style={{ width: 46, height: 26, borderRadius: 13, background: on > 0.5 ? gradient.brand : color.gray200, position: "relative" }}>
-                <span style={{ position: "absolute", top: 3, left: 3 + on * 20, width: 20, height: 20, borderRadius: 10, background: color.white }} />
-              </span>
-            </div>
-          );
-        })}
-      </div>
     </>
   );
 };
 
-// ---------- zone E: the account statement PDF ----------
-const PDF = { x: ZE.x - 300, y: ZE.y - 360, w: 600, h: 720 };
-const QR = { x: PDF.x + PDF.w - 190, y: PDF.y + PDF.h - 168, size: 130 };
-const QrCode: React.FC = () => {
+// ---------- zone C: the hosting limit vs. the server ----------
+const ZoneC: React.FC<{ f: number }> = ({ f }) => {
+  const L = { x: ZC.x - 760, w: 1520 };
+  const top = ZC.y - 420, bot = ZC.y + 40;
+  const trackX = 330, trackW = 1080, LIMIT = 0.42;
+  const p1 = k(f, [T.web[0], T.web[1]], [0, LIMIT], Easing.linear);
+  const failed = f >= T.fail;
+  const revert = k(f, [T.fail + 8, T.fail + 26], [0, 1], Easing.bezier(0.5, 0, 0.2, 1));
+  const shake = failed && f < T.fail + 12 ? Math.sin(f * 2.4) * 7 * (1 - (f - T.fail) / 12) : 0;
+  const webSecs = Math.min(120, Math.round((p1 / LIMIT) * 120));
+  const srvP = k(f, [T.srv[0], T.srv[1]], [0, 1], Easing.bezier(0.3, 0, 0.35, 1));
+  const srvSecs = Math.round(srvP * 250);
+  const done = f >= T.srv[1];
+  const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  const move = k(f, [T.move[0], T.move[1]], [0, 1], Easing.bezier(0.5, 0, 0.2, 1));
+  const srvOn = k(f, [T.move[0] - 10, T.move[0] + 10], [0, 1], OUT);
+  const Box: React.FC<{ y: number; children: React.ReactNode; tone: string; dim?: number }> = ({ y, children, tone, dim = 1 }) => (
+    <div style={{ position: "absolute", left: L.x, top: y, width: L.w, height: 330, borderRadius: 28, background: color.white, border: `1.5px solid ${tone}44`, boxShadow: "0 30px 70px -30px rgba(26,26,28,.35)", opacity: dim }}>{children}</div>
+  );
+  const icon = (d: string, c: string) => (
+    <div style={{ position: "absolute", left: 50, top: 110, width: 210, height: 150, borderRadius: 22, background: `${c}14`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>
+      <Icon d={d} c={c} size={64} w={1.4} />
+    </div>
+  );
+  return (
+    <>
+      {/* before: inside the web request */}
+      <div style={{ translate: `${shake}px 0` }}>
+        <Box y={top} tone={failed ? color.error : color.gray300}>
+          <div style={{ position: "absolute", left: 50, top: 34, display: "flex", alignItems: "center", gap: 14 }}>
+            <Tag c={color.gray600} style={{ fontSize: 18 }}>Antes</Tag>
+            <span style={{ fontSize: 30, fontWeight: font.semibold, color: color.black }}>Dentro de la página web</span>
+          </div>
+          {icon("M3 5h18v14H3zM3 9h18M7 7h.1M10 7h.1", color.gray600)}
+          <div style={{ position: "absolute", left: 60, top: 270, width: 190, textAlign: "center", fontSize: 16, color: color.gray600 }}>Petición del navegador</div>
+          <div style={{ position: "absolute", right: 50, top: 30, fontSize: 48, fontWeight: font.stat, color: failed ? color.error : color.black, fontVariantNumeric: "tabular-nums" }}>{mmss(webSecs)}</div>
+          <div style={{ position: "absolute", left: trackX, top: 140, fontSize: 20, color: color.gray600 }}>Sincronizando descuentos</div>
+          <div style={{ position: "absolute", left: trackX, top: 176, width: trackW, height: 44, borderRadius: 22, background: color.gray100, overflow: "hidden" }}>
+            <div style={{ width: `${p1 * (1 - revert) * 100}%`, height: "100%", borderRadius: 22, background: failed ? color.error : gradient.brand }} />
+          </div>
+          {/* the wall */}
+          <div style={{ position: "absolute", left: trackX + trackW * LIMIT - 6, top: 150, width: 12, height: 96, borderRadius: 4, background: color.black, boxShadow: failed ? `0 0 0 ${k(f, [T.fail, T.fail + 6, T.fail + 30], [0, 10, 0])}px ${color.error}44` : "none" }} />
+          <div style={{ position: "absolute", left: trackX + trackW * LIMIT - 160, top: 254, width: 320, textAlign: "center", fontSize: 19, color: color.black, fontWeight: font.medium }}>Límite del hosting · 2:00</div>
+          {failed && <div style={{ position: "absolute", right: 50, top: 270, fontSize: 24, fontWeight: font.semibold, color: color.error, opacity: k(f, [T.fail, T.fail + 8], [0, 1]) }}>Se corta y se revierte todo</div>}
+        </Box>
+      </div>
+
+      {/* now: an internal process on the server */}
+      <Box y={bot} tone={done ? color.success : color.purple} dim={0.35 + srvOn * 0.65}>
+        <div style={{ position: "absolute", left: 50, top: 34, display: "flex", alignItems: "center", gap: 14 }}>
+          <Tag c={color.success} style={{ fontSize: 18 }}>Ahora</Tag>
+          <span style={{ fontSize: 30, fontWeight: font.semibold, color: color.black }}>Proceso interno en el servidor</span>
+        </div>
+        {icon("M4 4h16v6H4zM4 14h16v6H4zM8 7h.1M8 17h.1M12 7h5M12 17h5", color.purple)}
+        <div style={{ position: "absolute", left: 60, top: 270, width: 190, textAlign: "center", fontSize: 16, color: color.gray600 }}>Servidor</div>
+        <div style={{ position: "absolute", right: 50, top: 30, fontSize: 48, fontWeight: font.stat, color: done ? color.success : color.black, fontVariantNumeric: "tabular-nums" }}>{mmss(srvSecs)}</div>
+        <div style={{ position: "absolute", left: trackX, top: 140, fontSize: 20, color: color.gray600 }}>
+          Sincronizando descuentos · {Math.round(srvP * 486250).toLocaleString("es-AR")}
+        </div>
+        <div style={{ position: "absolute", left: trackX, top: 176, width: trackW, height: 44, borderRadius: 22, background: color.gray100, overflow: "hidden" }}>
+          <div style={{ width: `${srvP * 100}%`, height: "100%", borderRadius: 22, background: done ? color.success : gradient.brand }} />
+        </div>
+        {/* ghost of the old limit: no wall any more */}
+        <div style={{ position: "absolute", left: trackX + trackW * 0.48 - 2, top: 150, width: 4, height: 96, borderLeft: `3px dashed ${color.gray300}` }} />
+        <div style={{ position: "absolute", left: trackX + trackW * 0.48 - 160, top: 108, width: 320, textAlign: "center", fontSize: 19, color: color.gray600, fontWeight: font.medium }}>2:00 · sin límite</div>
+        {done && <div style={{ position: "absolute", right: 50, top: 270, fontSize: 26, fontWeight: font.semibold, color: color.success, opacity: k(f, [T.srv[1], T.srv[1] + 8], [0, 1]) }}>Completo</div>}
+      </Box>
+
+      {/* the job moves from the web request into the server */}
+      {f >= T.move[0] - 4 && f <= T.srv[0] + 4 && (
+        <div style={{ position: "absolute", left: L.x + trackX + 40, top: top + 198 + move * (bot - top), translate: "-50% -50%", scale: String(1 + Math.sin(move * Math.PI) * 0.15) }}>
+          <Chip c={color.purple}>Sincro de descuentos</Chip>
+        </div>
+      )}
+    </>
+  );
+};
+
+// ---------- zone D: features merge into the configuration screen ----------
+const FEATURES: [string, string, boolean][] = [
+  ["Control de crédito", "Valida el crédito del cliente en el checkout", true],
+  ["Pre-venta por orden de compra", "Toma pedidos de productos sin stock", false],
+  ["Productos sustitutos", "Ofrece un reemplazo cuando no hay stock", true],
+  ["Familias y artículos ocultos", "Oculta líneas enteras de la tienda", false],
+  ["Precios incrementales", "Actualiza solo los precios que cambiaron", true],
+  ["Cuenta corriente", "Saldos, vencimientos y facturas en la tienda", true],
+];
+const CFG = { x: ZD.x + 40, y: ZD.y - 400, w: 820, rowY: 150, rowH: 96 };
+const ZoneD: React.FC<{ f: number }> = ({ f }) => {
+  const winIn = k(f, [T.cards - 6, T.cards + 20], [0, 1], OUT);
+  const toggledOn = (i: number) => (i === 1 ? f >= T.click1 + 2 : i === 3 ? f >= T.click2 + 2 : FEATURES[i][2]);
+  const saved = f >= T.save + 2;
+  return (
+    <>
+      {/* configuration window (PrestaShop back office module page look) */}
+      <div style={{ position: "absolute", left: CFG.x, top: CFG.y, width: CFG.w, height: 800, borderRadius: 18, background: color.white, boxShadow: "0 40px 90px -30px rgba(26,26,28,.4)", overflow: "hidden", opacity: winIn, transform: "translateZ(30px)" }}>
+        <div style={{ height: 56, background: "#363a41", color: "#fff", display: "flex", alignItems: "center", padding: "0 22px", fontSize: 16, gap: 10 }}>
+          <span style={{ color: "#bbcdd2" }}>Módulos /</span> {NAME}
+          <span style={{ marginLeft: "auto", fontSize: 13, padding: "4px 10px", borderRadius: 4, background: "#25b9d7" }}>Configurar</span>
+        </div>
+        <div style={{ display: "flex", gap: 26, padding: "16px 26px 0", fontSize: 15, borderBottom: `1px solid ${PS.line}` }}>
+          {["General", "Precios", "Pedidos", "Funciones"].map((t) => (
+            <span key={t} style={{ paddingBottom: 10, fontWeight: t === "Funciones" ? font.semibold : font.regular, color: t === "Funciones" ? "#25b9d7" : PS.text, borderBottom: t === "Funciones" ? "3px solid #25b9d7" : "3px solid transparent" }}>{t}</span>
+          ))}
+        </div>
+        {FEATURES.map(([name, desc], i) => {
+          const s = T.merge + i * 14;
+          const rowIn = k(f, [s + 14, s + 24], [0, 1], OUT);
+          const on = toggledOn(i);
+          const flip = i === 1 ? k(f, [T.click1, T.click1 + 8], [0, 1]) : i === 3 ? k(f, [T.click2, T.click2 + 8], [0, 1]) : 1;
+          return (
+            <div key={name} style={{ position: "absolute", left: 26, top: CFG.rowY + i * CFG.rowH - 50, width: CFG.w - 52, height: CFG.rowH - 12, display: "flex", alignItems: "center", gap: 16, borderBottom: `1px solid ${PS.line}`, opacity: rowIn }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 21, fontWeight: font.semibold, color: PS.text }}>{name}</div>
+                <div style={{ fontSize: 15, color: PS.muted, marginTop: 4 }}>{desc}</div>
+              </div>
+              {/* PrestaShop "SÍ / NO" switch */}
+              <div style={{ display: "flex", borderRadius: 4, overflow: "hidden", border: `1px solid ${PS.line}`, fontSize: 14, fontWeight: font.semibold, scale: String(1 + (i === 1 || i === 3 ? Math.sin(flip * Math.PI) * 0.12 : 0)) }}>
+                <span style={{ padding: "7px 16px", background: on ? color.success : "#fff", color: on ? "#fff" : PS.muted }}>SÍ</span>
+                <span style={{ padding: "7px 16px", background: !on ? "#e04f5f" : "#fff", color: !on ? "#fff" : PS.muted }}>NO</span>
+              </div>
+            </div>
+          );
+        })}
+        <div style={{ position: "absolute", right: 26, bottom: 24, padding: "11px 26px", borderRadius: 4, background: saved ? color.success : "#25b9d7", color: "#fff", fontSize: 16, fontWeight: font.semibold, scale: String(1 - k(f, [T.save - 3, T.save + 1, T.save + 8], [0, 0.08, 0])) }}>
+          {saved ? "Configuración guardada" : "Guardar"}
+        </div>
+      </div>
+
+      {/* feature cards that fly in and merge into their row */}
+      {FEATURES.map(([name, desc], i) => {
+        const appear = k(f, [T.cards + i * 4, T.cards + i * 4 + 14], [0, 1], OUT);
+        const s = T.merge + i * 14;
+        const m = k(f, [s, s + 20], [0, 1], Easing.bezier(0.5, 0, 0.2, 1));
+        if (m >= 1) return null;
+        const sx = ZD.x - 820 + (i % 2) * 380;
+        const sy = ZD.y - 330 + Math.floor(i / 2) * 230;
+        const tx = CFG.x + 26;
+        const ty = CFG.y + CFG.rowY + i * CFG.rowH - 50;
+        const x = sx + (tx - sx) * m;
+        const y = sy + (ty - sy) * m - Math.sin(m * Math.PI) * 60;
+        const w = 340 + (CFG.w - 52 - 340) * m;
+        return (
+          <div key={name} style={{ position: "absolute", left: x, top: y, width: w, height: 150 - m * 66, borderRadius: 18 - m * 10, background: color.white, border: `2px solid ${color.pink}${m > 0.6 ? "00" : "88"}`, boxShadow: `0 20px 40px -14px rgba(231,0,126,${0.45 * (1 - m)})`, padding: "16px 20px", boxSizing: "border-box", opacity: appear * (1 - Math.max(0, m - 0.7) / 0.3), transform: `translateZ(${120 - m * 90}px)` }}>
+            <div style={{ fontSize: 22, fontWeight: font.semibold, color: color.black }}>{name}</div>
+            <div style={{ fontSize: 16, color: color.gray600, marginTop: 6, opacity: 1 - m }}>{desc}</div>
+            <div style={{ fontSize: 13, color: color.pink, marginTop: 8, opacity: 1 - m }}>Hecha para Tienda {String(3 + i * 7).padStart(2, "0")}</div>
+          </div>
+        );
+      })}
+    </>
+  );
+};
+
+// ---------- zone E: account statement, detail, PDF, QR, ARCA ----------
+const SE = { x: 60, y: 2760, w: 1140, h: 880 };
+const PDF = { x: 1290, y: 2780, w: 560, h: 840 };
+const QR = { x: PDF.x + PDF.w - 176, y: PDF.y + PDF.h - 196, size: 136 };
+const ARCA = { x: 1960, y: 2860, w: 860, h: 680 };
+const MOVES = [
+  ["05/11/26", "Factura A 0004-00012873", 184500, 0],
+  ["12/11/26", "Factura A 0004-00012911", 96200, 0],
+  ["14/11/26", "Recibo 0002-00004410", 0, 150000],
+  ["19/11/26", "Factura A 0004-00012960", 251900, 0],
+  ["21/11/26", "Nota de crédito A 0004-00000318", 0, 12800],
+] as const;
+
+const QrCode: React.FC<{ x: number; y: number; size: number }> = ({ x, y, size }) => {
   const n = 25;
-  const cell = QR.size / n;
+  const cell = size / n;
+  const cells: React.ReactNode[] = [];
   const finder = (r: number, c: number) => {
-    const inBox = (R: number, C: number) => r >= R && r < R + 7 && c >= C && c < C + 7;
     for (const [R, C] of [[0, 0], [0, n - 7], [n - 7, 0]]) {
-      if (inBox(R, C)) {
+      if (r >= R && r < R + 7 && c >= C && c < C + 7) {
         const rr = r - R, cc = c - C;
         return rr === 0 || rr === 6 || cc === 0 || cc === 6 || (rr >= 2 && rr <= 4 && cc >= 2 && cc <= 4) ? 1 : 0;
       }
     }
     return -1;
   };
-  const cells: React.ReactNode[] = [];
   for (let r = 0; r < n; r++)
     for (let c = 0; c < n; c++) {
       const fv = finder(r, c);
-      const on = fv === -1 ? random(`qr${r}-${c}`) > 0.52 : fv === 1;
-      if (on) cells.push(<rect key={`${r}-${c}`} x={c * cell} y={r * cell} width={cell + 0.3} height={cell + 0.3} fill={color.black} />);
+      if (fv === -1 ? random(`qr${r}-${c}`) > 0.52 : fv === 1) cells.push(<rect key={`${r}-${c}`} x={c * cell} y={r * cell} width={cell + 0.3} height={cell + 0.3} fill={color.black} />);
     }
   return (
-    <svg style={{ position: "absolute", left: QR.x, top: QR.y }} width={QR.size} height={QR.size}>
+    <svg style={{ position: "absolute", left: x, top: y }} width={size} height={size}>
       {cells}
     </svg>
   );
 };
+
 const ZoneE: React.FC<{ f: number }> = ({ f }) => {
-  const a = k(f, [T.pdf - 10, T.pdf + 24], [0, 1], OUT);
-  const rows = [
-    ["FA-A 0004-00012873", "05/11/26", "$ 184.500"],
-    ["FA-A 0004-00012911", "12/11/26", "$ 96.200"],
-    ["FA-A 0004-00012960", "19/11/26", "$ 251.900"],
-    ["FA-A 0004-00013002", "26/11/26", "$ 74.300"],
-    ["ND-A 0004-00000318", "30/11/26", "$ 12.800"],
-  ];
+  const winIn = k(f, [T.rows - 20, T.rows], [0, 1], OUT);
+  const detail = k(f, [T.detail + 2, T.detail + 22], [0, 1], OUT);
+  const pdfIn = k(f, [T.pdfFly[0], T.pdfFly[1]], [0, 1], Easing.bezier(0.3, 0, 0.2, 1));
+  const scan = k(f, [T.scan[0], T.scan[1]], [0, 1], Easing.linear);
+  const arcaIn = k(f, [T.arca, T.arca + 20], [0, 1], OUT);
+  const ok = k(f, [T.arca + 22, T.arca + 32], [0, 1], OUT);
+  let saldo = 0;
   return (
-    <div style={{ opacity: a, translate: `0 ${(1 - a) * 60}px` }}>
-      <div style={{ position: "absolute", left: PDF.x, top: PDF.y, width: PDF.w, height: PDF.h, background: color.white, borderRadius: 10, boxShadow: "0 50px 100px -30px rgba(26,26,28,.45)", padding: "44px 46px", boxSizing: "border-box", rotate: `${Math.sin(f / 30) * 0.8}deg` }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div>
-            <div style={{ fontSize: 34, fontWeight: font.semibold, color: color.black }}>Cuenta corriente</div>
-            <div style={{ fontSize: 18, color: color.gray600, marginTop: 4 }}>Tienda 18 · Cliente 004521</div>
+    <>
+      {/* store: Mi cuenta > Cuenta corriente */}
+      <div style={{ position: "absolute", left: SE.x, top: SE.y, width: SE.w, height: SE.h, borderRadius: 18, background: color.white, boxShadow: "0 40px 90px -30px rgba(26,26,28,.4)", overflow: "hidden", opacity: winIn, transform: "translateZ(30px)", color: PS.text }}>
+        <div style={{ height: 40, background: "#eceef1", display: "flex", alignItems: "center", gap: 8, padding: "0 16px" }}>
+          {["#ff5f57", "#febc2e", "#28c840"].map((c) => (
+            <span key={c} style={{ width: 11, height: 11, borderRadius: 6, background: c }} />
+          ))}
+          <div style={{ marginLeft: 14, flex: 1, height: 26, borderRadius: 8, background: color.white, fontSize: 14, color: PS.muted, display: "flex", alignItems: "center", padding: "0 12px" }}>tienda-07.ejemplo.com.ar/mi-cuenta/cuenta-corriente</div>
+        </div>
+        <div style={{ height: 60, display: "flex", alignItems: "center", padding: "0 26px", borderBottom: `1px solid ${PS.line}`, gap: 24 }}>
+          <div style={{ fontSize: 24, fontWeight: font.semibold }}>
+            hogar<span style={{ color: PS.accent }}>nova</span>
           </div>
-          <div style={{ width: 60, height: 60, borderRadius: 14, background: gradient.brand }} />
+          <span style={{ marginLeft: "auto", fontSize: 14, color: PS.muted }}>Mayorista Sur · Cliente 004521</span>
         </div>
-        <div style={{ height: 1, background: color.gray200, margin: "26px 0 16px" }} />
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 110px 120px", fontSize: 15, color: color.gray600, paddingBottom: 8 }}>
-          <span>Comprobante</span>
-          <span>Vencimiento</span>
-          <span style={{ textAlign: "right" }}>Saldo</span>
-        </div>
-        {rows.map((r, i) => {
-          const ra = k(f, [T.pdf + 10 + i * 6, T.pdf + 24 + i * 6], [0, 1], OUT);
-          return (
-            <div key={r[0]} style={{ display: "grid", gridTemplateColumns: "1fr 110px 120px", fontSize: 17, color: color.black, padding: "12px 0", borderTop: `1px solid ${color.gray100}`, opacity: ra }}>
-              <span>{r[0]}</span>
-              <span>{r[1]}</span>
-              <span style={{ textAlign: "right" }}>{r[2]}</span>
+        <div style={{ padding: "18px 26px 6px", fontSize: 14, color: PS.muted }}>Mi cuenta / Cuenta corriente</div>
+        <div style={{ display: "flex", gap: 22, padding: "0 26px" }}>
+          {[["Saldo", "$ 369.800", PS.text], ["Vencido", "$ 0", "#4cbb6c"], ["Próximo vencimiento", "26/11/26", PS.text]].map(([l, v, c]) => (
+            <div key={l} style={{ flex: 1, padding: "14px 18px", background: PS.bg, borderRadius: 6 }}>
+              <div style={{ fontSize: 13, color: PS.muted }}>{l}</div>
+              <div style={{ fontSize: 26, fontWeight: font.semibold, color: c }}>{v}</div>
             </div>
-          );
-        })}
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 22, fontWeight: font.semibold, color: color.black, padding: "18px 0", borderTop: `2px solid ${color.black}` }}>
-          <span>Saldo total</span>
-          <GradientText>$ 619.700</GradientText>
+          ))}
         </div>
-        <div style={{ position: "absolute", left: 46, bottom: 60, fontSize: 15, color: color.gray600, lineHeight: 1.7 }}>
-          CAE 76451238904512
-          <br />
-          Vto. CAE 21/11/2026
+        <div style={{ margin: "18px 26px 0", width: detail > 0 ? 640 : SE.w - 52, fontSize: 15 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "84px 1fr 100px 100px 100px", padding: "10px 0", color: PS.muted, borderBottom: `2px solid ${PS.line}` }}>
+            <span>Fecha</span>
+            <span>Comprobante</span>
+            <span style={{ textAlign: "right" }}>Debe</span>
+            <span style={{ textAlign: "right" }}>Haber</span>
+            <span style={{ textAlign: "right" }}>Saldo</span>
+          </div>
+          {MOVES.map(([d, c, deb, hab], i) => {
+            saldo += deb - hab;
+            const a = k(f, [T.rows + i * 5, T.rows + i * 5 + 12], [0, 1], OUT);
+            const sel = i === 1 && detail > 0;
+            return (
+              <div key={c} style={{ display: "grid", gridTemplateColumns: "84px 1fr 100px 100px 100px", padding: "12px 0", borderBottom: `1px solid ${PS.line}`, opacity: a, background: sel ? `${PS.accent}18` : "transparent", alignItems: "center" }}>
+                <span>{d}</span>
+                <span style={{ color: PS.accent, textDecoration: "underline", whiteSpace: "nowrap", overflow: "hidden" }}>{c}</span>
+                <span style={{ textAlign: "right" }}>{deb ? money(deb) : ""}</span>
+                <span style={{ textAlign: "right" }}>{hab ? money(hab) : ""}</span>
+                <span style={{ textAlign: "right", fontWeight: font.semibold }}>{money(saldo)}</span>
+              </div>
+            );
+          })}
+        </div>
+        {/* movement detail */}
+        <div style={{ position: "absolute", right: 0, top: 266, bottom: 0, width: 440, background: color.white, borderLeft: `1px solid ${PS.line}`, boxShadow: "-20px 0 40px -20px rgba(0,0,0,.25)", padding: "20px 24px", boxSizing: "border-box", translate: `${(1 - detail) * 460}px 0` }}>
+          <div style={{ fontSize: 13, color: PS.muted }}>Detalle del movimiento</div>
+          <div style={{ fontSize: 21, fontWeight: font.semibold, margin: "4px 0 14px" }}>Factura A 0004-00012911</div>
+          {[["Cafetera de filtro", 2, 36500], ["Toallón de algodón", 1, 12700], ["Almohadón decorativo", 1, 9800]].map(([n, q, p]) => (
+            <div key={n as string} style={{ display: "flex", justifyContent: "space-between", fontSize: 15, padding: "9px 0", borderBottom: `1px solid ${PS.line}` }}>
+              <span>
+                {q as number} × {n as string}
+              </span>
+              <span>{money((q as number) * (p as number))}</span>
+            </div>
+          ))}
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15, padding: "9px 0", color: PS.muted }}>
+            <span>IVA 21 %</span>
+            <span>$ 0</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 19, fontWeight: font.semibold, padding: "10px 0" }}>
+            <span>Total</span>
+            <span>{money(96200)}</span>
+          </div>
+          <div style={{ fontSize: 14, color: PS.muted, marginTop: 6 }}>Vence 26/11/26 · CAE 76451238904512</div>
+          <div style={{ marginTop: 22, height: 46, background: PS.accent, color: "#fff", fontSize: 16, fontWeight: font.semibold, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, scale: String(1 - k(f, [T.pdfClick - 3, T.pdfClick + 1, T.pdfClick + 8], [0, 0.08, 0])) }}>
+            <Icon d="M12 4v11M7 10l5 5 5-5M5 20h14" c="#fff" size={20} />
+            DESCARGAR FACTURA (PDF)
+          </div>
         </div>
       </div>
-      <QrCode />
-    </div>
+
+      {/* the PDF invoice */}
+      {pdfIn > 0 && (
+        <div style={{ position: "absolute", left: PDF.x + (1 - pdfIn) * -300, top: PDF.y + (1 - pdfIn) * 220, width: PDF.w, height: PDF.h, scale: String(0.4 + pdfIn * 0.6), opacity: pdfIn, transform: "translateZ(80px)" }}>
+          <div style={{ position: "absolute", inset: 0, background: color.white, borderRadius: 8, boxShadow: "0 50px 100px -30px rgba(26,26,28,.45)", padding: "34px 38px", boxSizing: "border-box", color: color.black }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div>
+                <div style={{ fontSize: 22, fontWeight: font.semibold }}>Distribuidora Ejemplo S.A.</div>
+                <div style={{ fontSize: 13, color: color.gray600, marginTop: 4 }}>CUIT 30-71234567-8 · IVA Responsable Inscripto</div>
+              </div>
+              <div style={{ width: 64, height: 64, border: `2px solid ${color.black}`, fontSize: 40, fontWeight: font.stat, display: "flex", alignItems: "center", justifyContent: "center" }}>A</div>
+            </div>
+            <div style={{ fontSize: 20, fontWeight: font.semibold, marginTop: 18 }}>Factura N° 0004-00012911</div>
+            <div style={{ fontSize: 14, color: color.gray600 }}>Fecha 12/11/2026 · Cliente: Mayorista Sur (004521)</div>
+            <div style={{ height: 1, background: color.gray200, margin: "16px 0 8px" }} />
+            {[["Cafetera de filtro", 2, 36500], ["Toallón de algodón", 1, 12700], ["Almohadón decorativo", 1, 9800]].map(([n, q, p]) => (
+              <div key={n as string} style={{ display: "grid", gridTemplateColumns: "40px 1fr 110px", fontSize: 15, padding: "8px 0", borderBottom: `1px solid ${color.gray100}` }}>
+                <span>{q as number}</span>
+                <span>{n as string}</span>
+                <span style={{ textAlign: "right" }}>{money((q as number) * (p as number))}</span>
+              </div>
+            ))}
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 22, fontWeight: font.semibold, padding: "16px 0", borderTop: `2px solid ${color.black}`, marginTop: 10 }}>
+              <span>Total</span>
+              <span>{money(96200)}</span>
+            </div>
+            <div style={{ position: "absolute", left: 38, bottom: 44, fontSize: 14, lineHeight: 1.7 }}>
+              <div style={{ fontWeight: font.semibold, fontSize: 16 }}>Comprobante autorizado</div>
+              CAE N°: 76451238904512
+              <br />
+              Fecha de Vto. de CAE: 22/11/2026
+            </div>
+          </div>
+          <QrCode x={PDF.w - 176} y={PDF.h - 196} size={136} />
+          {/* scan line */}
+          {scan > 0 && scan < 1 && <div style={{ position: "absolute", left: PDF.w - 186, top: PDF.h - 196 + scan * 136, width: 156, height: 4, background: color.pink, boxShadow: `0 0 16px 4px ${color.pink}88` }} />}
+        </div>
+      )}
+
+      {/* ARCA verification page (emulated) */}
+      {arcaIn > 0 && (
+        <div style={{ position: "absolute", left: ARCA.x, top: ARCA.y, width: ARCA.w, height: ARCA.h, borderRadius: 18, background: color.white, boxShadow: "0 40px 90px -30px rgba(26,26,28,.4)", overflow: "hidden", opacity: arcaIn, translate: `${(1 - arcaIn) * 80}px 0`, transform: "translateZ(60px)" }}>
+          <div style={{ height: 40, background: "#eceef1", display: "flex", alignItems: "center", gap: 8, padding: "0 16px" }}>
+            {["#ff5f57", "#febc2e", "#28c840"].map((c) => (
+              <span key={c} style={{ width: 11, height: 11, borderRadius: 6, background: c }} />
+            ))}
+            <div style={{ marginLeft: 14, flex: 1, height: 26, borderRadius: 8, background: color.white, fontSize: 13, color: PS.muted, display: "flex", alignItems: "center", padding: "0 12px", whiteSpace: "nowrap", overflow: "hidden" }}>www.afip.gob.ar/fe/qr/?p=eyJ2ZXIiOjEsImZlY2hhIjoiMjAyNi0xMS0xMiIsImN1aXQiOjMwNzEyMzQ1Njc4…</div>
+          </div>
+          <div style={{ height: 64, background: "#0d3a6b", color: "#fff", display: "flex", alignItems: "center", padding: "0 28px", fontSize: 22, fontWeight: font.semibold, letterSpacing: "0.04em" }}>ARCA</div>
+          <div style={{ padding: "26px 34px" }}>
+            <div style={{ fontSize: 26, fontWeight: font.semibold, color: color.black }}>Consulta de comprobante</div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 10, marginTop: 14, padding: "10px 18px", borderRadius: 10, background: `${color.success}1a`, color: color.success, fontSize: 21, fontWeight: font.semibold, opacity: ok, scale: String(0.9 + ok * 0.1) }}>
+              <Icon d="M5 12l4 4 10-10" c={color.success} size={22} w={2.6} />
+              Comprobante autorizado
+            </div>
+            <div style={{ marginTop: 20, display: "grid", gridTemplateColumns: "220px 1fr", rowGap: 12, fontSize: 18 }}>
+              {[
+                ["CUIT emisor", "30-71234567-8"],
+                ["Tipo de comprobante", "Factura A"],
+                ["Punto de venta", "0004"],
+                ["Número", "00012911"],
+                ["Fecha de emisión", "12/11/2026"],
+                ["Importe total", money(96200)],
+                ["CAE", "76451238904512"],
+              ].map(([l, v], i) => {
+                const a = k(f, [T.arca + 16 + i * 3, T.arca + 26 + i * 3], [0, 1], OUT);
+                return (
+                  <React.Fragment key={l}>
+                    <span style={{ color: color.gray600, opacity: a }}>{l}</span>
+                    <span style={{ color: color.black, fontWeight: font.medium, opacity: a }}>{v}</span>
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
 export const Sincropresta: React.FC = () => {
   const f = useCurrentFrame();
   const cam = camera(f);
-  const zoomIn = Math.max(0, Math.min(1, (cam.s - 1.02) / 0.2));
+  const zoomIn = Math.max(0, Math.min(1, (cam.s - 1.02) / 0.15));
   const wash = k(f, [T.through[1] - 14, T.through[1]], [0, 1], Easing.linear);
+  const rowY = (i: number) => SE.y + 266 + 18 + 44 + i * 47 + 22;
   return (
     <AbsoluteFill style={{ background: color.gray50, fontFamily: font.family, overflow: "hidden" }}>
       <CloudBackground opacity={0.22} />
@@ -475,13 +766,52 @@ export const Sincropresta: React.FC = () => {
           <ZoneC f={f} />
           <ZoneD f={f} />
           <ZoneE f={f} />
-          <DoodleCircle f={f} start={T.try2[0] + 40} end={T.try2[1] + 50} cx={ZC.x - 650 + 70 + 1160 * LIMIT} cy={ZC.y - 260 + 253} rx={70} ry={86} id="dc-limit" />
-          <DoodleArrow f={f} start={T.try2[1] + 4} end={T.try2[1] + 50} x1={ZC.x + 200} y1={ZC.y + 220} x2={ZC.x + 560} y2={ZC.y + 20} bend={0.2} id="da-done" />
-          <DoodleCircle f={f} start={T.pdf + 50} end={T.through[0] + 6} cx={QR.x + QR.size / 2} cy={QR.y + QR.size / 2} rx={92} ry={92} id="dc-qr" />
+          {/* doodles */}
+          <DoodleCircle f={f} start={T.fail + 4} end={T.move[0]} cx={ZC.x - 760 + 330 + 1080 * 0.42} cy={ZC.y - 420 + 198} rx={64} ry={84} id="dc-wall" />
+          <DoodleArrow f={f} start={T.move[0] - 6} end={T.srv[0] + 16} x1={ZC.x - 760 + 250} y1={ZC.y - 120} x2={ZC.x - 760 + 250} y2={ZC.y + 150} bend={0.35} id="da-move" />
+          <DoodleCircle f={f} start={T.srv[0] + 34} end={T.srv[1] + 20} cx={ZC.x - 760 + 330 + 1080 * 0.48} cy={ZC.y + 40 + 198} rx={72} ry={84} id="dc-nolimit" />
+          <DoodleCircle f={f} start={T.click2 + 10} end={T.save + 20} cx={CFG.x + CFG.w - 130} cy={CFG.y + CFG.rowY + 3 * CFG.rowH - 50 + 42} rx={90} ry={34} id="dc-switch" />
+          <DoodleCircle f={f} start={T.scan[0] - 10} end={T.arca + 20} cx={QR.x + QR.size / 2} cy={QR.y + QR.size / 2} rx={98} ry={98} id="dc-qr" />
+          <DoodleArrow f={f} start={T.arca - 4} end={T.through[0] + 6} x1={QR.x + QR.size + 20} y1={QR.y + 30} x2={ARCA.x - 20} y2={ARCA.y + 200} bend={-0.25} id="da-arca" />
+          <Cursor
+            f={f}
+            show={[852, 930]}
+            clicks={[T.click1, T.click2, T.save]}
+            keys={[
+              [852, CFG.x + 500, CFG.y + 700],
+              [T.click1 - 8, CFG.x + CFG.w - 70, CFG.y + CFG.rowY + 1 * CFG.rowH - 50 + 42],
+              [T.click2 - 8, CFG.x + CFG.w - 70, CFG.y + CFG.rowY + 3 * CFG.rowH - 50 + 42],
+              [T.save - 8, CFG.x + CFG.w - 110, CFG.y + 800 - 46],
+              [930, CFG.x + CFG.w - 110, CFG.y + 800 - 46],
+            ]}
+          />
+          <Cursor
+            f={f}
+            show={[968, 1062]}
+            clicks={[T.detail, T.pdfClick]}
+            keys={[
+              [968, SE.x + 500, SE.y + 760],
+              [T.detail - 8, SE.x + 26 + 84 + 120, rowY(1)],
+              [T.pdfClick - 10, SE.x + SE.w - 220, SE.y + 266 + 452],
+              [1062, SE.x + SE.w - 220, SE.y + 266 + 452],
+            ]}
+          />
         </div>
       </AbsoluteFill>
       <Vignette amount={zoomIn * (1 - k(f, [T.through[0], T.through[0] + 10], [0, 1]))} />
       <DockedHeadline i={1} f={f} start={-30} />
+      <Subtitles
+        f={f}
+        cues={[
+          [8, 232, "El Módulo Sincro Presta conecta la tienda online con el ERP Flexxus: catálogo, precios, stock y pedidos se sincronizan solos."],
+          [256, 452, "Cada semana salió una versión nueva: mejoras y correcciones que fueron haciendo crecer el producto."],
+          [474, 572, "Antes, la sincro corría dentro de la página web y el hosting la cortaba a los 2 minutos: se revertía todo."],
+          [576, 720, "Ahora se ejecuta como un proceso interno del servidor, sin ese límite: termina completa."],
+          [742, 932, "Funciones que se hicieron para un cliente ahora son parte del módulo: cada tienda las activa o desactiva desde la configuración."],
+          [954, 1046, "Cada cliente ve su cuenta corriente en la tienda y entra al detalle de cada movimiento."],
+          [1050, 1196, "Descarga la factura en PDF: el QR con el CAE lleva a ARCA, que valida el comprobante."],
+        ]}
+      />
       <AbsoluteFill style={{ background: color.gray50, opacity: wash }} />
     </AbsoluteFill>
   );
