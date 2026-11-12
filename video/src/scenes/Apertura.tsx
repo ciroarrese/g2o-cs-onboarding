@@ -18,7 +18,7 @@ export const PROJECTS = [
   { name: "Health Score", line: "a quién contactar primero" },
 ] as const;
 
-const LABELS = [
+export const LABELS = [
   "Solo corregir", "Seguir contexto", "Con formato", "Escalado desarrollo", "Dictar",
   "Crear reporte", "Errores de pedidos", "Precios incrementales", "Cuenta corriente",
   "Control de crédito", "Pre-venta", "Productos sustitutos", "Sincronizando productos",
