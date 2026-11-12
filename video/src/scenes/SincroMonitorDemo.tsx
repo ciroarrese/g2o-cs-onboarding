@@ -9,23 +9,24 @@ import {
 import "../brand/fonts";
 import { CloudBackground, CountUp } from "../brand/primitives";
 import { color, font, gradient, radius, shadow } from "../brand/theme";
+import { DockedHeadline } from "./Apertura";
 
 /**
  * Sincro Monitor, rebuilt in the Grow2on style. No narration: the story is
  * told by the tool itself (its own labels), the data and the motion.
- * Aggregate figures from the live panel on 10/11/2026. Store domains and the
+ * Figures are emulated (the video uses invented numbers). Store domains and the
  * ticket number are fictional, so no client appears on screen.
  */
 
 // ---------- data ----------
 const STATUS = [
-  { key: "ok", label: "OK", kpi: "Sin problemas", n: 146, c: color.success },
-  { key: "infra", label: "Error en servidor", kpi: "Error en servidor", n: 73, c: color.error },
-  { key: "sync", label: "Error sincro", kpi: "Error sincro", n: 17, c: color.orange },
-  { key: "warn", label: "Advertencia sincro", kpi: "Advertencia sincro", n: 12, c: color.warning },
-  { key: "none", label: "Sin datos", kpi: "Sin datos", n: 67, c: color.gray300 },
+  { key: "ok", label: "OK", kpi: "Sin problemas", n: 128, c: color.success },
+  { key: "infra", label: "Error en servidor", kpi: "Error en servidor", n: 61, c: color.error },
+  { key: "sync", label: "Error sincro", kpi: "Error sincro", n: 23, c: color.orange },
+  { key: "warn", label: "Advertencia sincro", kpi: "Advertencia sincro", n: 14, c: color.warning },
+  { key: "none", label: "Sin datos", kpi: "Sin datos", n: 54, c: color.gray300 },
 ] as const;
-const TOTAL = 315;
+const TOTAL = 280; // emulated: the video uses invented figures
 const FOCUS_STATUS = 1; // the filter the cursor clicks: server errors
 const TICKET = "#48213";
 const STORE = "tienda-07.ejemplo.com.ar";
@@ -132,7 +133,7 @@ const camera = (f: number) => {
   const t = [0, 112, 160, 190, 225, 270, 305, 410, 470, 520, 590, 640, 700, 712, 752, 900, 1030, 1080];
   const s = [2.4, 2.4, 1, 1, 1.12, 1.12, 1.5, 1.5, 1.5, 0.56, 0.56, 1.0, 1.0, 1.0, 0.98, 1.0, 1.02, 0.42];
   const fx = [300, 300, 820, 820, 760, 760, 1060, 1060, 1060, 1560, 1560, 2460, 2460, 2460, TEAMS_CX, TEAMS_CX, TEAMS_CX, 2090];
-  const fy = [668, 668, 460, 460, 400, 400, 610, 610, 610, 470, 470, 400, 400, 400, 460, 460, 470, 450];
+  const fy = [668, 668, 410, 410, 400, 400, 610, 610, 610, 470, 470, 400, 400, 400, 460, 460, 470, 450];
   const tt = [0, 112, 136, 168, 470, 520, 590, 640, 700, 712, 752, 800, 1030, 1080, 1140];
   return {
     s: k(f, t, s),
@@ -1105,7 +1106,7 @@ const FlyingTicket: React.FC<{ f: number }> = ({ f }) => {
   );
 };
 
-/** 315 dots that light up by status and collapse into the donut ring. */
+/** One dot per store (TOTAL) that light up by status and collapse into the donut ring. */
 const DotField: React.FC<{ f: number; s: number }> = ({ f, s }) => {
   const cols = 21;
   const sp = 40;
@@ -1427,6 +1428,7 @@ export const SincroMonitorDemo: React.FC = () => {
         </div>
       </AbsoluteFill>
       <DotField f={f} s={cam.s} />
+      <DockedHeadline i={2} f={f} start={150} hide={(cam.s - 1.0) / 0.08} />
     </AbsoluteFill>
   );
 };

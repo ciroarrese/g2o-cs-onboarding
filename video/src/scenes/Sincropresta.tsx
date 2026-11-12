@@ -850,7 +850,7 @@ export const Sincropresta: React.FC = () => {
         </div>
       </AbsoluteFill>
       <Vignette amount={zoomIn * (1 - k(f, [T.through[0], T.through[0] + 10], [0, 1]))} />
-      <DockedHeadline i={1} f={f} start={-30} hide={(cam.s - 1.0) / 0.25} />
+      <DockedHeadline i={1} f={f} start={-30} hide={(cam.s - 1.0) / 0.08} />
       <AbsoluteFill style={{ background: color.gray50, opacity: wash }} />
     </AbsoluteFill>
   );
