@@ -7,6 +7,7 @@ import { Sincropresta } from "./scenes/Sincropresta";
 import { HealthScore } from "./scenes/HealthScore";
 import { Cierre } from "./scenes/Cierre";
 import { ProyectosConIA, TOTAL_FRAMES } from "./ProyectosConIA";
+import { AGENDA_FRAMES, Agenda } from "./scenes/Agenda";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -19,6 +20,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition id="SincroMonitor" component={SincroMonitorDemo} durationInFrames={1440} fps={30} width={1920} height={1080} />
       <Composition id="HealthScore" component={HealthScore} durationInFrames={1080} fps={30} width={1920} height={1080} />
       <Composition id="Cierre" component={Cierre} durationInFrames={450} fps={30} width={1920} height={1080} />
+      <Composition id="Agenda" component={Agenda} durationInFrames={AGENDA_FRAMES} fps={30} width={1920} height={1080} defaultProps={{ done: 1 }} />
     </Folder>
     <Folder name="Pruebas">
       <Composition
