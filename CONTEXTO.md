@@ -91,7 +91,11 @@ Se recorrió con Playwright en solo lectura (bandeja propia, pestañas, No asign
 - Si el usuario edita el doc, leer con `sinceRev` antes de tocarlo (la última revisión escrita por Claude es la 13).
 - **Decisión del usuario (11/11/2026): el video usa números emulados**, no las cifras reales. Hoy la escena del Sincro Monitor todavía muestra las cifras reales del panel (315 tiendas: 146 / 73 / 17 / 12 / 67, en el tablero y en los 315 puntos de la dona). Hay que cambiarlas por valores inventados al armar el guion final. Los números de la tarjeta de Teams y de la mesa ya son ficticios.
 
-## Guion: borrador del 11/11/2026
+## Guion: actualizado con lo producido el 12/11/2026
+
+- El doc "Guion del video: Proyectos con IA" ya refleja el video aprobado (estructura con tiempos, efectos, vuelta al listado, escenas 1–6, decisiones). Última revisión escrita por Claude: 458. Las secciones "Preguntas abiertas" y "Para empezar a producir" quedan con las respuestas del usuario como sugerencias suyas (solo él puede aceptarlas o rechazarlas).
+
+### Borrador original del 11/11/2026
 
 - Link: https://claude.ai/artifact/7WLNKbRP3RFRb8gNQdZPdF (doc `34af5645-5049-4f34-8c98-ffc108001dae`). Última revisión escrita por Claude: 10.
 - **Efectos pedidos por el usuario:** Zoom Through, UI World (interfaces flotantes), Headline Wall, Chart Grow, Doodle Boil con la estética del design system y Digital Zoom. Se sumaron cursor con clic, vuelo con estela y morph de forma. El guion tiene una tabla que dice qué efecto va en cada escena.
@@ -115,7 +119,7 @@ Se recorrió con Playwright en solo lectura (bandeja propia, pestañas, No asign
 | 5. Health Score (36 s, 1080 frames) | `HealthScore` | `video/src/scenes/HealthScore.tsx` | **Aprobada** (12/11/2026) |
 | 6. Cierre (15 s, 450 frames) | `Cierre` | `video/src/scenes/Cierre.tsx` | **Aprobada** (12/11/2026) |
 | Agenda entre proyectos (4 s, 120 frames, ×4) | `Agenda` (prop `done`) | `video/src/scenes/Agenda.tsx` | Nueva (12/11, pedido del usuario) |
-| **Video completo** (3:13, 5790 frames) | `ProyectosConIA` (raíz) | `video/src/ProyectosConIA.tsx` | Versión 2 con agendas; renderizada, esperando aprobación |
+| **Video completo** (3:13, 5790 frames) | `ProyectosConIA` (raíz) | `video/src/ProyectosConIA.tsx` | **Aprobado** (12/11/2026) |
 
 - `Apertura.tsx` exporta `PROJECTS` (los 4 titulares) y `DockedHeadline`, el titular chico arriba a la izquierda que usa cada escena de proyecto.
 - `video/src/brand/motion.tsx`: helpers compartidos (`k`, `OUT`, `IN_OUT`, `typed`, `Cursor`, `DoodleCircle`, `DoodleArrow` con efecto boil cada 3 frames, `Vignette`).
