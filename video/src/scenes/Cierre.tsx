@@ -12,7 +12,16 @@ import { LABELS, PROJECTS } from "./Apertura";
  * fade with the Grow2on logo and "Hecho con Claude". 420 frames at 30 fps.
  */
 
-const T = { cards: 0, wall: 140, wash: [270, 300] as const, logo: 296, sign: 322 };
+const T = {
+  cards: 0,
+  wall: 140,
+  fold: [186, 216] as const, // panels minimise, only the titles stay
+  fly: [216, 270] as const, // titles travel into the wall (staggered)
+  light: 276,
+  wash: [352, 382] as const,
+  logo: 378,
+  sign: 402,
+};
 
 // ---------- miniatures of each tool ----------
 const Win: React.FC<{ dark?: boolean; children: React.ReactNode }> = ({ dark, children }) => (
@@ -114,60 +123,163 @@ const CARDS = [
   { el: <MiniHealth />, x: 1380, y: 760, z: 60 },
 ];
 
-// ---------- the label wall, back behind the tools ----------
-const WALL = LABELS.map((text, i) => ({
-  text,
-  x: -860 + (i % 5) * 420 + (Math.floor(i / 5) % 2) * 160 + (random(`cx${i}`) - 0.5) * 40,
-  y: -440 + Math.floor(i / 5) * 170 + (random(`cy${i}`) - 0.5) * 24,
-  on: T.wall + random(`con${i}`) * 70,
-}));
+// ---------- the label wall, with the four projects at its centre ----------
+const WALL_P = 1600; // perspective of the wall layer
+const wallZ = (f: number) => k(f, [0, T.fly[0], T.fly[1] + 30, 370], [-500, -500, -560, -1150]);
+const wallRy = (f: number) => k(f, [0, 360], [-6, 2]);
+
+type Slot = { x: number; y: number };
+const SLOTS: Slot[] = [];
+const RESERVED: Slot[] = [];
+for (let r = 0; r < 6; r++)
+  for (let c = 0; c < 6; c++) {
+    const centre = (r === 2 || r === 3) && c >= 1 && c <= 4;
+    if (centre) continue;
+    SLOTS.push({ x: -1050 + c * 420 + (r % 2) * 60, y: -475 + r * 190 });
+  }
+RESERVED.push({ x: -330, y: -95 }, { x: 330, y: -95 }, { x: -330, y: 95 }, { x: 330, y: 95 });
+const WALL = LABELS.map((text, i) => ({ text, ...SLOTS[i], on: T.wall + random(`con${i}`) * 70 }));
+// an outer ring that only shows as the camera pulls back: the work is part of something bigger
+const OUTER: (Slot & { text: string; on: number })[] = [];
+for (let r = -1; r <= 6; r++)
+  for (let c = -1; c <= 6; c++) {
+    if (r >= 0 && r <= 5 && c >= 0 && c <= 5) continue;
+    const i = OUTER.length;
+    OUTER.push({ x: -1050 + c * 420 + (((r % 2) + 2) % 2) * 60, y: -475 + r * 190, text: LABELS[(i * 11 + 5) % LABELS.length], on: T.light + 10 + random(`o${i}`) * 50 });
+  }
+
+/** Screen position and scale of a point on the wall plane. */
+const wallProject = (f: number, x: number, y: number) => {
+  const a = (wallRy(f) * Math.PI) / 180;
+  const xr = x * Math.cos(a);
+  const zr = -x * Math.sin(a) + wallZ(f);
+  const fac = WALL_P / (WALL_P - zr);
+  return { x: 960 + xr * fac, y: 540 + y * fac, s: fac };
+};
+
+const CARD_P = 2200;
+/** Screen position and scale of a point of the floating-cards layer. */
+const cardProject = (x: number, y: number, z: number, cam: { s: number; rx: number; ry: number }) => {
+  let px = (x - 960) * cam.s, py = (y - 540) * cam.s, pz = z * cam.s;
+  const ay = (cam.ry * Math.PI) / 180, ax = (cam.rx * Math.PI) / 180;
+  const x1 = px * Math.cos(ay) + pz * Math.sin(ay);
+  const z1 = -px * Math.sin(ay) + pz * Math.cos(ay);
+  const y2 = py * Math.cos(ax) - z1 * Math.sin(ax);
+  const z2 = py * Math.sin(ax) + z1 * Math.cos(ax);
+  const fac = CARD_P / (CARD_P - z2);
+  return { x: 960 + x1 * fac, y: 540 + y2 * fac, s: fac * cam.s };
+};
+
+const ProjectPill: React.FC<{ i: number; scale: number; glow: number }> = ({ i, scale, glow }) => (
+  <div
+    style={{
+      display: "flex",
+      alignItems: "baseline",
+      gap: 12,
+      padding: "14px 28px",
+      borderRadius: radius.pill,
+      background: color.white,
+      border: `2.5px solid ${color.pink}aa`,
+      boxShadow: `0 14px 40px -12px rgba(231,0,126,${0.35 + glow * 0.4}), 0 0 0 ${glow * 10}px ${color.pink}22`,
+      whiteSpace: "nowrap",
+      scale: String(scale),
+      transformOrigin: "50% 50%",
+    }}
+  >
+    <span style={{ fontSize: 24, fontWeight: font.stat }}>
+      <GradientText>{String(i + 1).padStart(2, "0")}</GradientText>
+    </span>
+    <span style={{ fontSize: 34, fontWeight: font.semibold, color: color.black }}>{PROJECTS[i].name}</span>
+  </div>
+);
 
 export const Cierre: React.FC = () => {
   const f = useCurrentFrame();
-  const s = k(f, [0, 150, 270], [1.5, 0.98, 0.94], Easing.bezier(0.3, 0, 0.2, 1));
-  const ry = k(f, [0, 270], [-12, 8]);
-  const rx = k(f, [0, 270], [8, 2]);
+  const cam = {
+    s: k(f, [0, 150, 270], [1.5, 0.98, 0.94], Easing.bezier(0.3, 0, 0.2, 1)),
+    ry: k(f, [0, 270], [-12, 8]),
+    rx: k(f, [0, 270], [8, 2]),
+  };
   const wallIn = k(f, [T.wall - 20, T.wall + 10], [0, 1], OUT);
+  const focus = k(f, [T.fly[0], T.fly[1]], [0, 1]); // wall comes into focus as the titles arrive
+  const fold = k(f, [T.fold[0], T.fold[1]], [0, 1], Easing.bezier(0.6, 0, 0.3, 1));
   const wash = k(f, [T.wash[0], T.wash[1]], [0, 1], Easing.linear);
   const logo = k(f, [T.logo, T.logo + 26], [0, 1], OUT);
   const sign = k(f, [T.sign, T.sign + 22], [0, 1], OUT);
+  const flyOf = (i: number) => k(f, [T.fly[0] + i * 6, T.fly[0] + i * 6 + 40], [0, 1], Easing.bezier(0.5, 0, 0.2, 1));
   return (
     <AbsoluteFill style={{ background: color.gray50, fontFamily: font.family, overflow: "hidden" }}>
       <CloudBackground opacity={0.22} />
-      {/* wall behind */}
-      <AbsoluteFill style={{ perspective: 1600, opacity: wallIn * 0.6, filter: "blur(2px)" }}>
-        <div style={{ position: "absolute", left: 960, top: 540, transformStyle: "preserve-3d", transform: `translateZ(-500px) rotateY(${ry * 0.5}deg)` }}>
+      {/* the wall */}
+      <AbsoluteFill style={{ perspective: WALL_P, opacity: wallIn * (0.6 + focus * 0.4), filter: `blur(${(1 - focus) * 2}px)` }}>
+        <div style={{ position: "absolute", left: 960, top: 540, transformStyle: "preserve-3d", transform: `translateZ(${wallZ(f)}px) rotateY(${wallRy(f)}deg)` }}>
           {WALL.map((c) => {
-            const lit = f >= c.on;
-            const pop = k(f, [c.on, c.on + 5, c.on + 20], [0, 1, 0]);
+            const on = Math.min(c.on, T.light + random(`l2${c.text}`) * 30);
+            const lit = f >= on;
+            const pop = k(f, [on, on + 5, on + 20], [0, 1, 0]);
             return (
               <div key={c.text} style={{ position: "absolute", transform: `translate(-50%, -50%) translate(${c.x}px, ${c.y}px)`, padding: "14px 26px", borderRadius: radius.pill, background: color.white, border: `2px solid ${lit ? color.pink + "66" : color.gray200}`, color: lit ? color.black : color.gray300, fontSize: 30, fontWeight: font.medium, whiteSpace: "nowrap", scale: String(1 + pop * 0.12), boxShadow: `0 10px 30px -14px rgba(231,0,126,${0.15 + pop * 0.3})` }}>
                 {c.text}
               </div>
             );
           })}
-        </div>
-      </AbsoluteFill>
-      {/* the four tools */}
-      <AbsoluteFill style={{ perspective: 2200 }}>
-        <div style={{ position: "absolute", left: 0, top: 0, width: 1920, height: 1080, transformOrigin: "960px 540px", transformStyle: "preserve-3d", transform: `rotateX(${rx}deg) rotateY(${ry}deg) scale(${s})` }}>
-          {CARDS.map((c, i) => {
-            const a = k(f, [T.cards + i * 8, T.cards + i * 8 + 24], [0, 1], OUT);
-            const bob = Math.sin(f / 28 + i * 1.7) * 10;
+          {OUTER.map((c, i) => {
+            const lit = f >= c.on;
             return (
-              <div key={i} style={{ position: "absolute", left: c.x - 280, top: c.y - 170 + bob, transform: `translateZ(${c.z + (1 - a) * 300}px)`, opacity: a }}>
-                <div style={{ position: "absolute", left: 0, top: -58, display: "flex", alignItems: "baseline", gap: 12, whiteSpace: "nowrap" }}>
-                  <span style={{ fontSize: 22, fontWeight: font.stat }}>
-                    <GradientText>{String(i + 1).padStart(2, "0")}</GradientText>
-                  </span>
-                  <span style={{ fontSize: 32, fontWeight: font.semibold, color: color.black }}>{PROJECTS[i].name}</span>
-                </div>
-                {c.el}
+              <div key={`o${i}`} style={{ position: "absolute", transform: `translate(-50%, -50%) translate(${c.x}px, ${c.y}px)`, padding: "14px 26px", borderRadius: radius.pill, background: color.white, border: `2px solid ${lit ? color.pink + "44" : color.gray200}`, color: lit ? color.gray600 : color.gray300, fontSize: 30, fontWeight: font.medium, whiteSpace: "nowrap", opacity: 0.55 }}>
+                {c.text}
+              </div>
+            );
+          })}
+          {/* the four projects, once they have landed */}
+          {RESERVED.map((r, i) => {
+            if (flyOf(i) < 1) return null;
+            const glow = k(f, [T.fly[0] + i * 6 + 40, T.fly[0] + i * 6 + 48, T.fly[0] + i * 6 + 90], [0, 1, 0.3]);
+            return (
+              <div key={i} style={{ position: "absolute", transform: `translate(-50%, -50%) translate(${r.x}px, ${r.y}px)` }}>
+                <ProjectPill i={i} scale={1} glow={glow} />
               </div>
             );
           })}
         </div>
       </AbsoluteFill>
+      {/* the four tools, which minimise to their titles */}
+      <AbsoluteFill style={{ perspective: CARD_P }}>
+        <div style={{ position: "absolute", left: 0, top: 0, width: 1920, height: 1080, transformOrigin: "960px 540px", transformStyle: "preserve-3d", transform: `rotateX(${cam.rx}deg) rotateY(${cam.ry}deg) scale(${cam.s})` }}>
+          {CARDS.map((c, i) => {
+            const a = k(f, [T.cards + i * 8, T.cards + i * 8 + 24], [0, 1], OUT);
+            const bob = Math.sin(f / 28 + i * 1.7) * 10;
+            const titleOut = f >= T.fly[0] + i * 6 ? 0 : 1;
+            return (
+              <div key={i} style={{ position: "absolute", left: c.x - 280, top: c.y - 170 + bob, transform: `translateZ(${c.z + (1 - a) * 300}px)`, opacity: a }}>
+                <div style={{ position: "absolute", left: 0, top: -58, display: "flex", alignItems: "baseline", gap: 12, whiteSpace: "nowrap", opacity: titleOut }}>
+                  <span style={{ fontSize: 22, fontWeight: font.stat }}>
+                    <GradientText>{String(i + 1).padStart(2, "0")}</GradientText>
+                  </span>
+                  <span style={{ fontSize: 32, fontWeight: font.semibold, color: color.black }}>{PROJECTS[i].name}</span>
+                </div>
+                <div style={{ transformOrigin: "50% 0", scale: `${1 - fold * 0.15} ${Math.max(0.001, 1 - fold)}`, opacity: 1 - fold * 0.8 }}>{c.el}</div>
+              </div>
+            );
+          })}
+        </div>
+      </AbsoluteFill>
+      {/* titles in flight: from where they sit on screen to their place in the wall */}
+      {CARDS.map((c, i) => {
+        const p = flyOf(i);
+        if (p <= 0 || p >= 1) return null;
+        const bob = Math.sin(f / 28 + i * 1.7) * 10;
+        const from = cardProject(c.x - 280 + 150, c.y - 170 - 40 + bob, c.z, cam);
+        const to = wallProject(f, RESERVED[i].x, RESERVED[i].y);
+        const x = from.x + (to.x - from.x) * p;
+        const y = from.y + (to.y - from.y) * p - Math.sin(p * Math.PI) * 60;
+        const sc = from.s * 0.95 + (to.s - from.s * 0.95) * p;
+        return (
+          <div key={i} style={{ position: "absolute", left: x, top: y, translate: "-50% -50%" }}>
+            <ProjectPill i={i} scale={sc} glow={Math.sin(p * Math.PI)} />
+          </div>
+        );
+      })}
       {/* sign-off */}
       <AbsoluteFill style={{ background: color.white, opacity: wash }} />
       <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 34 }}>
