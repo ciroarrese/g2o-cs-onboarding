@@ -86,7 +86,7 @@ const MESA_NEW = {
 // Teams chat window, to the right of the help desk. Structure copied from the
 // real "Sincro Monitor · novedades" card the monitor posts to the team chat
 // (screenshot from the user, 11/11/2026). Stores and figures are fictional.
-const TEAMS = { x: 350, y: 1160, w: 940, h: 1000 };
+const TEAMS = { x: -1180, y: -40, w: 940, h: 1000 }; // to the left of the panel
 const TEAMS_CX = TEAMS.x + TEAMS.w / 2;
 const TT = { win: 744, signal: [732, 790] as const, typing: 796, card: 818, rows: 832, inc: 898, fix: 952, hi: [974, 992, 1010] };
 const NOVEDADES: { l: string; n?: number; v: string }[] = [
@@ -158,14 +158,14 @@ const KEYS: [number, number, number, number][] = [
   // whip back to the panel: the alert drops from the bell
   [630, 820, 410, 1.0], [644, 820, 410, 1.0], [658, 1340, 220, 1.7], [700, 1340, 220, 1.7], [730, 1340, 240, 1.35],
   // follow the bell down to Teams
-  [762, 900, 860, 0.75], [792, TEAMS_CX, TEAMS.y + 500, 0.98], [998, TEAMS_CX, TEAMS.y + 500, 0.98],
+  [762, 300, 260, 0.7], [792, TEAMS_CX, TEAMS.y + 500, 0.98], [998, TEAMS_CX, TEAMS.y + 500, 0.98],
   [1012, TEAMS_CX, TEAMS.y + 740, 1.45], [1042, TEAMS_CX, TEAMS.y + 740, 1.45],
   // fly to the help desk and open the ticket
-  [1068, 2200, 900, 0.45], [1092, 2460, 420, 1.0], [1106, 2400, 381, 1.3], [1118, 2400, 381, 1.3],
+  [1068, 900, 420, 0.4], [1092, 2460, 420, 1.0], [1106, 2400, 381, 1.3], [1118, 2400, 381, 1.3],
   [1140, 2460, 460, 1.0], [1150, 2460, 460, 1.0], [1166, ED.x + 360, 640, 1.6], [1268, ED.x + 360, 640, 1.6],
   [1292, 2460, 460, 1.0], [1320, 2460, 460, 1.0],
   // everything at once, then out through the sent reply
-  [1352, 1560, 1080, 0.42], [1396, 1560, 1080, 0.42], [1404, 1560, 1080, 0.42],
+  [1352, 970, 440, 0.43], [1396, 970, 440, 0.43], [1404, 970, 440, 0.43],
 ];
 const camAt = (f: number) => {
   const t = KEYS.map((q) => q[0]);
@@ -1464,7 +1464,7 @@ const BellFlight: React.FC<{ f: number }> = ({ f }) => {
   const sx = ALERT.x + ALERT.w / 2, sy = ALERT.y + ALERT.h / 2;
   const pos = (ff: number) => {
     const p = k(ff, [a, b], [0, 1], Easing.bezier(0.45, 0, 0.2, 1));
-    const mx = (sx + BELL_LAND.x) / 2 + 380, my = (sy + BELL_LAND.y) / 2 - 120;
+    const mx = (sx + BELL_LAND.x) / 2, my = Math.min(sy, BELL_LAND.y) - 260;
     return {
       x: (1 - p) * (1 - p) * sx + 2 * (1 - p) * p * mx + p * p * BELL_LAND.x,
       y: (1 - p) * (1 - p) * sy + 2 * (1 - p) * p * my + p * p * BELL_LAND.y,
