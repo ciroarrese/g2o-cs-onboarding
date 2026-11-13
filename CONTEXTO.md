@@ -93,7 +93,7 @@ Se recorrió con Playwright en solo lectura (bandeja propia, pestañas, No asign
 
 ## Guion: actualizado con lo producido el 12/11/2026
 
-- El doc "Guion del video: Proyectos con IA" ya refleja el video aprobado (estructura con tiempos, efectos, vuelta al listado, escenas 1–6, decisiones). Última revisión escrita por Claude: 458. Las secciones "Preguntas abiertas" y "Para empezar a producir" quedan con las respuestas del usuario como sugerencias suyas (solo él puede aceptarlas o rechazarlas).
+- El doc "Guion del video: Proyectos con IA" ya refleja el video aprobado (estructura con tiempos, efectos, vuelta al listado, escenas 1–6, decisiones). Última revisión escrita por Claude: 458. El usuario aceptó sus respuestas en "Preguntas abiertas" y "Para empezar a producir" (13/11/2026); quedan como registro. Queda abierta solo su sugerencia en la pregunta del formato ("Sí"). Última revisión de Claude: 475.
 
 ### Borrador original del 11/11/2026
 
