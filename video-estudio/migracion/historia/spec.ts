@@ -1,7 +1,5 @@
-// Configuración de la apertura y del cierre (misma copia y mismas etiquetas que Apertura.tsx del proyecto de Remotion).
+// Configuración de la apertura, las vueltas y el cierre (misma copia y mismas etiquetas que Apertura.tsx del proyecto de Remotion).
 import type { StorySpec } from "video-estudio/stories";
-// El logo vive en la carpeta externa; `?url` lo copia al bundle (así lo ven render, qa, sheet y privacy sin `--assets`).
-import logo from "../../assets/brand/logo-grow2on.png?url";
 
 export const spec: StorySpec = {
   title: { text: "Proyectos con IA", highlight: "con IA" },
@@ -19,6 +17,10 @@ export const spec: StorySpec = {
     "Incidentes abiertos", "Sincro Monitor · novedades", "En crecimiento", "Maduro", "En caída",
     "Cola de atención", "En activación", "Cartera sana", "Severidad alta", "Oportunidades comerciales",
   ],
-  signoff: { logo, text: "Hecho con Claude" },
-  timing: { opening: 300, closing: 450 },
+  // El original cierra con el logo y "Hecho con Claude" (Claude en negrita): sin texto grande.
+  signoff: { logo: "brand/logo-grow2on.png", tagline: "Hecho con **Claude**" },
+  timing: { closing: 450 },
+  // Lo más parecido al original: cartel de vidrio, lista en un renglón, titular acoplado, muro de 5 × 6 sin desenfoque de distancia,
+  // nubes con el desenfoque del original (las manchas, colores y opacidad salen de los tokens `--cloud-*` del tema).
+  design: { titleCard: "glass", list: "inline", handoff: "dock", wall: { columns: 5, rows: 6, blur: false }, clouds: { blur: 56 } },
 };

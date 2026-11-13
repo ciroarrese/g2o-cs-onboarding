@@ -17,5 +17,5 @@
       "react/jsx-runtime": ["/home/user/video-estudio/node_modules/@types/react/jsx-runtime"]
     }
   },
-  "include": ["migracion/**/*.ts", "migracion/**/*.tsx", "env.d.ts"]
+  "include": ["migracion/**/*.ts", "migracion/**/*.tsx"]
 }

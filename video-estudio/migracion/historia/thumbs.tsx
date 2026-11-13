@@ -2,13 +2,13 @@
 import React from "react";
 import { ThemeScope } from "video-estudio/kit";
 import { useTheme } from "video-estudio/themes";
-import { tablero, tableroTheme } from "../theme";
+import { tableroTheme } from "../theme";
 
 const SIZE = 200, R = 82, W = 24;
-const E = tablero.estados;
-const RING: [number, string][] = [[96, E.inactivo], [64, E.crecimiento], [52, E.maduro], [48, E.activacion], [22, E.caida], [14, E.estancado], [4, E.detenida]];
+const RING = [[96, "estadoInactivo"], [64, "estadoCrecimiento"], [52, "estadoMaduro"], [48, "estadoActivacion"], [22, "estadoCaida"], [14, "estadoEstancado"], [4, "estadoDetenida"]] as const;
 
 function Ring() {
+  const t = useTheme();
   const total = RING.reduce((a, v) => a + v[0], 0);
   let acc = 0;
   return (
@@ -18,7 +18,7 @@ function Ring() {
         acc += v;
         const a1 = -Math.PI / 2 + (acc / total) * Math.PI * 2;
         const p = (a: number) => `${SIZE / 2 + Math.cos(a) * R},${SIZE / 2 + Math.sin(a) * R}`;
-        return <path key={i} d={`M${p(a0 + 0.02)} A${R},${R} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${p(a1 - 0.02)}`} fill="none" stroke={c} strokeWidth={W} />;
+        return <path key={i} d={`M${p(a0 + 0.02)} A${R},${R} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${p(a1 - 0.02)}`} fill="none" stroke={t.data[c]} strokeWidth={W} />;
       })}
     </svg>
   );
@@ -26,18 +26,17 @@ function Ring() {
 
 function Inner() {
   const t = useTheme();
-  const F = tablero.fichas;
-  const filas: [string, number, string][] = [["Inactivos", 96, F.inactivos], ["En caída", 22, F.caida], ["En crecimiento", 64, F.crecimiento]];
+  const filas = [["Inactivos", 96, t.data.fichaInactivos], ["En caída", 22, t.data.fichaCaida], ["En crecimiento", 64, t.data.fichaCrecimiento]] as const;
   return (
     <>
-      <div style={{ padding: "14px 18px", color: t.color.text, fontSize: 16 }}>Distribución de estados (por canal)</div>
+      <div style={{ padding: "14px 18px", color: t.color.text, fontSize: t.type.ui.sm }}>Distribución de estados (por canal)</div>
       <div style={{ display: "flex", gap: 18, padding: "0 18px", alignItems: "center" }}>
         <Ring />
         <div style={{ display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
           {filas.map(([l, n, c]) => (
-            <div key={l} style={{ borderRadius: 6, background: c, color: tablero.strong, padding: "8px 12px", display: "flex", justifyContent: "space-between", fontSize: 16 }}>
+            <div key={l} style={{ borderRadius: 6, background: c, color: t.data.strong, padding: "8px 12px", display: "flex", justifyContent: "space-between", fontSize: t.type.ui.sm }}>
               {l}
-              <b style={{ fontSize: 22 }}>{n}</b>
+              <b style={{ fontSize: t.type.ui.md }}>{n}</b>
             </div>
           ))}
         </div>

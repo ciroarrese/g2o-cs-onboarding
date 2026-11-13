@@ -1,12 +1,9 @@
 // Tema de la marca, armado desde los tokens de video/src/brand/theme.ts con el adaptador del toolkit.
-// Los tokens van como texto CSS (alias que reconoce el adaptador); las fuentes se declaran aparte en `font.files`.
+// Todo sale de los tokens: colores de datos (`data`), tamaños de la interfaz recreada (`type.ui`), nubes (`cloud`) y fuentes
+// (archivos de la carpeta `assets/` externa, que el render sirve sola).
+import { asset } from "video-estudio/engine";
 import { themeFromTokensWithReport } from "video-estudio/themes";
-import type { Theme } from "video-estudio/themes";
-// `?url` hace que vite copie el archivo al bundle y devuelva su URL: así lo ven render, qa, sheet y privacy sin `--assets`.
-import geistRegular from "../assets/fonts/Geist-Regular.otf?url";
-import geistMedium from "../assets/fonts/Geist-Medium.otf?url";
-import geistSemiBold from "../assets/fonts/Geist-SemiBold.otf?url";
-import geistBold from "../assets/fonts/Geist-Bold.otf?url";
+import type { DataRoleInput, Theme } from "video-estudio/themes";
 
 const TOKENS = `:root {
   --name: marca-cs;
@@ -41,6 +38,9 @@ const TOKENS = `:root {
   --type-caption: 32px;
   --type-eyebrow: 26px;
   --type-stat: 180px;
+  --type-ui-xs: 15px;
+  --type-ui-sm: 17px;
+  --type-ui-md: 22px;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-panel: 12px;
@@ -49,22 +49,47 @@ const TOKENS = `:root {
   --shadow-sm: 0 1px 2px rgba(26,26,28,.06);
   --shadow-md: 0 4px 12px rgba(26,26,28,.1);
   --shadow-lg: 0 12px 32px rgba(26,26,28,.14);
+  /* nubes del original (CloudBackground): rosa, naranja y violeta; "x y diámetro" con x e y como fracción del cuadro */
+  --cloud-colors: #e7007e, #f56406, #770ce9;
+  --cloud-opacity: 0.22;
+  --cloud-blob-1: 0.248 0.487 1060;
+  --cloud-blob-2: 0.752 0.569 876;
+  --cloud-blob-3: 0.608 0.983 783;
+  /* colores de datos de la interfaz recreada (estados de Health Score) */
+  --data-estado-inactivo: #a8243a;
+  --data-estado-crecimiento: #2e8b4a;
+  --data-estado-maduro: #73bf69;
+  --data-estado-activacion: #3d7fe0;
+  --data-estado-caida: #f2495c;
+  --data-estado-estancado: #e0b400;
+  --data-estado-detenida: #a352cc;
 }`;
 
-const r = themeFromTokensWithReport(TOKENS);
+// Estados: se dibujan como puntos sobre el fondo claro de la marca y como anillo sobre el tablero oscuro; 3 sobre `bg` de cada tema.
+const ESTADO: DataRoleInput = { on: ["bg"], min: 3 };
+// Pares de la paleta de marca aprobada que no llegan a 4,5:1 (naranja y verde claros, el rosa sobre fondo claro...): se dan por conocidos en el
+// informe del tema. `qa` sigue juzgando el texto real en pantalla; acá el degradado de marca solo se usa como texto de números grandes
+// (qa no lo juzga) y los estados salen de `data`. No se reconocen los pares de `data.*`: esos sí se ven en pantalla con poco contraste.
+const MARCA_APROBADA = [
+  "accent/bg", "accent/surface", "accent2/bg", "accent2/surface", "onAccent/accent",
+  "success/bg", "success/surface", "success/surfaceAlt", "warning/bg", "warning/surface", "warning/surfaceAlt", "danger/surfaceAlt", "chart[4]/surface",
+];
+const r = themeFromTokensWithReport(TOKENS, undefined, {
+  acknowledge: MARCA_APROBADA,
+  data: {
+    estadoInactivo: ESTADO, estadoCrecimiento: ESTADO, estadoMaduro: ESTADO, estadoActivacion: ESTADO,
+    estadoCaida: ESTADO, estadoEstancado: ESTADO, estadoDetenida: ESTADO,
+  },
+});
 
-// Las tipografías son archivos locales de la carpeta externa (assets/fonts), importados con `?url`.
-const fontFile = (weight: number, src: string) => ({ weight, src });
 export const theme: Theme = {
   ...r.theme,
-  // El adaptador deriva las nubes del acento; las de la marca son rosa, naranja y violeta (no hay token para eso).
-  cloud: { colors: ["#e7007e", "#f56406", "#770ce9"], opacity: 0.22 },
-  font: { ...r.theme.font, files: [fontFile(400, geistRegular), fontFile(500, geistMedium), fontFile(600, geistSemiBold), fontFile(700, geistBold)] },
+  font: { ...r.theme.font, files: [400, 500, 600, 700].map((weight, i) => ({ weight, src: asset(`fonts/Geist-${["Regular", "Medium", "SemiBold", "Bold"][i]}.otf`) })) },
 };
 export const report = r.report;
 
 // ---------- tema oscuro de la herramienta recreada (tablero de monitoreo) ----------
-const GRAFANA = `:root {
+const TABLERO = `:root {
   --name: tablero-oscuro;
   --color-background: #111217;
   --color-surface: #181b1f;
@@ -86,23 +111,33 @@ const GRAFANA = `:root {
   --chart-6: #e0b400;
   --chart-7: #a352cc;
   --font-family: "Geist", sans-serif;
+  /* colores propios del tablero: texto fuerte, fondos de ficha, severidades, riel y botón */
+  --data-strong: #ffffff;
+  --data-ficha-inactivos: #8a1c2c;
+  --data-ficha-detenida: #8e3fb5;
+  --data-ficha-caida: #d6283c;
+  --data-ficha-maduros: #4a9a3f;
+  --data-ficha-crecimiento: #1f6b36;
+  --data-ficha-fresco: #1a7f37;
+  --data-sev0: #e0b400;
+  --data-sev1: #ff9830;
+  --data-sev2: #f2495c;
+  --data-sev3: #c4162a;
+  --data-naranja: #ff9830;
+  --data-riel: #2a2d33;
+  --data-azul-boton: #3d71d9;
+  --data-logo-a: #f05a28;
+  --data-logo-b: #fbca0a;
 }`;
-const g = themeFromTokensWithReport(GRAFANA, theme);
+// `strong` es texto sobre las fichas y el fondo oscuro (4,5); las fichas, severidades, riel y botón son rellenos que llevan texto blanco encima:
+// se les pide solo que se distingan del panel (1,1), el contraste del texto lo juzga `qa` sobre lo que se ve.
+const FILL: DataRoleInput = { on: ["surface"], min: 1.1 };
+const g = themeFromTokensWithReport(TABLERO, theme, {
+  data: {
+    strong: { on: ["bg", "surface"], min: 4.5 },
+    fichaInactivos: FILL, fichaDetenida: FILL, fichaCaida: FILL, fichaMaduros: FILL, fichaCrecimiento: FILL, fichaFresco: FILL,
+    sev0: FILL, sev1: FILL, sev2: FILL, sev3: FILL, naranja: FILL, riel: FILL, azulBoton: FILL, logoA: FILL, logoB: FILL,
+  },
+});
 export const tableroTheme: Theme = g.theme;
 export const tableroReport = g.report;
-
-/**
- * Colores de datos del tablero que no tienen rol en `Theme` (fichas de estado, severidades, verde de frescura...).
- * El toolkit no tiene un lugar en el tema para esto: viven acá y las escenas los leen de este módulo.
- */
-export const tablero = {
-  strong: "#ffffff",
-  estados: { inactivo: "#a8243a", crecimiento: "#2e8b4a", maduro: "#73bf69", activacion: "#3d7fe0", caida: "#f2495c", estancado: "#e0b400", detenida: "#a352cc" },
-  fichas: { inactivos: "#8a1c2c", detenida: "#8e3fb5", caida: "#d6283c", maduros: "#4a9a3f", crecimiento: "#1f6b36", fresco: "#1a7f37" },
-  severidad: ["#e0b400", "#ff9830", "#f2495c", "#c4162a"],
-  naranja: "#ff9830",
-  riel: "#2a2d33",
-  fila: "#22252b",
-  azulBoton: "#3d71d9",
-  logo: "linear-gradient(135deg,#f05a28,#fbca0a)",
-} as const;
