@@ -63,6 +63,63 @@ const TOKENS = `:root {
   --data-estado-caida: #f2495c;
   --data-estado-estancado: #e0b400;
   --data-estado-detenida: #a352cc;
+  /* ---- estilo del design system (aesthetic): lo que el video ya no decide ---- */
+  /* forma: chips y píldoras redondeados del todo, borde de 1 px, tarjetas con radio lg */
+  --style-shape-corners: pill;
+  --style-shape-border: 1;
+  --style-shape-outlined: true;
+  /* superficie: blanca con sombra de marca; el vidrio del cartel del título (0,82 del original) */
+  --style-surface-kind: solid;
+  --style-surface-elevation: shadow;
+  --style-surface-opacity: 0.82;
+  /* texto: Geist semibold en los títulos, medium en los rótulos, degradado de marca en números y en la palabra resaltada */
+  --style-type-title-weight: semibold;
+  --style-type-label-weight: medium;
+  --style-type-title-tracking: 0;
+  --style-type-eyebrow-case: as-is;
+  --style-type-eyebrow-tracking: 0;
+  --style-type-numerals: gradient;
+  --style-type-highlight: gradient;
+  /* fondo: las nubes de marca */
+  --style-background-kind: clouds;
+  --style-background-intensity: 1;
+  /* movimiento: cada pieza entra a su manera, sin rebote; la cámara inclina un 10 % más que la base (0,055) y desenfoca al viajar */
+  --style-motion-entrance: auto;
+  --style-motion-overshoot: 0;
+  --style-motion-stagger: 4;
+  --style-motion-camera-blur: true;
+  --style-motion-camera-tilt: 1.1;
+  --style-motion-transition: wash;
+  /* decoración: garabatos a mano, viñeta de tinta (0,28 del original = 1,27 de la base) y degradado que respira cada 3,5 s (105 cuadros) */
+  --style-decor-doodles: true;
+  --style-decor-doodle-stroke: hand;
+  --style-decor-vignette: 1.27;
+  --style-decor-accent: bar;
+  --style-decor-gradient-loop: 105;
+  /* historias: cartel de vidrio, lista en un renglón con el subrayado bajo el nombre, se atraviesa el titular, muro de 5 x 6 sin desenfoque
+     de distancia en la apertura (con desenfoque en el cierre), cierre sobre blanco y firma sin barra */
+  --style-story-title-card: glass;
+  --style-story-list-layout: inline;
+  --style-story-list-underline: name;
+  --style-story-handoff: through;
+  --style-story-headline-size: md;
+  --style-story-closing-bg: surface;
+  --style-story-signoff-bar: false;
+  --style-story-wall-columns: 5;
+  --style-story-wall-rows: 6;
+  --style-story-wall-chip-scale: 1;
+  --style-story-wall-dolly: 20;
+  --style-story-wall-depth: 1;
+  --style-story-wall-blur-opening: false;
+  --style-story-wall-blur-closing: true;
+  /* gráficos, trazos y texto de efectos: los del original (trazo de 5 px, barras con radio md, llegada de las letras subiendo 24 px) */
+  --style-chart-bar-radius: md;
+  --style-chart-line-width: 5;
+  --style-chart-grid: auto;
+  --style-chart-fill: solid;
+  --style-line-weight: regular;
+  --style-line-cap: round;
+  --style-text-arrival: rise;
 }`;
 
 // Estados: se dibujan como puntos sobre el fondo claro de la marca y como anillo sobre el tablero oscuro; 3 sobre `bg` de cada tema.
@@ -82,8 +139,13 @@ const r = themeFromTokensWithReport(TOKENS, undefined, {
   },
 });
 
+// Movimiento de la marca (motion.tsx del original): `OUT` (0,16, 1, 0,3, 1), `IN_OUT` (0,65, 0, 0,35, 1) y la curva estándar de la marca
+// (0,4, 0, 0,2, 1). El adaptador de tokens todavía no lee `--ease-*`: se declara sobre el tema ya armado.
+const MOTION: Theme["motion"] = { easing: { standard: [0.4, 0, 0.2, 1], out: [0.16, 1, 0.3, 1], inOut: [0.65, 0, 0.35, 1] }, duration: r.theme.motion.duration };
+
 export const theme: Theme = {
   ...r.theme,
+  motion: MOTION,
   font: { ...r.theme.font, files: [400, 500, 600, 700].map((weight, i) => ({ weight, src: asset(`fonts/Geist-${["Regular", "Medium", "SemiBold", "Bold"][i]}.otf`) })) },
 };
 export const report = r.report;
@@ -128,6 +190,27 @@ const TABLERO = `:root {
   --data-azul-boton: #3d71d9;
   --data-logo-a: #f05a28;
   --data-logo-b: #fbca0a;
+  /* aro de foco que el video pone sobre una ficha cuando la pregunta la señala (es de la marca, no de la herramienta) */
+  --data-foco: #e7007e;
+  /* herramienta recreada: paneles de 6 px, controles de 4, ventana de 20; la sombra grande es el halo oscuro bajo el tablero */
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-panel: 6px;
+  --radius-lg: 20px;
+  --shadow-lg: 0 50px 100px -30px rgba(17,18,23,.9);
+  /* su propio estilo: planos y de contorno fino, títulos medium, sin garabatos ni viñeta, sin nubes */
+  --style-shape-corners: pill;
+  --style-shape-border: 1;
+  --style-shape-outlined: true;
+  --style-surface-kind: solid;
+  --style-surface-elevation: flat;
+  --style-type-title-weight: medium;
+  --style-type-label-weight: medium;
+  --style-type-eyebrow-case: as-is;
+  --style-background-kind: plain;
+  --style-decor-doodles: false;
+  --style-decor-vignette: 0;
+  --style-decor-gradient-loop: 0;
 }`;
 // `strong` es texto sobre las fichas y el fondo oscuro (4,5); las fichas, severidades, riel y botón son rellenos que llevan texto blanco encima:
 // se les pide solo que se distingan del panel (1,1), el contraste del texto lo juzga `qa` sobre lo que se ve.
@@ -136,7 +219,7 @@ const g = themeFromTokensWithReport(TABLERO, theme, {
   data: {
     strong: { on: ["bg", "surface"], min: 4.5 },
     fichaInactivos: FILL, fichaDetenida: FILL, fichaCaida: FILL, fichaMaduros: FILL, fichaCrecimiento: FILL, fichaFresco: FILL,
-    sev0: FILL, sev1: FILL, sev2: FILL, sev3: FILL, naranja: FILL, riel: FILL, azulBoton: FILL, logoA: FILL, logoB: FILL,
+    sev0: FILL, sev1: FILL, sev2: FILL, sev3: FILL, naranja: FILL, riel: FILL, azulBoton: FILL, logoA: FILL, logoB: FILL, foco: FILL,
   },
 });
 export const tableroTheme: Theme = g.theme;

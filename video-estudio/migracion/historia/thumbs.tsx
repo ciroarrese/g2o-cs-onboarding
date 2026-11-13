@@ -1,7 +1,7 @@
 // Miniatura real de Health Score para el cierre (lienzo de 560x340, quieta), portada de MiniHealth de Cierre.tsx.
 import React from "react";
 import { ThemeScope } from "video-estudio/kit";
-import { useTheme } from "video-estudio/themes";
+import { cornerRadius, surfaceStyle, useTheme } from "video-estudio/themes";
 import { tableroTheme } from "../theme";
 
 const SIZE = 200, R = 82, W = 24;
@@ -34,7 +34,7 @@ function Inner() {
         <Ring />
         <div style={{ display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
           {filas.map(([l, n, c]) => (
-            <div key={l} style={{ borderRadius: 6, background: c, color: t.data.strong, padding: "8px 12px", display: "flex", justifyContent: "space-between", fontSize: t.type.ui.sm }}>
+            <div key={l} style={{ borderRadius: cornerRadius(t, "panel"), background: c, color: t.data.strong, padding: "8px 12px", display: "flex", justifyContent: "space-between", fontSize: t.type.ui.sm }}>
               {l}
               <b style={{ fontSize: t.type.ui.md }}>{n}</b>
             </div>
@@ -46,7 +46,7 @@ function Inner() {
 }
 
 export const MiniHealth: React.FC = () => (
-  <ThemeScope theme={tableroTheme} paint style={{ width: 560, height: 340, borderRadius: 22, border: `1px solid ${tableroTheme.color.border}`, boxSizing: "border-box", overflow: "hidden" }}>
+  <ThemeScope theme={tableroTheme} paint style={{ width: 560, height: 340, ...surfaceStyle(tableroTheme, "window"), background: tableroTheme.color.bg, boxSizing: "border-box", overflow: "hidden" }}>
     <Inner />
   </ThemeScope>
 );
