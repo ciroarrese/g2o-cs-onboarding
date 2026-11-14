@@ -14,7 +14,7 @@ import { CountUp, DoodleArrow, DoodleCircle, Eyebrow, Stage, ThemeScope, Vignett
 import type { CameraKey } from "video-estudio/kit";
 import { fade as op } from "video-estudio/fx/core"; // opacidad solo mientras cambia (en reposo no se emite: residuos que rompen --check)
 import { TopicHeadline, useTopic } from "video-estudio/stories";
-import { ThemeProvider, contrastRatio, cornerRadius, entrance, staggerFrames, surfaceStyle, textStyle, useTheme, withAlpha } from "video-estudio/themes";
+import { ThemeProvider, contrastRatio, cornerRadius, entrance, parseColor, staggerFrames, surfaceStyle, textStyle, useTheme, withAlpha } from "video-estudio/themes";
 import type { Theme } from "video-estudio/themes";
 import { tableroTheme, theme as brand } from "../theme";
 
@@ -25,6 +25,17 @@ const bez = (a: number, b: number, c: number, d: number) => Easing.bezier(a, b, 
 
 /** Texto sobre un relleno de datos: el blanco del tablero y, si no llega a 3:1 (amarillo, naranja, verde claro), el fondo oscuro del tema. */
 const onFill = (t: ReturnType<typeof useTheme>, bg: string) => (contrastRatio(t.data.strong, bg) >= 3 ? t.data.strong : t.color.bg);
+
+/** Opacidad mínima (desde `from`) con la que `fg` atenuado sobre `bg` sigue llegando a `min`:1. Un texto "apagado" con una opacidad fija (0,40) solo se lee con la paleta para la que se eligió. */
+const dimOpacity = (fg: string, bg: string, min = 3.05, from = 0.4) => {
+  const f = parseColor(fg), b = parseColor(bg);
+  if (!f || !b) return from;
+  for (let a = from; a < 1; a += 0.01) {
+    const mix = `rgb(${[f.r, f.g, f.b].map((c, i) => Math.round(c * a + [b.r, b.g, b.b][i]! * (1 - a))).join(",")})`;
+    if (contrastRatio(mix, bg) >= min) return +a.toFixed(2);
+  }
+  return 1;
+};
 
 // Tamaños de letra de la interfaz recreada: `type.ui` del tema (xs 15, sm 17, md 22) y los escalones de `type`; el número grande de las fichas es del mundo recreado.
 const STAT = 58;
@@ -63,9 +74,12 @@ const DONUT = { cx: 230, cy: 420, r: 150, w: 34 };
 const TR = { x: 2100, y: 200, w: 1420, h: 880 };
 
 // ---------- cámara (foco x, y y escala; misma tabla que el original) ----------
+// Vista general del tablero entero: el foco está más arriba que en el original (780) para que la barra superior y los filtros del tablero (mundo y 0 a 140)
+// queden por debajo de la franja del titular (hasta y = 170, docs/guia-escenas.md §13a): el cartel del titular cambia de ancho y de alto con el design system.
+const VISTA_Y = 640;
 const KEYS: CameraKey[] = ([
   [0, 960, -800, 0.95], [140, 960, -800, 0.95],
-  [196, DONUT.cx + 100, DONUT.cy, 1.2], [232, 960, 780, 0.6], [330, 960, 780, 0.6],
+  [196, DONUT.cx + 100, DONUT.cy, 1.2], [232, 960, VISTA_Y, 0.6], [330, 960, VISTA_Y, 0.6],
   [346, 380, 420, 1.45], [556, 380, 420, 1.45], // las cuatro preguntas
   [584, 960, 1060, 0.95], [632, 960, 1060, 0.95], [652, 620, 1000, 1.45], [720, 620, 1000, 1.45], // cola de atención
   [760, 960, 1060, 0.95], [782, 1900, 700, 0.5], [804, TR.x + TR.w / 2, TR.y + TR.h / 2, 0.98],
@@ -158,12 +172,12 @@ const ColumnLabels: React.FC<{ f: number }> = ({ f }) => {
 };
 
 // ---------- el tablero ----------
-const Panel: React.FC<{ x: number; y: number; w: number; h: number; title?: string; f: number; at: number; qa?: string; children?: React.ReactNode; style?: React.CSSProperties }> = ({ x, y, w, h, title, f, at, qa, children, style }) => {
+const Panel: React.FC<{ x: number; y: number; w: number; h: number; title?: string; titleOpacity?: number; f: number; at: number; qa?: string; children?: React.ReactNode; style?: React.CSSProperties }> = ({ x, y, w, h, title, titleOpacity = 1, f, at, qa, children, style }) => {
   const t = useTheme();
   const a = kf(f, [at, at + 18], [0, 1], OUT);
   return (
     <div data-qa-ignore={qa} style={{ position: "absolute", left: x, top: y, width: w, height: h, ...surfaceStyle(t, "panel"), overflow: "hidden", ...flyInZ(a, { from: 160, perspective: 2400 }), ...style }}>
-      {title && <div style={{ padding: "12px 16px 0", fontSize: t.type.ui.sm, ...textStyle(t, "title"), color: t.color.text }}>{title}</div>}
+      {title && <div style={{ padding: "12px 16px 0", fontSize: t.type.ui.sm, ...textStyle(t, "title"), color: t.color.text, opacity: op(titleOpacity) }}>{title}</div>}
       {children}
     </div>
   );
@@ -196,14 +210,39 @@ const activeQ = (f: number) => {
   return -1;
 };
 
+/** Opacidad de la píldora de pregunta y avance de la de respuesta en el cuadro `f` (las usan las píldoras y el texto que dejan debajo). */
+const qState = (f: number) => {
+  const qi = activeQ(f);
+  if (qi < 0) return { qi, a: 0, ans: 0 };
+  const start = T.q[qi]!;
+  const end = qi === QUESTIONS.length - 1 ? T.qEnd : T.q[qi + 1]!;
+  return { qi, a: kf(f, [start, start + 10, end - 6, end], [0, 1, 1, 0]), ans: kf(f, [start + 14, start + 26], [0, 1], OUT) };
+};
+
+// Geometría fija de la tabla "Estado consolidado" (encabezado y filas de alto fijo): la respuesta tapa filas según su altura, y esas filas se apagan debajo de ella.
+const TABLA = { top: 180 + 52, headH: 27, rowH: 47 }; // alto total con el borde de 1 px (encabezado: 18 + 8 de relleno + 1; fila: 46 + 1)
+const PILL_H = 56; // cota del alto de la píldora de respuesta (relleno 10 + 10 y una línea de 22 px)
+/** Cuánto se apaga el texto de la primera columna de la fila `i` (-1 = encabezado) bajo la píldora de respuesta. */
+const underAnswer = (f: number, i: number) => {
+  const { qi, a, ans } = qState(f);
+  if (qi < 0) return 1;
+  const firstRow = STATES.findIndex((_, k) => QUESTIONS[qi]!.sts.includes(k));
+  const pillTop = 180 + 70 + firstRow * 36 + 18 - 24;
+  const top = i < 0 ? TABLA.top : TABLA.top + TABLA.headH + i * TABLA.rowH;
+  const h = i < 0 ? TABLA.headH : TABLA.rowH;
+  const hit = top < pillTop + PILL_H + 4 && top + h > pillTop - 4;
+  return hit ? 1 - Math.min(1, ans * a * 2) : 1;
+};
+
 const DonutPanel: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
   const draw = kf(f, [T.morph[1] - 10, T.morph[1] + 16], [0, 1], OUT);
   const qi = activeQ(f);
   const focus = qi >= 0 ? QUESTIONS[qi]!.sts : [];
   let acc = 0;
+  const dim = dimOpacity(t.color.text, t.color.surface); // las filas que no son la pregunta se apagan sin bajar de 3:1
   return (
-    <Panel x={20} y={180} w={640} h={460} f={f} at={T.build - 30} title="Distribución de estados (por canal)">
+    <Panel x={20} y={180} w={640} h={460} f={f} at={T.build - 30} title="Distribución de estados (por canal)" titleOpacity={1 - Math.min(1, qState(f).a * 2)}>
       <svg style={{ position: "absolute", left: 0, top: 0 }} width={640} height={460}>
         {STATES.map((s, si) => {
           const a0 = -Math.PI / 2 + (acc / TOTAL) * Math.PI * 2;
@@ -226,7 +265,7 @@ const DonutPanel: React.FC<{ f: number }> = ({ f }) => {
         {STATES.map((s, si) => {
           const hot = focus.includes(si);
           return (
-            <div key={s.key} style={{ display: "flex", alignItems: "center", gap: 8, height: 36, padding: "0 8px", borderRadius: cornerRadius(t, "control"), color: t.color.text, background: hot ? withAlpha(t.data[COLOR_KEY[si]!], 0.2) : undefined, opacity: focus.length && !hot ? 0.4 : undefined }}>
+            <div key={s.key} style={{ display: "flex", alignItems: "center", gap: 8, height: 36, padding: "0 8px", borderRadius: cornerRadius(t, "control"), color: t.color.text, background: hot ? withAlpha(t.data[COLOR_KEY[si]!], 0.2) : undefined, opacity: focus.length && !hot ? dim : undefined }}>
               <span style={{ width: 14, height: 4, borderRadius: cornerRadius(t, "bar"), background: t.data[COLOR_KEY[si]!] }} />
               <span style={{ flex: 1 }}>{s.l}</span>
               <span style={{ color: t.data.strong, ...textStyle(t, "label", { strong: true }) }}>{s.n}</span>
@@ -246,17 +285,16 @@ const Questions: React.FC<{ f: number }> = ({ f }) => {
   const Q = QUESTIONS[qi]!;
   const start = T.q[qi]!;
   const end = qi === QUESTIONS.length - 1 ? T.qEnd : T.q[qi + 1]!;
-  const a = kf(f, [start, start + 10, end - 6, end], [0, 1, 1, 0]);
-  const ans = kf(f, [start + 14, start + 26], [0, 1], OUT);
+  const { a, ans } = qState(f);
   const firstRow = STATES.findIndex((_, i) => Q.sts.includes(i));
   const rowY = 180 + 70 + firstRow * 36 + 18;
   // la pregunta y la respuesta son píldoras de la marca (superficie y radio de chip del design system) que entran por `entrance`
   return (
     <>
-      <div style={{ position: "absolute", left: 60, top: 196, padding: "10px 20px", ...surfaceStyle(t, "card", { corner: "chip", level: "lg" }), color: t.color.text, fontSize: t.type.ui.md, ...textStyle(t, "label", { strong: true }), ...entrance(t, a, 0, { native: "rise", distance: -16 }), whiteSpace: "nowrap" }}>
+      <div style={{ position: "absolute", left: 60, top: 196, padding: "10px 20px", ...surfaceStyle(t, "card", { corner: "chip", level: "lg" }), color: t.color.text, fontSize: t.type.ui.md, ...textStyle(t, "label", { strong: true }), ...entrance(t, a, 0, { native: "rise", distance: -16 }), whiteSpace: "nowrap", lineHeight: 1.2 }}>
         {Q.q}
       </div>
-      <div style={{ position: "absolute", left: 680, top: rowY - 24, padding: "10px 22px", ...surfaceStyle(t, "chip", { on: false, level: "sm" }), border: "none", background: t.gradient.brand, color: t.color.onAccent, fontSize: t.type.ui.md, ...textStyle(t, "label", { strong: true }), ...entrance(t, ans * a, 0, { native: "scale", from: 0.8 }), whiteSpace: "nowrap" }}>
+      <div style={{ position: "absolute", left: 680, top: rowY - 24, padding: "10px 22px", ...surfaceStyle(t, "chip", { on: false, level: "sm" }), border: "none", background: t.gradient.brand, color: t.color.onAccent, fontSize: t.type.ui.md, ...textStyle(t, "label", { strong: true }), ...entrance(t, ans * a, 0, { native: "scale", from: 0.8 }), whiteSpace: "nowrap", lineHeight: 1.2 }}>
         {Q.a}
       </div>
       {Q.sts.map((si) => (
@@ -348,14 +386,14 @@ const Dashboard: React.FC<{ f: number }> = ({ f }) => {
       <DonutPanel f={f} />
       <Panel x={680} y={180} w={760} h={460} f={f} at={b} qa="min-size" title="Estado consolidado por cliente">
         <div style={{ position: "absolute", left: 16, right: 16, top: 52, fontSize: t.type.ui.xs }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 90px 150px", color: t.color.textMuted, paddingBottom: 8, borderBottom: `1px solid ${t.color.border}` }}>
-            <span>Cliente</span>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 90px 150px", height: 18, color: t.color.textMuted, paddingBottom: 8, borderBottom: `1px solid ${t.color.border}` }}>
+            <span style={{ opacity: op(underAnswer(f, -1)) }}>Cliente</span>
             <span>Canales</span>
             <span>Estado consolidado</span>
           </div>
-          {FILAS_CLIENTE.map(([c, n, s]) => (
+          {FILAS_CLIENTE.map(([c, n, s], i) => (
             <div key={c} style={{ display: "grid", gridTemplateColumns: "1fr 90px 150px", alignItems: "center", height: 46, borderBottom: `1px solid ${t.color.border}`, color: t.color.text }}>
-              <span>{c}</span>
+              <span style={{ opacity: op(underAnswer(f, i)) }}>{c}</span>
               <span>{n}</span>
               <span style={{ height: 46, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 10, background: t.data[COLOR_KEY[s]!], color: onFill(t, t.data[COLOR_KEY[s]!]) }}>{STATES[s]!.l}</span>
             </div>
