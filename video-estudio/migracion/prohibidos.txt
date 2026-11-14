@@ -1,11 +1,12 @@
 # Lista de términos prohibidos de la prueba de migración (revisar con ve-privacy).
 # OJO: los nombres reales de clientes y agentes NO los conoce quien armó esta lista; lo que sigue son PLACEHOLDERS que marcan
 # el tipo de dato. El dueño tiene que reemplazarlos por los reales antes de dar la verificación por buena.
-# Montos y cifras reales de clientes
-/\$\s?\d{2,3}(\.\d{3})+/
+# Montos: el video usa cifras emuladas (aprobado por el dueño), así que no hay patrón genérico de montos. Si aparece una cifra real conocida, agregarla acá tal cual.
+# (sin patrón de montos)
 # Correos y dominios internos
 /[\w.+-]+@[\w-]+\.[\w.-]+/
-/\b[\w-]+\.(com|com\.ar|net|io)\b/i
+# Dominios: se permite solo el dominio ficticio ejemplo.com.ar de las escenas
+/\b(?!(?:[\w-]+\.)*ejemplo\.)[\w-]+\.(com|com\.ar|net|io)\b/i
 # Tickets reales: el video solo usa números emulados entre 48190 y 48239 (los de las escenas aprobadas, incluido el reporte interno 48231); este patrón avisa de cualquier otro número de ticket
 /ticket\s*#?\s*(?!481[9]\d|482[0-3]\d)\d{5}/i
 # --- PLACEHOLDERS: reemplazar por nombres reales ---

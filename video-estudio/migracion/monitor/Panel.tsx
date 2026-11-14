@@ -208,6 +208,7 @@ const TicketButton: React.FC<{ f: number }> = ({ f }) => {
 const Detail: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
   const open = appear(f, T.rowClick + 5, T.rowClick + 35);
+  if (open <= 0) return null; // cerrado: no hay texto escondido en una caja de alto cero
   return (
     <div style={{ height: open * DETAIL_H, overflow: "hidden" }}>
       {/* el detalle se abre hacia abajo: mientras crece, su borde corta el contenido a propósito (no es texto cortado por error) */}
@@ -292,9 +293,12 @@ const Table: React.FC<{ f: number; filterOn: number }> = ({ f, filterOn }) => {
         const tint = isTarget ? rowClick * 0.12 + kf(f, [T.rowClick, T.rowClick + 20], [0, 0.05]) : 0;
         const e = entrance(t, rowIn, i, { native: "slide", side: "right", distance: 30 });
         if (tops[i]! + TABLE.row * 0.5 > TABLE.h - 6) return isTarget ? <Detail key={i} f={f} /> : null;
+        // mientras el detalle crece, las filas de abajo se corren hacia el borde de la tabla: se apagan antes de llegar y el borde las corta a propósito
+        const sliding = f >= T.rowClick + 5 && f <= T.rowClick + 37;
+        const nearEdge = sliding ? kf(tops[i]! + TABLE.row / 2, [TABLE.h - 70, TABLE.h - 6], [1, 0], Easing.linear) : 1;
         return (
           <React.Fragment key={i}>
-            <div style={{ ...e, height: TABLE.row * (1 - collapse), opacity: op(rowIn * (1 - collapse)), overflow: "hidden", boxSizing: "border-box", display: "flex", alignItems: "center", padding: "0 26px", borderBottom: `1px solid ${t.color.surfaceAlt}`, background: tint > 0 ? withAlpha(t.color.accent, tint) : undefined, fontSize: t.type.ui.sm, lineHeight: 1.25, color: t.color.text, whiteSpace: "nowrap" }}>
+            <div data-qa-ignore={sliding && i > target ? "clip" : undefined} style={{ ...e, height: TABLE.row * (1 - collapse), opacity: op(rowIn * (1 - collapse) * nearEdge), overflow: "hidden", boxSizing: "border-box", display: "flex", alignItems: "center", padding: "0 26px", borderBottom: `1px solid ${t.color.surfaceAlt}`, background: tint > 0 ? withAlpha(t.color.accent, tint) : undefined, fontSize: t.type.ui.sm, lineHeight: 1.25, color: t.color.text, whiteSpace: "nowrap" }}>
               <StatusPill st={r.st} />
               <div style={{ flex: 1, ...textStyle(t, "label") }}>{r.d}</div>
               <div style={{ minWidth: cols.sc, ...grey }}>{r.s}</div>

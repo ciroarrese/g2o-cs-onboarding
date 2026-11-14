@@ -21,8 +21,8 @@ const MONITOR = `:root {
   --name: sincro-monitor;
   --color-background: #f7f7f8;
   --color-text-muted: #5c5b5f;
-  /* letra de la herramienta: 17 (rótulos, pastillas; el original usaba 15: a 17 llegan a 18 px con el acercamiento de 1,12), 19 (filas, chips, botones: con la inclinación del viaje de 190 a 225 a 18 se bajaba de 18 px en pantalla), 20 (botón de ticket, subtítulo de la dona) */
-  --type-ui-xs: 17px;
+  /* letra de la herramienta: 18 (rótulos y pastillas de estado; el original usaba 15: las pastillas de la tabla se ven a escala 1 antes del acercamiento), 19 (filas, chips, botones: con la inclinación del viaje de 190 a 225 a 18 se bajaba de 18 px en pantalla), 20 (botón de ticket, subtítulo de la dona) */
+  --type-ui-xs: 18px;
   --type-ui-sm: 19px;
   --type-ui-md: 20px;
   ${SOMBRAS}

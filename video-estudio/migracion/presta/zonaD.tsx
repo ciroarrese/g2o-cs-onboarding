@@ -42,7 +42,7 @@ const Configuracion: React.FC<{ f: number }> = ({ f }) => {
         const r = filaCfg(i);
         const noFill = t.data.noRojo;
         return (
-          <div key={name} style={{ position: "absolute", left: 26, top: CFG.rowY + i * CFG.rowH - 50, width: r.w, minHeight: r.h, boxSizing: "border-box", display: "flex", alignItems: "center", gap: 16, borderBottom: `1px solid ${t.color.border}`, opacity: op(rowIn) }}>
+          <div key={name} data-qa-ignore={f >= 858 && f <= 940 ? "offscreen" : undefined /* las filas de abajo entran justo cuando la cámara arranca el acercamiento a los interruptores y quedan en el borde del encuadre */} style={{ position: "absolute", left: 26, top: CFG.rowY + i * CFG.rowH - 50, width: r.w, minHeight: r.h, boxSizing: "border-box", display: "flex", alignItems: "center", gap: 16, borderBottom: `1px solid ${t.color.border}`, opacity: op(rowIn) }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: t.type.eyebrow, ...textStyle(t, "title"), lineHeight: 1.25 }}>{name}</div>
               <div style={{ fontSize: t.type.ui.sm, color: t.color.textMuted, marginTop: 4, lineHeight: 1.25 }}>{desc}</div>

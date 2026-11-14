@@ -234,7 +234,7 @@ export const Modulo: React.FC<{ f: number }> = ({ f }) => {
         const x = (1 - q) * (1 - q) * sx + 2 * (1 - q) * q * HUB.x + q * q * ex;
         const y = (1 - q) * (1 - q) * sy + 2 * (1 - q) * q * (HUB.y + 40) + q * q * ey;
         return (
-          <div key={l.label} style={{ position: "absolute", left: 0, top: 0, transform: `translate(${Math.round(x)}px, ${Math.round(y)}px) translate(-50%, -50%)`, zIndex: 30 }}>
+          <div key={l.label} style={{ position: "absolute", left: 0, top: 0, transform: `translate(${Math.round(x)}px, ${Math.round(y)}px) translate(-50%, -50%)`, opacity: op(kf(f, [l.r[1] - 8, l.r[1]], [1, 0])), zIndex: 30 }}>
             <Chip c={l.c}>{l.label}</Chip>
           </div>
         );

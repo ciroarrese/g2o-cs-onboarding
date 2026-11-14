@@ -22,7 +22,7 @@ const AlertToast: React.FC<{ f: number }> = ({ f }) => {
   const h = ALERT.h + (96 - ALERT.h) * fold;
   const surf = surfaceStyle(t, "card", { level: "lg" });
   return (
-    <div style={{ position: "absolute", left: Math.round(ALERT_C.x - w / 2), top: Math.round(ALERT_C.y - h / 2 - (1 - drop) * 70), width: Math.round(w), height: Math.round(h), boxSizing: "border-box", ...surf, borderRadius: cornerRadius(t, "card") + fold * 30, background: fold > 0.6 ? t.gradient.brand : t.color.surface, border: `1.5px solid ${withAlpha(t.color.accent, 0.33)}`, boxShadow: `inset ${6 * (1 - fold)}px 0 0 ${t.color.danger}, ${t.shadow.lg}`, opacity: op(drop), overflow: "hidden", zIndex: 30 }}>
+    <div /* el aviso se pliega en una campanita: mientras se achica, su borde corta el texto, que ya se apagó a la mitad del pliegue */ data-qa-ignore={fold > 0 ? "clip" : undefined} style={{ position: "absolute", left: Math.round(ALERT_C.x - w / 2), top: Math.round(ALERT_C.y - h / 2 - (1 - drop) * 70), width: Math.round(w), height: Math.round(h), boxSizing: "border-box", ...surf, borderRadius: cornerRadius(t, "card") + fold * 30, background: fold > 0.6 ? t.gradient.brand : t.color.surface, border: `1.5px solid ${withAlpha(t.color.accent, 0.33)}`, boxShadow: `inset ${6 * (1 - fold)}px 0 0 ${t.color.danger}, ${t.shadow.lg}`, opacity: op(drop), overflow: "hidden", zIndex: 30 }}>
       {/* el texto se apaga antes de que el borde en pliegue lo corte: a media transición ya casi no se ve */}
       <div style={{ padding: "16px 22px", opacity: op(1 - fold * 2), display: "flex", gap: 14 }}>
         <div style={{ width: 44, height: 44, borderRadius: 22, background: withAlpha(t.color.danger, 0.09), display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
