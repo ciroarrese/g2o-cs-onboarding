@@ -148,7 +148,7 @@ const TOKENS = `:root {
 }`;
 
 // Estados: se dibujan como puntos sobre el fondo claro de la marca y como anillo sobre el tablero oscuro; 3 sobre `bg` de cada tema.
-const ESTADO: DataRoleInput = { on: ["bg"], min: 3 };
+const ESTADO: DataRoleInput = { on: ["bg"], min: 3, scope: "puntos de la lluvia sobre el fondo de cada sistema; paleta aprobada de la herramienta recreada (maduro y estancado no llegan a 3:1 sobre blanco)" };
 // Pares de la paleta de marca aprobada que no llegan a 4,5:1 (naranja y verde claros, el rosa sobre fondo claro...): se dan por conocidos en el
 // informe del tema. `qa` sigue juzgando el texto real en pantalla; acá el degradado de marca solo se usa como texto de números grandes
 // (qa no lo juzga) y los estados salen de `data`. No se reconocen los pares de `data.*`: esos sí se ven en pantalla con poco contraste.
