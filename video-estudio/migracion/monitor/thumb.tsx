@@ -61,8 +61,8 @@ function Inner() {
         </div>
       </div>
       {/* el aviso cae sobre la esquina de abajo */}
-      <div style={{ position: "absolute", right: 14, bottom: 12, width: 300, boxSizing: "border-box", padding: "10px 14px", ...surfaceStyle(t, "card", { level: "lg" }), boxShadow: `inset 5px 0 0 ${t.color.danger}, ${t.shadow.lg}`, display: "flex", gap: 10, alignItems: "center" }}>
-        <svg width={26} height={26} viewBox="0 0 24 24"><path d={ICON.bell} fill="none" stroke={t.color.danger} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" /></svg>
+      <div style={{ position: "absolute", right: 14, bottom: 12, width: 326, boxSizing: "border-box", padding: "10px 14px", ...surfaceStyle(t, "card", { level: "lg" }), boxShadow: `inset 5px 0 0 ${t.color.danger}, ${t.shadow.lg}`, display: "flex", gap: 10, alignItems: "center" }}>
+        <svg width={26} height={26} viewBox="0 0 24 24" style={{ flexShrink: 0 }}><path d={ICON.bell} fill="none" stroke={t.color.danger} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" /></svg>
         <div style={{ lineHeight: 1.25, whiteSpace: "nowrap" }}>
           <div style={{ fontSize: t.type.ui.xs * 0.95, ...textStyle(t, "title"), color: t.color.text }}>Nuevo incidente · prioridad alta</div>
           <div style={{ fontSize: t.type.ui.xs * 0.8, color: t.color.textMuted }}>{STORE}</div>

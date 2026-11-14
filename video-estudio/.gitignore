@@ -1,2 +1,4 @@
 .ve-cache/
 out/
+# audio derivado (contiene la pista con licencia: no se redistribuye)
+migracion/audio/

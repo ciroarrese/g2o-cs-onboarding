@@ -40,9 +40,10 @@ export const MiniAsistente: React.FC = () => {
   return (
     <div style={{ position: "absolute", left: 0, top: 0, width: 560, height: 340, boxSizing: "border-box", ...surfaceStyle(t, "window"), background: t.color.bg, overflow: "hidden" }}>
       <div style={{ position: "absolute", left: 18, top: 14, width: 400, whiteSpace: "nowrap", fontSize: t.type.ui.sm, lineHeight: 1.25, ...textStyle(t, "title"), color: t.color.text }}>Pedidos que no bajan al ERP</div>
+      {/* los renglones llevan data-qa-ignore="overlap": en el cierre el panel viaja inclinado y las cajas rectas de dos renglones seguidos se tocan aunque el texto no (falso positivo) */}
       <div style={{ position: "absolute", left: 18, top: 50, width: 524, minHeight: 140, boxSizing: "border-box", ...surfaceStyle(t, "card", { corner: "panel", on: true, level: "sm" }), padding: "12px 14px", fontSize: t.type.ui.xs, lineHeight: 1.5, color: t.color.text }}>
         {FORMATTED.map((l, i) => (
-          <div key={i} style={{ display: "flex", gap: 6, whiteSpace: "nowrap", paddingLeft: l.bullet ? 6 : 0 }}>
+          <div key={i} data-qa-ignore="overlap" style={{ display: "flex", gap: 6, whiteSpace: "nowrap", paddingLeft: l.bullet ? 6 : 0 }}>
             {l.bullet && <span>•</span>}
             <span>{l.seg.map(([s, b], j) => (b ? <b key={j}>{s}</b> : <span key={j}>{s}</span>))}</span>
           </div>

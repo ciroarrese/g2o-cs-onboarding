@@ -4,10 +4,9 @@ import type { StorySpec } from "video-estudio/stories";
 export const spec: StorySpec = {
   title: { text: "Proyectos con IA", highlight: "con IA" },
   topics: [
-    // Los tres primeros no tienen escena en esta prueba, pero en el video aprobado ya se vieron: `seen` los muestra tildados en las vueltas.
-    { id: "asistente-ia", name: "Asistente IA", line: "responde, dicta y escala sin salir del ticket", seen: true },
-    { id: "sincro-presta", name: "Módulo Sincro Presta", line: "la tienda y el ERP, siempre sincronizados", seen: true },
-    { id: "sincro-monitor", name: "Sincro Monitor", line: "avisa antes de que el cliente reclame", seen: true },
+    { id: "asistente-ia", name: "Asistente IA", line: "responde, dicta y escala sin salir del ticket" },
+    { id: "sincro-presta", name: "Módulo Sincro Presta", line: "la tienda y el ERP, siempre sincronizados" },
+    { id: "sincro-monitor", name: "Sincro Monitor", line: "avisa antes de que el cliente reclame" },
     { id: "health-score", name: "Health Score", line: "a quién contactar primero" },
   ],
   labels: [
