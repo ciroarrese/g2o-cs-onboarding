@@ -265,7 +265,7 @@ const Table: React.FC<{ f: number; filterOn: number }> = ({ f, filterOn }) => {
   const p = appear(f, 150, 175);
   const target = ROWS.findIndex((r) => r.st === FOCUS_STATUS);
   const rowClick = kf(f, [T.rowClick - 2, T.rowClick + 2, T.rowClick + 10], [0, 1, 0]);
-  const cols = { st: 200, sc: 190, t: 110, dur: 100 };
+  const cols = { st: 200, sc: 180, t: 140, dur: 110 };
   const grey = { fontSize: t.type.ui.sm, color: t.color.textMuted };
   // alto acumulado: con el detalle abierto, las filas que quedan más abajo del borde de la tabla no se dibujan (no hay texto oculto por el borde)
   const detailH = appear(f, T.rowClick + 5, T.rowClick + 35) * DETAIL_H;

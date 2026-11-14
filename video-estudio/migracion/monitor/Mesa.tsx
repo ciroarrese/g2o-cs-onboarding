@@ -203,7 +203,7 @@ const FlyingTicket: React.FC<{ f: number }> = ({ f }) => {
       <div style={{ width: CARD_W, height: MESA.card, display: "flex", justifyContent: "center" }}>
         <div data-qa-ignore={p < 1 ? "clip" : undefined} /* la tarjeta crece de 220 px al ancho de la fila: mientras crece, su borde corta el texto a propósito */ style={{ width: Math.round(w), height: MESA.card, boxSizing: "border-box", ...surfaceStyle(t, "panel", { glow: lift * 0.6, level: "lg" }), border: `2px solid ${t.color.accent}`, transform: `rotate(${(Math.sin(p * Math.PI) * -6).toFixed(2)}deg)`, display: "flex", alignItems: "center", gap: 16, padding: "0 22px", fontSize: t.type.ui.md, ...textStyle(t, "title"), color: t.color.accent, whiteSpace: "nowrap", overflow: "hidden", lineHeight: 1.25 }}>
           {/* el contenido aparece cuando la tarjeta ya despegó: apenas salida del botón es chico y se ve cortado por su borde */}
-          <span style={{ display: "flex", alignItems: "center", gap: 16, opacity: op(kf(p, [0.15, 0.35], [0, 1])) }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 16, opacity: op(kf(p, [0.02, 0.2], [0, 1])) }}>
             <svg width={24} height={24} viewBox="0 0 24 24" style={{ flexShrink: 0 }}><path d="M4 7h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4z" fill="none" stroke={t.color.accent} strokeWidth={2} /></svg>
             {TICKET}
             <span style={{ color: t.color.text }}>Error en servidor · {STORE}</span>
