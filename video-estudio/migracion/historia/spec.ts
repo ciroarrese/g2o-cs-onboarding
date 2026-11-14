@@ -21,8 +21,6 @@ export const spec: StorySpec = {
   // El original cierra con el logo y "Hecho con Claude" (Claude en negrita): sin texto grande.
   signoff: { logo: "brand/logo-grow2on.png", tagline: "Hecho con **Claude**" },
   timing: { closing: 450 },
-  // Todo lo estético (cartel de vidrio, lista en un renglón, muro de 5 x 6, atravesado del titular, cierre blanco, degradado de 105 cuadros)
-  // sale del design system de la marca (`theme.style`, ver ../theme.ts). Lo único que queda por video: el desenfoque de las nubes (56 px
-  // del original), porque `theme.cloud` todavía no tiene `blur`.
-  design: { clouds: { blur: 56 } },
+  // Todo lo estético (cartel, lista, muro, nubes, pasos, atravesado, cierre, degradado) sale del design system de la marca (`theme.style`, ver ../theme.ts):
+  // el spec ya no lleva `design`.
 };

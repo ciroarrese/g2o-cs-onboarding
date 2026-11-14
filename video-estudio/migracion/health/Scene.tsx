@@ -6,11 +6,11 @@
 // La escena no decide estética: la cámara (inclinación y desenfoque), los garabatos, la viñeta, el titular, el velo, las superficies, los
 // radios, los pesos de letra, las entradas y los pasos entre elementos salen del design system (`theme.style`, ver ../theme.ts) por las
 // ayudas del toolkit. El tablero es un design system propio (`tableroTheme`, plano y con radios de herramienta) dentro de un `ThemeScope`.
-// Los paneles entran en profundidad con `flyInZ` (como el translateZ del original); los colores de la interfaz recreada son `theme.data`
+// Los paneles entran en profundidad (`entrance` con `motion.entrance: depth` del tablero, como el translateZ del original); los colores de la interfaz recreada son `theme.data`
 // y su letra, `type.ui`. Distinto del original: el mundo no usa `preserve-3d` (el plano se inclina entero).
 import React from "react";
 import { Easing, random, useFormat, useFrame } from "video-estudio/engine";
-import { CountUp, DoodleArrow, DoodleCircle, Eyebrow, Stage, ThemeScope, Vignette, Wash, World, flyInZ, hideFromScale, kf, useCameraAt, zoomThrough } from "video-estudio/kit";
+import { CountUp, DoodleArrow, DoodleCircle, Eyebrow, Stage, ThemeScope, Vignette, Wash, World, hideFromScale, kf, useCameraAt, zoomThrough } from "video-estudio/kit";
 import type { CameraKey } from "video-estudio/kit";
 import { fade as op } from "video-estudio/fx/core"; // opacidad solo mientras cambia (en reposo no se emite: residuos que rompen --check)
 import { TopicHeadline, useTopic } from "video-estudio/stories";
@@ -27,7 +27,7 @@ const bez = (a: number, b: number, c: number, d: number) => Easing.bezier(a, b, 
 const onFill = (t: ReturnType<typeof useTheme>, bg: string) => (contrastRatio(t.data.strong, bg) >= 3 ? t.data.strong : t.color.bg);
 
 /** Opacidad mínima (desde `from`) con la que `fg` atenuado sobre `bg` sigue llegando a `min`:1. Un texto "apagado" con una opacidad fija (0,40) solo se lee con la paleta para la que se eligió. */
-const dimOpacity = (fg: string, bg: string, min = 3.05, from = 0.4) => {
+const dimOpacity = (fg: string, bg: string, min = 4.55, from = 0.4) => {
   const f = parseColor(fg), b = parseColor(bg);
   if (!f || !b) return from;
   for (let a = from; a < 1; a += 0.01) {
@@ -146,7 +146,8 @@ const Dots: React.FC<{ f: number }> = ({ f }) => {
 
 const ColumnLabels: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
-  const out = kf(f, [T.morph[0] - 6, T.morph[0] + 10], [1, 0]);
+  // los rótulos se van antes de que la cámara arranque el viaje a la dona (a 8 cuadros del inicio el último, a la derecha, ya sobresalía del cuadro con tipografías anchas)
+  const out = kf(f, [T.morph[0] - 14, T.morph[0] - 2], [1, 0]);
   if (out <= 0) return null;
   const DOTS = dotsFor(t);
   return (
@@ -176,7 +177,7 @@ const Panel: React.FC<{ x: number; y: number; w: number; h: number; title?: stri
   const t = useTheme();
   const a = kf(f, [at, at + 18], [0, 1], OUT);
   return (
-    <div data-qa-ignore={qa} style={{ position: "absolute", left: x, top: y, width: w, height: h, ...surfaceStyle(t, "panel"), overflow: "hidden", ...flyInZ(a, { from: 160, perspective: 2400 }), ...style }}>
+    <div data-qa-ignore={qa} style={{ position: "absolute", left: x, top: y, width: w, height: h, ...surfaceStyle(t, "panel"), overflow: "hidden", ...entrance(t, a, 0, { depth: 160 }), ...style }}>
       {title && <div style={{ padding: "12px 16px 0", fontSize: t.type.ui.sm, ...textStyle(t, "title"), color: t.color.text, opacity: op(titleOpacity) }}>{title}</div>}
       {children}
     </div>
@@ -240,7 +241,7 @@ const DonutPanel: React.FC<{ f: number }> = ({ f }) => {
   const qi = activeQ(f);
   const focus = qi >= 0 ? QUESTIONS[qi]!.sts : [];
   let acc = 0;
-  const dim = dimOpacity(t.color.text, t.color.surface); // las filas que no son la pregunta se apagan sin bajar de 3:1
+  const dim = dimOpacity(t.color.text, t.color.surface); // las filas que no son la pregunta se apagan sin bajar de 4,5:1 (texto)
   return (
     <Panel x={20} y={180} w={640} h={460} f={f} at={T.build - 30} title="Distribución de estados (por canal)" titleOpacity={1 - Math.min(1, qState(f).a * 2)}>
       <svg style={{ position: "absolute", left: 0, top: 0 }} width={640} height={460}>
@@ -499,8 +500,8 @@ export function SceneBody() {
         <DoodleCircle start={T.sort[1] + 4} end={760} cx={20 + 16 + 100} cy={860 + 90 + 26} rx={120} ry={32} id="dc-first" />
         <DoodleArrow start={T.trans[0] + 10} end={1000} x1={TR.x + 520} y1={TR.y + 120} x2={TR.x + 640} y2={TR.y + 120} bend={-0.4} id="da-trans" />
       </World>
-      {/* la viñeta del original es del color del texto (tinta): la intensidad (0,28) es `decor.vignette` del design system */}
-      <Vignette amount={zoomIn * (1 - kf(f, [T.through[0], T.through[0] + 10], [0, 1]))} color="text" />
+      {/* la viñeta del original es del color del texto (tinta) y de intensidad 0,28: ambos son del design system (`decor.vignetteColor`, `decor.vignette`) */}
+      <Vignette amount={zoomIn * (1 - kf(f, [T.through[0], T.through[0] + 10], [0, 1]))} />
       {/* disposición, tamaño y entrada del titular: los de la historia (o, con la escena sola, los del design system) */}
       <TopicHeadline title={topic.name} number={topic.index + 1} subtitle={topic.line} start={-18} hide={hideFromScale(cam.scale, 1, 0.08)} />
       <Wash range={[T.through[1] - 14, T.through[1]]} />
@@ -511,7 +512,7 @@ export function SceneBody() {
 /** Escena sola (fuera de la historia): tema de marca y las nubes del original (desenfoque 56). */
 export const SceneVideo: React.FC = () => (
   <ThemeProvider theme={brand}>
-    <Stage cloud={{ blur: 56 }}>
+    <Stage>
       <SceneBody />
     </Stage>
   </ThemeProvider>

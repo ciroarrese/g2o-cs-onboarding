@@ -52,9 +52,16 @@ const TOKENS = `:root {
   /* nubes del original (CloudBackground): rosa, naranja y violeta; "x y diámetro" con x e y como fracción del cuadro */
   --cloud-colors: #e7007e, #f56406, #770ce9;
   --cloud-opacity: 0.22;
+  --cloud-blur: 56;
   --cloud-blob-1: 0.248 0.487 1060;
   --cloud-blob-2: 0.752 0.569 876;
   --cloud-blob-3: 0.608 0.983 783;
+  /* movimiento de la marca (brand/motion.tsx y primitives.tsx): OUT, IN_OUT y la curva estándar; 15 cuadros de Reveal y 40 de CountUp */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-base: 15;
+  --duration-slow: 40;
   /* colores de datos de la interfaz recreada (estados de Health Score) */
   --data-estado-inactivo: #a8243a;
   --data-estado-crecimiento: #2e8b4a;
@@ -68,6 +75,8 @@ const TOKENS = `:root {
   --style-shape-corners: pill;
   --style-shape-border: 1;
   --style-shape-outlined: true;
+  /* el cartel del título del original: radio de 40 px = 2,5 x radius.lg (16) */
+  --style-shape-hero-scale: 2.5;
   /* superficie: blanca con sombra de marca; el vidrio del cartel del título (0,82 del original) */
   --style-surface-kind: solid;
   --style-surface-elevation: shadow;
@@ -80,6 +89,10 @@ const TOKENS = `:root {
   --style-type-eyebrow-tracking: 0;
   --style-type-numerals: gradient;
   --style-type-highlight: gradient;
+  /* subtítulos y línea de la lista del original: caja normal, sin interletrado, peso regular */
+  --style-type-caption-case: as-is;
+  --style-type-caption-tracking: 0;
+  --style-type-caption-weight: regular;
   /* fondo: las nubes de marca */
   --style-background-kind: clouds;
   --style-background-intensity: 1;
@@ -87,6 +100,11 @@ const TOKENS = `:root {
   --style-motion-entrance: auto;
   --style-motion-overshoot: 0;
   --style-motion-stagger: 4;
+  /* pasos del original por contexto: filas de la lista de la apertura 22, filas de la agenda 3, paneles del cierre 8, piezas del muro 0,6 */
+  --style-motion-stagger-list: 22;
+  --style-motion-stagger-rows: 3;
+  --style-motion-stagger-items: 8;
+  --style-motion-stagger-chips: 0.6;
   --style-motion-camera-blur: true;
   --style-motion-camera-tilt: 1.1;
   --style-motion-transition: wash;
@@ -94,7 +112,9 @@ const TOKENS = `:root {
   --style-decor-doodles: true;
   --style-decor-doodle-stroke: hand;
   --style-decor-vignette: 1.27;
+  --style-decor-vignette-color: text;
   --style-decor-accent: bar;
+  --style-decor-accent-thickness: 0.625;
   --style-decor-gradient-loop: 105;
   /* historias: cartel de vidrio, lista en un renglón con el subrayado bajo el nombre, se atraviesa el titular, muro de 5 x 6 sin desenfoque
      de distancia en la apertura (con desenfoque en el cierre), cierre sobre blanco y firma sin barra */
@@ -109,7 +129,12 @@ const TOKENS = `:root {
   --style-story-wall-rows: 6;
   --style-story-wall-chip-scale: 1;
   --style-story-wall-dolly: 20;
-  --style-story-wall-depth: 1;
+  --style-story-wall-depth: 0.82;
+  /* muro del original: columnas cada 410 px (480 de la base), filas cada 160 (168), ladrillo de 150 (200) y temblor igual */
+  --style-story-wall-gap-x: 0.854;
+  --style-story-wall-gap-y: 0.952;
+  --style-story-wall-brick: 0.75;
+  --style-story-wall-jitter: 1;
   --style-story-wall-blur-opening: false;
   --style-story-wall-blur-closing: true;
   /* gráficos, trazos y texto de efectos: los del original (trazo de 5 px, barras con radio md, llegada de las letras subiendo 24 px) */
@@ -139,13 +164,8 @@ const r = themeFromTokensWithReport(TOKENS, undefined, {
   },
 });
 
-// Movimiento de la marca (motion.tsx del original): `OUT` (0,16, 1, 0,3, 1), `IN_OUT` (0,65, 0, 0,35, 1) y la curva estándar de la marca
-// (0,4, 0, 0,2, 1). El adaptador de tokens todavía no lee `--ease-*`: se declara sobre el tema ya armado.
-const MOTION: Theme["motion"] = { easing: { standard: [0.4, 0, 0.2, 1], out: [0.16, 1, 0.3, 1], inOut: [0.65, 0, 0.35, 1] }, duration: r.theme.motion.duration };
-
 export const theme: Theme = {
   ...r.theme,
-  motion: MOTION,
   font: { ...r.theme.font, files: [400, 500, 600, 700].map((weight, i) => ({ weight, src: asset(`fonts/Geist-${["Regular", "Medium", "SemiBold", "Bold"][i]}.otf`) })) },
 };
 export const report = r.report;
@@ -204,6 +224,8 @@ const TABLERO = `:root {
   --style-shape-outlined: true;
   --style-surface-kind: solid;
   --style-surface-elevation: flat;
+  /* los paneles del tablero llegan desde 160 px de profundidad (translateZ del original) */
+  --style-motion-entrance: depth;
   --style-type-title-weight: medium;
   --style-type-label-weight: medium;
   --style-type-eyebrow-case: as-is;
