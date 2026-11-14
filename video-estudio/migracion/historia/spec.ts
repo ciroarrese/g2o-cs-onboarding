@@ -17,8 +17,8 @@ export const spec: StorySpec = {
     "Incidentes abiertos", "Sincro Monitor · novedades", "En crecimiento", "Maduro", "En caída",
     "Cola de atención", "En activación", "Cartera sana", "Severidad alta", "Oportunidades comerciales",
   ],
-  // El original cierra con el logo y "Hecho con Claude" (Claude en negrita): sin texto grande.
-  signoff: { logo: "brand/logo-grow2on.png", tagline: "Hecho con **Claude**" },
+  // Cierre solo con el logo: el dueño pidió quitar la leyenda del final.
+  signoff: { logo: "brand/logo-grow2on.png" },
   timing: { closing: 450 },
   // Todo lo estético (cartel, lista, muro, nubes, pasos, atravesado, cierre, degradado) sale del design system de la marca (`theme.style`, ver ../theme.ts):
   // el spec ya no lleva `design`.
