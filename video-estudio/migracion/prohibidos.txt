@@ -6,8 +6,8 @@
 # Correos y dominios internos
 /[\w.+-]+@[\w-]+\.[\w.-]+/
 /\b[\w-]+\.(com|com\.ar|net|io)\b/i
-# Tickets reales: el video solo usa el rango emulado 48190 a 48213 (ver CONTEXTO); este patrón avisa de cualquier otro número de ticket
-/ticket\s*#?\s*(?!481[9]\d|482[01]\d)\d{5}/i
+# Tickets reales: el video solo usa números emulados entre 48190 y 48239 (los de las escenas aprobadas, incluido el reporte interno 48231); este patrón avisa de cualquier otro número de ticket
+/ticket\s*#?\s*(?!481[9]\d|482[0-3]\d)\d{5}/i
 # --- PLACEHOLDERS: reemplazar por nombres reales ---
 CLIENTE_REAL_1
 CLIENTE_REAL_2
