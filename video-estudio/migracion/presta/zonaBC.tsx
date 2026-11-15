@@ -158,7 +158,7 @@ export const ZonaC: React.FC<{ f: number }> = ({ f }) => {
 
       {/* el trabajo pasa de la petición web al servidor */}
       {f >= T.move[0] - 4 && f <= T.srv[0] + 4 && (
-        <div style={{ position: "absolute", left: 0, top: 0, transform: `translate(${L + trackX + 40}px, ${Math.round(top + 198 + move * (bot - top))}px) translate(-50%, -50%) scale(${(1 + Math.sin(move * Math.PI) * 0.15).toFixed(3)})`, zIndex: 30 }}>
+        <div data-qa-ignore="offscreen" /* la pastilla viaja con la cámara y en un cuadro asoma 48 px por el borde izquierdo del encuadre */ style={{ position: "absolute", left: 0, top: 0, transform: `translate(${L + trackX + 40}px, ${Math.round(top + 198 + move * (bot - top))}px) translate(-50%, -50%) scale(${(1 + Math.sin(move * Math.PI) * 0.15).toFixed(3)})`, zIndex: 30 }}>
           <Chip c={t.color.chart[2]!}>Sincro de descuentos</Chip>
         </div>
       )}

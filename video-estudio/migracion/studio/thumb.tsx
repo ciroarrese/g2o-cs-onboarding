@@ -32,8 +32,8 @@ export const MiniStudio: React.FC = () => {
         <div style={{ position: "absolute", left: 0, top: 0, width: 560, height: 340, transformOrigin: "0 0", transform: "scale(0.45)" }}><MiniHealth /></div>
       </div>
       <Baldosa x={424} y={52} w={116} h={150}>
-        <div style={{ position: "absolute", left: 8, top: 30 }}>
-          <DonutRing frame={FIN} start={0} width={100} height={100} value={5} max={5} unit="" label="" />
+        <div style={{ position: "absolute", left: 2, top: 22 }}>
+          <DonutRing frame={FIN} start={0} width={112} height={112} value={5} max={5} unit="" label="" />
         </div>
       </Baldosa>
       <div style={{ position: "absolute", left: 22, top: 222, whiteSpace: "nowrap", fontSize: t.type.ui.xs, lineHeight: 1.25, color: t.color.textMuted, ...textStyle(t, "label") }}>Línea de tiempo</div>

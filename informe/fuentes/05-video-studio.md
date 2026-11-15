@@ -17,7 +17,7 @@ Un agente que produce videos animados a partir del contexto que se le da (captur
 
 ## Cifras para el video (reales, no sensibles; verificar contra el repo antes de armar la escena)
 
-- 51 efectos y animaciones en el catálogo.
+- 50 efectos y animaciones en el catálogo.
 - 5 sistemas de diseño de ejemplo, más el de la marca.
 - 3 formatos.
 

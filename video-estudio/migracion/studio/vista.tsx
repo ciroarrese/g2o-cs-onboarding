@@ -15,7 +15,7 @@ import type { Theme } from "video-estudio/themes";
 import { SceneBody as Health } from "../health/Scene";
 import { theme as marca } from "../theme";
 import { spec } from "../historia/spec";
-import { HEALTH_FRAME } from "./datos";
+import { HEALTH_FRAME, PREVIEW } from "./datos";
 
 const NATIVE: Record<FormatName, [number, number]> = { horizontal: [1920, 1080], vertical: [1080, 1920], cuadrado: [1080, 1080] };
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
@@ -33,12 +33,15 @@ const LAYERS: Layer[] = [
 ];
 const FADE = 10;
 
-/** Medidas de la caja de la vista previa en el cuadro `f`: 800x450 hasta la tercera parte, después crece y cambia de forma con el formato. */
+/**
+ * Medidas de la caja de la vista previa en el cuadro `f`: 1008x567 (56 % de la ventana) hasta la tercera parte; después crece (horizontal 1120x630),
+ * y cada formato ocupa todo el alto útil de la ventana (vertical 394x700, cuadrado 700x700).
+ */
 export function previewRect(f: number) {
-  const w = kf(f, [446, 466, 690, 702, 735, 747], [800, 1067, 1067, 338, 338, 600]);
-  const h = kf(f, [446, 466], [450, 600]);
-  const top = kf(f, [446, 466], [338, 330]);
-  return { w: Math.round(w), h: Math.round(h), top: Math.round(top) };
+  const k = [446, 466, 690, 702, 735, 747];
+  const w = kf(f, k, [1008, 1120, 1120, 394, 394, 700]);
+  const h = kf(f, k, [567, 630, 630, 700, 700, 700]);
+  return { w: Math.round(w), h: Math.round(h), top: PREVIEW.top };
 }
 
 // ---------- contenido de la tercera parte ----------
@@ -54,13 +57,14 @@ export const Demo: React.FC = () => {
   const t = useTheme();
   const f = useFrame();
   const { pick } = useFormat();
+  const vert = pick({ horizontal: false, vertical: true, cuadrado: false });
   const m = pick({ horizontal: 110, vertical: 80, cuadrado: 80 });
   const colW = pick({ horizontal: 780, vertical: 920, cuadrado: 440 });
   const p = (i: number) => kf(f, [staggerFrames(t, i, { base: 6 }), staggerFrames(t, i, { base: 6 }) + 22], [0, 1]);
   const title = (
     <div style={{ ...entrance(t, p(0), 0), opacity: op(p(0)) }}>
-      <Eyebrow>Video de la semana</Eyebrow>
-      <div style={{ fontSize: t.type.h1, lineHeight: 1.15, color: t.color.text, ...textStyle(t, "title") }}>
+      <Eyebrow size={vert ? t.type.eyebrow * 1.5 : undefined}>Video de la semana</Eyebrow>
+      <div style={{ fontSize: vert ? t.type.h1 * 1.25 : t.type.h1, lineHeight: 1.15, color: t.color.text, ...textStyle(t, "title") }}>
         Proyectos <Highlight frame={f}>con IA</Highlight>
       </div>
     </div>
@@ -68,14 +72,14 @@ export const Demo: React.FC = () => {
   const lista = (
     <div style={{ width: colW, display: "flex", flexDirection: "column", gap: 14 }}>
       {LISTA.map((tp, i) => (
-        <div key={tp.id} style={{ minHeight: 84, boxSizing: "border-box", display: "flex", alignItems: "center", gap: 22, padding: "10px 26px", ...surfaceStyle(t, "card", { level: "sm" }), ...entrance(t, p(i + 1), i + 1), opacity: op(p(i + 1)) }}>
-          <span style={{ fontSize: t.type.body, lineHeight: 1.2 }}><Numeral frame={f}>{`0${i + 1}`}</Numeral></span>
-          <span style={{ fontSize: t.type.caption, lineHeight: 1.25, color: t.color.text, whiteSpace: "nowrap", ...textStyle(t, "label") }}>{tp.name}</span>
+        <div key={tp.id} style={{ minHeight: vert ? 132 : 84, boxSizing: "border-box", display: "flex", alignItems: "center", gap: 22, padding: "10px 26px", ...surfaceStyle(t, "card", { level: "sm" }), ...entrance(t, p(i + 1), i + 1), opacity: op(p(i + 1)) }}>
+          <span style={{ fontSize: vert ? t.type.h2 : t.type.body, lineHeight: 1.2 }}><Numeral frame={f}>{`0${i + 1}`}</Numeral></span>
+          <span style={{ fontSize: vert ? t.type.h2 * 0.75 : t.type.caption, lineHeight: 1.25, color: t.color.text, whiteSpace: "nowrap", ...textStyle(t, "label") }}>{tp.name}</span>
         </div>
       ))}
     </div>
   );
-  const chartH = pick({ horizontal: 400, vertical: 440, cuadrado: 340 });
+  const chartH = pick({ horizontal: 400, vertical: 560, cuadrado: 340 });
   const chart = (
     <div style={{ width: colW, boxSizing: "border-box", padding: 14, ...surfaceStyle(t, "card"), ...entrance(t, p(5), 5), opacity: op(p(5)) }}>
       <BarsGrow frame={f} start={26} duration={50} width={colW - 28} height={chartH - 28} data={[40, 64, 52]} labels={BARRAS} format={() => ""} />
@@ -90,7 +94,7 @@ export const Demo: React.FC = () => {
       </div>
     ),
     vertical: (
-      <div style={{ position: "absolute", left: m, top: 150, display: "flex", flexDirection: "column", gap: 40 }}>{title}{lista}{chart}{avisos}</div>
+      <div style={{ position: "absolute", left: m, top: 130, display: "flex", flexDirection: "column", gap: 40 }}>{title}{lista}{chart}</div>
     ),
     cuadrado: (
       <div style={{ position: "absolute", left: m, top: 70, display: "flex", gap: 60 }}>

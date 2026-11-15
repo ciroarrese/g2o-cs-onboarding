@@ -3,14 +3,14 @@
   "frame": 3,
   "sfx": "golpe",
   "gain": 0.6,
-  "_de": "opening@3"
+  "_de": "storyCues opening-title"
  },
  {
   "frame": 284,
   "sfx": "barrido-suave",
   "ancla": "pico",
-  "_de": "opening@284",
-  "gain": 0.4
+  "gain": 0.4,
+  "_de": "storyCues fly-in 246"
  },
  {
   "frame": 532,
@@ -82,18 +82,18 @@
   "_nota": "gain 1 -> 0.6 (bajado para que no sobresalte)"
  },
  {
-  "frame": 1170,
+  "frame": 1176,
   "sfx": "tilde",
+  "ancla": "pico",
   "gain": 0.7,
-  "_de": "interlude-1@30",
-  "_nota": "gain 0.8 -> 0.7 (bajado para que no sobresalte)"
+  "_de": "storyCues interlude-tick t0"
  },
  {
   "frame": 1238,
   "sfx": "barrido-suave",
   "ancla": "pico",
-  "_de": "interlude-1@98",
-  "gain": 0.4
+  "gain": 0.4,
+  "_de": "storyCues fly-in 1206"
  },
  {
   "frame": 1300,
@@ -163,18 +163,18 @@
   "_de": "presta@1116"
  },
  {
-  "frame": 2490,
+  "frame": 2496,
   "sfx": "tilde",
+  "ancla": "pico",
   "gain": 0.7,
-  "_de": "interlude-2@30",
-  "_nota": "gain 0.8 -> 0.7 (bajado para que no sobresalte)"
+  "_de": "storyCues interlude-tick t1"
  },
  {
   "frame": 2558,
   "sfx": "barrido-suave",
   "ancla": "pico",
-  "_de": "interlude-2@98",
-  "gain": 0.4
+  "gain": 0.4,
+  "_de": "storyCues fly-in 2526"
  },
  {
   "frame": 2798,
@@ -248,18 +248,18 @@
   "_nota": "gain 1 -> 0.7 (bajado para que no sobresalte)"
  },
  {
-  "frame": 4050,
+  "frame": 4056,
   "sfx": "tilde",
+  "ancla": "pico",
   "gain": 0.7,
-  "_de": "interlude-3@30",
-  "_nota": "gain 0.8 -> 0.7 (bajado para que no sobresalte)"
+  "_de": "storyCues interlude-tick t2"
  },
  {
   "frame": 4118,
   "sfx": "barrido-suave",
   "ancla": "pico",
-  "_de": "interlude-3@98",
-  "gain": 0.4
+  "gain": 0.4,
+  "_de": "storyCues fly-in 4086"
  },
  {
   "frame": 4346,
@@ -298,22 +298,59 @@
   "_de": "health@672"
  },
  {
-  "frame": 5250,
-  "sfx": "tilde",
-  "gain": 0.7,
-  "_de": "interlude-4@30",
-  "_nota": "gain 0.8 -> 0.7 (bajado para que no sobresalte)"
+  "frame": 5256,
+  "sfx": "golpe",
+  "gain": 0.6,
+  "_de": "studio@84"
  },
  {
-  "frame": 5256,
+  "frame": 6062,
+  "sfx": "golpe",
+  "gain": 0.6,
+  "_de": "studio@890"
+ },
+ {
+  "frame": 6112,
+  "sfx": "tilde",
+  "gain": 0.6,
+  "_de": "studio@940"
+ },
+ {
+  "frame": 6146,
+  "sfx": "tilde",
+  "gain": 0.6,
+  "_de": "studio@974"
+ },
+ {
+  "frame": 6180,
+  "sfx": "tilde",
+  "gain": 0.6,
+  "_de": "studio@1008"
+ },
+ {
+  "frame": 6258,
+  "sfx": "tilde",
+  "ancla": "pico",
+  "gain": 0.7,
+  "_de": "storyCues interlude-tick t3"
+ },
+ {
+  "frame": 6270,
   "sfx": "campanita",
   "gain": 0.6,
-  "_de": "interlude-4@36"
+  "_de": "storyCues reveal-enter"
  },
  {
-  "frame": 5709,
+  "frame": 6348,
+  "sfx": "tilde",
+  "ancla": "pico",
+  "gain": 0.7,
+  "_de": "storyCues reveal-tick"
+ },
+ {
+  "frame": 6741,
   "sfx": "golpe",
   "gain": 0.5,
-  "_de": "closing@369"
+  "_de": "storyCues closing-logo"
  }
 ]

@@ -8,6 +8,8 @@ export const spec: StorySpec = {
     { id: "sincro-presta", name: "Módulo Sincro Presta", line: "la tienda y el ERP, siempre sincronizados" },
     { id: "sincro-monitor", name: "Sincro Monitor", line: "avisa antes de que el cliente reclame" },
     { id: "health-score", name: "Health Score", line: "a quién contactar primero" },
+    // Tema sorpresa: la apertura y las vueltas anteriores anuncian cuatro; este aparece recién después de Health Score (sin vuelta al listado).
+    { id: "video-studio", name: "Video Studio", line: "videos a partir de contexto y un design system", reveal: "late" },
   ],
   labels: [
     "Solo corregir", "Seguir contexto", "Con formato", "Escalado desarrollo", "Dictar",

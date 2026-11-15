@@ -187,7 +187,7 @@ export const TicketView: React.FC<{ zoomed: boolean; recede: number }> = ({ zoom
 
       {/* comentarios */}
       <div style={{ position: "absolute", left: rx(MAIN.x), top: ry(838), width: MAIN.w, display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: t.type.ui.sm, lineHeight: 1.25, color: ink, paddingBottom: 8, borderBottom: `1px solid ${t.color.border}` }}>
-        Comentarios
+        <span data-qa-ignore="min-size" /* rótulo de la interfaz recreada: con la cámara alejándose queda por debajo de 18 px, se lee al acercar */>Comentarios</span>
         <span data-qa-ignore={cut} /* encuadre del panel: el contador queda cortado a propósito */ style={{ color: t.color.textMuted, fontSize: t.type.ui.xs, whiteSpace: "pre" }}><span>Total de comentarios: </span><span data-qa-decor /* el contador sube de 4 a 5 en el cuadro final: no se lee a este zoom */>{f >= C.fly[1] ? 5 : 4}</span></span>
       </div>
       <div
@@ -203,7 +203,7 @@ export const TicketView: React.FC<{ zoomed: boolean; recede: number }> = ({ zoom
           <span style={{ marginLeft: 8, padding: "2px 10px", borderRadius: cornerRadius(t, "chip"), background: t.color.surfaceAlt, color: t.color.textMuted, fontSize: t.type.ui.xs, lineHeight: 1.25 }}>Interno</span>
         </div>
         <div style={{ fontSize: t.type.ui.sm, lineHeight: 1.3, marginTop: 8, color: ink, whiteSpace: "nowrap" }}>
-          <b>Ticket interno creado para Desarrollo:</b> <span style={{ color: t.color.accent, textDecoration: "underline" }}>#{NEW_TICKET}</span>
+          <b>Ticket interno creado para Desarrollo:</b> <span data-qa-ignore="min-size" /* número de ticket de la interfaz recreada, se lee al acercar */ style={{ color: t.color.accent, textDecoration: "underline" }}>#{NEW_TICKET}</span>
         </div>
       </div>
 

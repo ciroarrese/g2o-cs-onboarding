@@ -135,7 +135,7 @@ export function SceneBody() {
         />
       </World>
       <Vignette amount={zoomIn * (1 - kf(f, [T.through[0], T.through[0] + 10], [0, 1]))} />
-      <TopicHeadline title={topic.name} number={topic.index + 1} subtitle={topic.line} start={-30} hide={hideFromScale(cam.scale, 1, 0.08)} />
+      <TopicHeadline title={topic.name} number={topic.index + 1} subtitle={topic.line} start={-30} hide={hideFromScale(cam.scale, 1.02, 0.02)} />
       <Wash range={[T.through[1] - 14, T.through[1]]} />
     </>
   );

@@ -7,7 +7,7 @@ import React from "react";
 import { Easing, useFormat, useFrame } from "video-estudio/engine";
 import { Stage, Wash, World, hideFromScale, kf, useCameraAt } from "video-estudio/kit";
 import type { CameraKey } from "video-estudio/kit";
-import { TopicHeadline } from "video-estudio/stories";
+import { TopicHeadline, useTopicOrNull } from "video-estudio/stories";
 import { ThemeProvider, dark, editorial, neon, neutral, papel } from "video-estudio/themes";
 import type { Theme } from "video-estudio/themes";
 import { theme as brand } from "../theme";
@@ -19,7 +19,7 @@ import { Banda, Conversacion, Etapas, LineaDeTiempo, RielesTercera, Tarjetas, Ve
 export { DURACION };
 
 const KEYS: CameraKey[] = [
-  // arranca con la vista previa llenando el cuadro (800x450 a escala 2,4) y se aleja hasta ver el estudio entero
+  // arranca con la vista previa llenando el cuadro (1008x567 a escala 1,9) y se aleja hasta ver el estudio entero
   { f: 0, x: PREVIEW.cx, y: PREVIEW.top + PREVIEW.h / 2, scale: 1920 / PREVIEW.w },
   { f: T.pull[0], x: PREVIEW.cx, y: PREVIEW.top + PREVIEW.h / 2, scale: 1920 / PREVIEW.w },
   { f: T.pull[1], x: 960, y: 540, scale: 1 },
@@ -31,6 +31,10 @@ const KEYS: CameraKey[] = [
 export function SceneBody() {
   const f = useFrame();
   const { width, height } = useFormat();
+  // En la historia: llega de la escena anterior (Health Score cortada en su cuadro `HEALTH_FRAME`, sin velo de entrada: el cuadro 0 es el suyo)
+  // y entrega al listado (cierra con el velo de siempre). Fuera de la historia (`handoff` indefinido) cierra igual.
+  const topic = useTopicOrNull();
+  const cierraConVelo = topic?.handoff !== "next-scene" && topic?.handoff !== "closing";
   // el viaje al muro se aleja a mitad de camino sin detenerse (una escala de 0,5 quieta dejaría la letra del estudio chica y quieta)
   // (la escala baja según el avance de la posición: la letra solo es chica cuando la cámara va rápido)
   const cam = useCameraAt(f, KEYS, { map: (fr, c) => ({ ...c, scale: c.scale * (1 - 0.5 * Math.sin(Math.PI * kf(fr, [T.travel[0], T.travel[1]], [0, 1], Easing.inOut))) }) });
@@ -59,7 +63,7 @@ export function SceneBody() {
         {f >= T.travel[0] && <Muro f={f} />}
       </World>
       <TopicHeadline title="Video Studio" number={5} start={T.headline} hide={hideFromScale(cam.scale)} />
-      <Wash range={T.wash} />
+      {cierraConVelo && <Wash range={T.wash} />}
     </>
   );
 }

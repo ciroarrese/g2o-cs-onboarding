@@ -128,7 +128,7 @@ const PanelBody: React.FC<{ open: number }> = ({ open }) => {
           <Section label="Reportar" open={rpOpen} />
           <div style={{ height: rpOpen * RP_H, overflow: "hidden" }}>
             {rpShow > 0 && (created ? (
-              <div style={{ fontSize: t.type.ui.md, lineHeight: 1.25, color: t.color.success, paddingTop: 10, opacity: op(rpShow) }}>Reporte creado (ticket #{NEW_TICKET}).</div>
+              <div data-qa-ignore="min-size" /* texto de la interfaz recreada: con la cámara alejándose queda por debajo de 18 px, se lee al acercar */ style={{ fontSize: t.type.ui.md, lineHeight: 1.25, color: t.color.success, paddingTop: 10, opacity: op(rpShow) }}>Reporte creado (ticket #{NEW_TICKET}).</div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 4, opacity: op(rpShow) }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>

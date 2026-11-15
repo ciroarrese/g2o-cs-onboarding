@@ -48,7 +48,7 @@ const Configuracion: React.FC<{ f: number }> = ({ f }) => {
               <div style={{ fontSize: t.type.ui.sm, color: t.color.textMuted, marginTop: 4, lineHeight: 1.25 }}>{desc}</div>
             </div>
             {/* el interruptor "SÍ / NO" de PrestaShop; el que se cambia da un pequeño salto */}
-            <div style={{ display: "flex", borderRadius: ctl, overflow: "hidden", border: `1px solid ${t.color.border}`, fontSize: t.type.ui.md, ...textStyle(t, "label", { strong: true }), lineHeight: 1.25, transform: xform({ scale: 1 + (i === 1 || i === 3 ? Math.sin(flip * Math.PI) * 0.12 : 0) }) }}>
+            <div data-qa-ignore="min-size" /* interruptor recreado de la interfaz: con la cámara abierta su letra baja de 18 px, se lee al acercar */ style={{ display: "flex", borderRadius: ctl, overflow: "hidden", border: `1px solid ${t.color.border}`, fontSize: t.type.ui.md, ...textStyle(t, "label", { strong: true }), lineHeight: 1.25, transform: xform({ scale: 1 + (i === 1 || i === 3 ? Math.sin(flip * Math.PI) * 0.12 : 0) }) }}>
               <span style={{ padding: "7px 16px", background: on ? t.color.success : t.color.surface, color: on ? readableOn(t, t.color.success) : t.color.textMuted }}>SÍ</span>
               <span style={{ padding: "7px 16px", background: !on ? noFill : t.color.surface, color: !on ? readableOn(t, noFill!) : t.color.textMuted }}>NO</span>
             </div>

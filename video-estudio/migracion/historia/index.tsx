@@ -1,5 +1,6 @@
-// Video completo: apertura, las cuatro escenas con una vuelta al listado entre temas y después de la última, y el cierre con las cuatro miniaturas reales.
-// Orden y duraciones como en el video aprobado (apertura 300, 840, vuelta 120, 1200, 120, 1440, 120, 1080, 120, cierre 450 = 5790 cuadros, 3:13 a 30 fps).
+// Video completo: apertura (anuncia cuatro temas), las tres primeras escenas con una vuelta al listado después de cada una, Health Score cortada en su
+// cuadro 1032 y seguida directo por la escena sorpresa Video Studio (tema 05, `reveal: "late"`), la vuelta de revelación (la fila 05 entra y se tilda) y el
+// cierre con las cinco miniaturas reales.
 //
 // Se arma con `composeStory` (lo mismo que hace `defineStory`) para agregar dos retoques de empalme, sin tocar las escenas ni el toolkit:
 //  1. Cada bloque termina en un velo liso (el `Wash` del design system) y el siguiente empieza con las nubes ya puestas: en un cuadro el fondo
@@ -24,6 +25,9 @@ import { DURACION as D_HEALTH, SceneBody as Health } from "../health/Scene";
 import { theme } from "../theme";
 import { spec } from "./spec";
 import { MiniHealth } from "./thumbs";
+import { DURACION as D_STUDIO, SceneBody as Studio } from "../studio/Scene";
+import { HEALTH_FRAME } from "../studio/datos";
+import { MiniStudio } from "../studio/thumb";
 
 const ENTRADA = 10; // cuadros que dura la entrada suave
 
@@ -52,12 +56,15 @@ const scenes: TopicScene[] = [
   { id: "asistente-ia", component: PrimeraEscena, durationInFrames: D_ASISTENTE, thumbnail: MiniAsistente },
   { id: "sincro-presta", component: Presta, durationInFrames: D_PRESTA, thumbnail: MiniPresta },
   { id: "sincro-monitor", component: Monitor, durationInFrames: D_MONITOR, thumbnail: MiniMonitor },
-  { id: "health-score", component: Health, durationInFrames: D_HEALTH, thumbnail: MiniHealth },
+  // Health Score se corta en `HEALTH_FRAME` (antes de su salida): la escena que sigue arranca con ese mismo cuadro congelado en su vista previa.
+  { id: "health-score", component: Health, durationInFrames: HEALTH_FRAME, thumbnail: MiniHealth },
+  { id: "video-studio", component: Studio, durationInFrames: D_STUDIO, thumbnail: MiniStudio },
 ];
+void D_HEALTH;
 
 const { component: Story, durationInFrames, timeline } = composeStory(spec, scenes, { audio: { src: "audio-migracion.wav" } }); // la mezcla vive en migracion/audio/ (ignorada por git: lleva la pista con licencia)
-// bloques que empiezan después de un velo liso: todas las vueltas y las escenas salvo la primera
-const conVelo = timeline.filter((e) => e.kind === "interlude" || (e.kind === "topic" && e.id !== scenes[0]!.id));
+// bloques que empiezan después de un velo liso: todas las vueltas y las escenas salvo la primera y la sorpresa (esa sigue a Health Score sin nada en medio)
+const conVelo = timeline.filter((e) => e.kind === "interlude" || (e.kind === "topic" && e.id !== scenes[0]!.id && e.id !== "video-studio"));
 
 const Video: React.FC = () => (
   <ThemeProvider theme={theme}>

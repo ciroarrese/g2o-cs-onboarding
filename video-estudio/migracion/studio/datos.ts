@@ -20,8 +20,9 @@ export const T = {
 export const WALL_X = 2300;
 
 /** Ventana del estudio y vista previa (coordenadas del mundo). */
-export const WIN = { x: 60, y: 268, w: 1800, h: 752, bar: 52 };
-export const PREVIEW = { cx: 960, w: 800, h: 450, top: 338, pad: 10 };
+export const WIN = { x: 60, y: 262, w: 1800, h: 786, bar: 52 };
+// 1008x567 es 16:9 (56 % del ancho de la ventana): a escala 1920/1008 llena el cuadro en el cuadro 0, igual que Health Score a pantalla completa.
+export const PREVIEW = { cx: 960, w: 1008, h: 567, top: 330, pad: 10 };
 
 /** Lo que se ve en la vista previa en la tercera parte: 4 sistemas de diseño (cada uno entra en `at` y su contenido arranca en `from`) y 3 formatos. */
 export const SISTEMAS = [
