@@ -8,7 +8,7 @@
 // el titular, los garabatos, el cursor, el velo y las entradas salen del design system de la marca por las piezas del kit.
 import React from "react";
 import { Easing, useFormat, useFrame } from "video-estudio/engine";
-import { Cursor, DoodleCircle, Stage, Wash, World, headlineStrip, hideFromScale, kf, useCameraAt, zoomThrough, cameraKeepClear } from "video-estudio/kit";
+import { Cursor, DoodleCircle, Stage, Wash, World, cameraView, headlineStrip, hideFromScale, kf, useCameraAt, zoomThrough, cameraKeepClear } from "video-estudio/kit";
 import type { CameraKey } from "video-estudio/kit";
 import { TopicHeadline, useTopic } from "video-estudio/stories";
 import { ThemeProvider, dark, editorial, neon, neutral, papel, useTheme } from "video-estudio/themes";
@@ -17,7 +17,11 @@ import { Aviso } from "./Aviso";
 import { ChatWindow } from "./Chat";
 import { MesaDeAyuda } from "./Mesa";
 import { DotField, MonitorPanel } from "./Panel";
-import { BTN, CH, CW, DURACION, ED, KEYS, MESA, T, TABLE, TEAMS, TEAMS_CX, TICKET, TILT_F, TILT_RX, TILT_RY, TVX, keysPara, chipX, firstRowY, CHIP, FOCUS_STATUS } from "./mundo";
+import { ChatWindowV } from "./ChatV";
+import { MesaDeAyudaV } from "./MesaV";
+import { DotFieldV, MonitorPanelV } from "./PanelV";
+import { BTNV, CHV, ENVIAR_V, EDV, MEV, NEWCARD_V, PANEL_RECT, RESPONDER_V, chipV, enPanel, firstRowV, keysAngostas } from "./angosto";
+import { BTN, CH, CW, DURACION, ED, KEYS, MESA, T, TABLE, TEAMS, TEAMS_CX, TICKET, TILT_F, TILT_RX, TILT_RY, TVX, chipX, firstRowY, CHIP, FOCUS_STATUS } from "./mundo";
 
 export { DURACION };
 
@@ -25,11 +29,11 @@ const OUT = Easing.out;
 const TT = T.teams;
 
 /** Claves del original; las de vista general (escala 1, titular a la vista) se corren lo mínimo para que el sujeto quede bajo la franja del titular. */
-const clearKeys = (strip: { x: number; y: number; w: number; h: number }, width: number, height: number, keys: CameraKey[]): CameraKey[] => {
+const clearKeys = (strip: { x: number; y: number; w: number; h: number }, width: number, height: number): CameraKey[] => {
   const panel = { x: 0, y: 0, w: CW, h: 880 }; // el panel sin su margen inferior
   const mesa = { x: MESA.x, y: MESA.y, w: MESA.w, h: MESA.h };
   const subject: Record<number, typeof panel> = { 160: panel, 190: panel, 630: panel, 644: panel, 546: mesa, 560: mesa, 1092: mesa, 1140: mesa, 1150: mesa, 1292: mesa, 1320: mesa };
-  return keys.map((k) => {
+  return KEYS.map((k) => {
     const s = subject[k.f];
     if (!s) return k;
     const c = cameraKeepClear(k, s, { strip, format: { width, height }, margin: 10 });
@@ -37,13 +41,13 @@ const clearKeys = (strip: { x: number; y: number; w: number; h: number }, width:
   });
 };
 
-export function SceneBody() {
+function SceneBodyH() {
   const f = useFrame();
   const t = useTheme();
-  const { width, height, format } = useFormat();
+  const { width, height } = useFormat();
   const topic = useTopic({ name: "Sincro Monitor", line: "avisa antes de que el cliente reclame", index: 2 });
   const strip = headlineStrip(t, { width, height });
-  const keys = clearKeys(strip, width, height, keysPara(format));
+  const keys = clearKeys(strip, width, height);
   // la cámara recorre el mismo camino del original; la inclinación en reposo (al llegar de la apertura y al seguir al ticket) se suma a la de la velocidad
   const c = useCameraAt(f, keys, {
     maxTilt: 9,
@@ -57,27 +61,18 @@ export function SceneBody() {
   // el titular se aparta con el zoom y mientras la cámara está en el chat
   // la ventana donde está el foco de la cámara es el sujeto; las otras asoman por el borde a propósito (el control no las juzga por "fuera del cuadro")
   const within = (r: { x: number; y: number; w: number; h: number }) => cam.x >= r.x && cam.x <= r.x + r.w && cam.y >= r.y && cam.y <= r.y + r.h;
-  // Marca de `qa` para cada ventana: "offscreen" si asoma como vecina o si, en vertical y cuadrado, es más ancha que el cuadro y el encuadre la recorta a
-  // propósito (la cámara muestra la zona de la acción); "min-size" solo cuando la ventana es vecina o la cámara vuela o está en la vista de conjunto de esos formatos (escala < 0,7): ahí
-  // la ventana es forma y no se lee. En horizontal queda como estaba: solo "offscreen" cuando la cámara está en otra ventana.
-  const extra = format !== "horizontal";
-  const marca = (r: { x: number; y: number; w: number; h: number }): string | undefined => {
-    const lejos = !within(r) || (extra && (r.w * cam.scale > width || r.h * cam.scale > height));
-    const chico = extra && (cam.scale < 0.7 || !within(r));
-    return [lejos ? "offscreen" : "", chico ? "min-size" : ""].filter(Boolean).join(" ") || undefined;
-  };
   const hide = Math.max(hideFromScale(cam.scale, 1, 0.08), kf(f, [744, 770, 1050, 1070], [0, 1, 1, 0]));
   return (
     <>
       <World camera={cam} width={width} height={height} perspective={2400}>
-        <MonitorPanel filterOn={filterOn} peek={marca({ x: 0, y: 0, w: CW, h: CH })} />
+        <MonitorPanel filterOn={filterOn} peek={!within({ x: 0, y: 0, w: CW, h: CH })} />
         <Cursor
           show={[182, 490]}
           clicks={[T.filterClick, T.rowClick, T.ticketClick]}
           keys={[[182, 1250, 880], [214, chip.x, chip.y], [262, chip.x, chip.y], [296, row.x, row.y], [404, row.x, row.y], [T.ticketClick - 4, BTN.x, BTN.y], [470, BTN.x, BTN.y], [500, BTN.x + 300, BTN.y + 200]]}
         />
-        <MesaDeAyuda peek={marca(MESA)} />
-        <ChatWindow peek={marca(TEAMS)} />
+        <MesaDeAyuda peek={!within(MESA)} />
+        <ChatWindow peek={!within(TEAMS)} />
         <Aviso />
         {/* los arreglos por aprobar: el círculo los agrupa */}
         <DoodleCircle id="dc-fixes" start={TT.hi[0] + 4} end={1046} cx={TEAMS_CX + 20} cy={TEAMS.y + 810} rx={440} ry={100} />
@@ -92,6 +87,68 @@ export function SceneBody() {
       <Wash range={[T.through[1] - 14, T.through[1]]} />
     </>
   );
+}
+
+/** Vertical y cuadrado: el mundo angosto (`angosto.ts`). Cada ventana se dibuja solo mientras la cámara la tiene a la vista (o pasa cerca): lo que
+ *  queda fuera del cuadro no existe, así `qa` juzga el texto que se ve. */
+function SceneBodyV() {
+  const f = useFrame();
+  const t = useTheme();
+  const { width, height, format } = useFormat();
+  const topic = useTopic({ name: "Sincro Monitor", line: "avisa antes de que el cliente reclame", index: 2 });
+  const strip = headlineStrip(t, { width, height });
+  // la vista de conjunto del panel (con el titular) cabe entera debajo de la franja del titular en vertical; en cuadrado se muestra la parte de arriba
+  const keys = keysAngostas(format).map((k) => {
+    if (format !== "vertical" || ![160, 190, 630, 644].includes(k.f)) return k;
+    const c = cameraKeepClear(k, PANEL_RECT, { strip, format: { width, height }, margin: 10 });
+    return c.fits ? { f: k.f, x: c.x, y: c.y, scale: k.scale } : k;
+  });
+  const c = useCameraAt(f, keys, {
+    maxTilt: 9,
+    map: (fr, cam) => zoomThrough(fr, T.through, cam, { x: EDV.x + EDV.w / 2, y: EDV.y + 70 }, 60),
+    noBlurFrom: T.through[0],
+  });
+  // la inclinación en reposo del original se suaviza: en una ventana alta se nota más
+  const cam = { ...c, rx: c.rx + kf(f, TILT_F, TILT_RX) * 0.5, ry: c.ry + kf(f, TILT_F, TILT_RY) * 0.5 };
+  const filterOn = kf(f, [T.filterClick + 4, T.filterClick + 32], [0, 1], OUT);
+  const view = cameraView(cam, { width, height });
+  const m = 0.18; // la inclinación y el desenfoque corren un poco los bordes: se dibuja también lo que asoma un 18 % fuera de la vista
+  const visible = (r: { x: number; y: number; w: number; h: number }) => r.x < view.x + view.w * (1 + m) && r.x + r.w > view.x - view.w * m && r.y < view.y + view.h * (1 + m) && r.y + r.h > view.y - view.h * m;
+  // la ventana donde está el foco de la cámara es el sujeto; las vecinas que asoman por el borde se marcan (`peek`, como en horizontal)
+  const within = (r: { x: number; y: number; w: number; h: number }) => cam.x >= r.x && cam.x <= r.x + r.w && cam.y >= r.y && cam.y <= r.y + r.h;
+  // en los vuelos (escala menor que 1) todas las ventanas son contexto y los bordes del cuadro las cortan a propósito
+  const peek = (r: { x: number; y: number; w: number; h: number }) => cam.scale < 1 || !within(r);
+  const hide = Math.max(hideFromScale(cam.scale, 1, 0.08), kf(f, [744, 770, 1050, 1070], [0, 1, 1, 0]));
+  return (
+    <>
+      <World camera={cam} width={width} height={height} perspective={2400}>
+        {/* cada ventana tiene su lugar fijo entre los hijos (aunque no se dibuje): `qa` identifica un texto entre cuadros por su ruta */}
+        <div>{visible(PANEL_RECT) && <MonitorPanelV filterOn={filterOn} peek={peek(PANEL_RECT)} />}</div>
+        <Cursor
+          show={[182, 490]}
+          clicks={[T.filterClick, T.rowClick, T.ticketClick]}
+          keys={[[182, enPanel(600, 760).x, enPanel(600, 760).y], [214, chipV(1).x, chipV(1).y], [262, chipV(1).x, chipV(1).y], [296, firstRowV.x, firstRowV.y], [404, firstRowV.x, firstRowV.y], [T.ticketClick - 4, BTNV.x, BTNV.y], [470, BTNV.x, BTNV.y], [500, BTNV.x + 200, BTNV.y + 120]]}
+        />
+        <div>{visible(MEV) && <MesaDeAyudaV peek={peek(MEV)} />}</div>
+        <div>{visible(CHV) && <ChatWindowV peek={peek(CHV)} />}</div>
+        <Aviso />
+        {/* los arreglos por aprobar: el círculo los agrupa */}
+        <DoodleCircle id="dc-fixes" start={TT.hi[0] + 4} end={1046} cx={CHV.x + CHV.w / 2} cy={CHV.y + 917} rx={385} ry={112} />
+        <Cursor
+          show={[1094, 1296]}
+          clicks={[T.openRow, T.responder, T.send]}
+          keys={[[1094, MEV.x + MEV.w + 40, NEWCARD_V.y + 140], [T.openRow - 8, NEWCARD_V.x, NEWCARD_V.y], [T.responder - 10, RESPONDER_V.x, RESPONDER_V.y], [T.typeFrom, RESPONDER_V.x, RESPONDER_V.y], [T.send - 10, ENVIAR_V.x, ENVIAR_V.y], [1296, MEV.x + MEV.w + 40, ENVIAR_V.y + 80]]}
+        />
+      </World>
+      <DotFieldV s={cam.scale} />
+      <TopicHeadline title={topic.name} number={topic.index + 1} subtitle={topic.line} start={150} hide={hide} />
+      <Wash range={[T.through[1] - 14, T.through[1]]} />
+    </>
+  );
+}
+
+export function SceneBody() {
+  return useFormat().format === "horizontal" ? <SceneBodyH /> : <SceneBodyV />;
 }
 
 /** Design systems con nombre para probar la escena con otro (`--props '{"theme":"editorial"}'`, también neon, papel, dark, neutral): cambia lo de afuera de las herramientas. */

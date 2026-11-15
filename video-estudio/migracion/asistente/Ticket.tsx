@@ -6,7 +6,8 @@ import { kf, typed } from "video-estudio/kit";
 import { Easing, useFrame } from "video-estudio/engine";
 import { fade as op } from "video-estudio/fx/core";
 import { cornerRadius, entrance, surfaceStyle, textStyle, useTheme } from "video-estudio/themes";
-import { C, COMMENT_Y, DICTATED, EDITOR, FORMATTED, MAIN, NEW_TICKET, SIDE, TICKET, W } from "./datos";
+import { C, DICTATED, FORMATTED, NEW_TICKET, SIDE, TICKET } from "./datos";
+import { useGeo } from "./geo";
 
 const OUT = Easing.out;
 
@@ -72,6 +73,8 @@ const Field: React.FC<{ children: React.ReactNode; h: number; size: number }> = 
 export const TicketView: React.FC<{ zoomed: boolean; recede: number }> = ({ zoomed, recede }) => {
   const f = useFrame();
   const t = useTheme();
+  const g = useGeo();
+  const { W, MAIN, EDITOR, COMMENT_Y } = g;
   const editorOpen = kf(f, [C.dictar + 4, C.dictar + 22], [0, 1], OUT);
   const formatted = f >= C.formatoDone;
   const dictText = typed(DICTATED, f, C.dictar + 18, 1.9);
@@ -120,17 +123,17 @@ export const TicketView: React.FC<{ zoomed: boolean; recede: number }> = ({ zoom
         <span style={{ width: 9, height: 9, borderRadius: cornerRadius(t, "chip"), background: t.color.danger }} />
         <span style={{ color: t.color.textMuted }}>Esperando al agente</span>
       </div>
-      <div data-qa-ignore={cut} style={{ position: "absolute", left: rx(960), top: ry(W.y + W.top + 30), display: "flex", gap: 16, alignItems: "center", whiteSpace: "nowrap" }}>
+      <div data-qa-ignore={cut} style={{ position: "absolute", left: g.angosta ? rx(MAIN.x) : rx(960), top: ry(g.angosta ? g.btnsY : W.y + W.top + 30), display: "flex", gap: g.angosta ? 14 : 16, alignItems: "center", whiteSpace: "nowrap" }}>
         <div style={{ padding: "10px 18px", border: `1.5px solid ${ink}`, borderRadius: cornerRadius(t, "control"), fontSize: t.type.ui.sm, lineHeight: 1.25, ...textStyle(t, "label"), color: ink }}>Reasignar Ticket</div>
-        <div style={{ padding: "10px 18px", ...surfaceStyle(t, "card", { corner: "control", level: "md" }), fontSize: t.type.ui.xs, lineHeight: 1.25, color: t.color.textMuted, textAlign: "center" }}>
+        <div style={{ padding: "10px 18px", ...surfaceStyle(t, "card", { corner: "control", level: "md" }), fontSize: t.type.ui.xs, lineHeight: 1.25, color: t.color.textMuted, textAlign: "center", ...(g.angosta ? { display: "flex", gap: 8, padding: "9px 18px" } : {}) }}>
           Prioridad
           <div style={{ color: t.color.accent }}>Media</div>
         </div>
       </div>
-      <div style={{ position: "absolute", left: W.rail, top: ry(290), width: W.w - W.rail, height: 1, background: t.color.border }} />
+      <div style={{ position: "absolute", left: W.rail, top: ry(g.divY), width: W.w - W.rail, height: 1, background: t.color.border }} />
 
       {/* mensaje inicial */}
-      <div style={{ position: "absolute", left: rx(MAIN.x), top: ry(312), width: MAIN.w, height: 210, boxSizing: "border-box", ...surfaceStyle(t, "card", { corner: "panel", level: "sm" }), padding: "18px 24px" }}>
+      <div style={{ position: "absolute", left: rx(MAIN.x), top: ry(g.msgY), width: MAIN.w, height: g.msgH, boxSizing: "border-box", ...surfaceStyle(t, "card", { corner: "panel", level: "sm" }), padding: "18px 24px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: t.type.ui.xs, lineHeight: 1.25, color: t.color.textMuted, paddingBottom: 12, borderBottom: `1px solid ${t.color.border}`, whiteSpace: "nowrap" }}>
           <Avatar t="T" c={t.color.accent2} size={30} />
           <span style={{ color: ink, textDecoration: "underline" }}>Tienda 18</span> Cliente
@@ -145,7 +148,7 @@ export const TicketView: React.FC<{ zoomed: boolean; recede: number }> = ({ zoom
       </div>
 
       {/* acciones */}
-      <div style={{ position: "absolute", left: rx(MAIN.x), top: ry(540), width: MAIN.w, minHeight: 40, display: "flex", alignItems: "center", fontSize: t.type.ui.sm, lineHeight: 1.25, whiteSpace: "nowrap" }}>
+      <div style={{ position: "absolute", left: rx(MAIN.x), top: ry(g.actY), width: MAIN.w, minHeight: 40, display: "flex", alignItems: "center", fontSize: t.type.ui.sm, lineHeight: 1.25, whiteSpace: "nowrap" }}>
         <span style={{ color: ink }}>Más opciones ⌄</span>
         <span style={{ marginLeft: "auto", color: t.color.accent, marginRight: 22 }}>Derivar</span>
         <span data-qa-ignore={cut} /* la cámara encuadra el panel y deja el borde de la mesa cortado */ style={{ padding: "9px 20px", borderRadius: cornerRadius(t, "control"), background: t.color.accent, color: t.color.onAccent, ...textStyle(t, "label") }}>Responder</span>
@@ -186,7 +189,7 @@ export const TicketView: React.FC<{ zoomed: boolean; recede: number }> = ({ zoom
       </div>
 
       {/* comentarios */}
-      <div style={{ position: "absolute", left: rx(MAIN.x), top: ry(838), width: MAIN.w, display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: t.type.ui.sm, lineHeight: 1.25, color: ink, paddingBottom: 8, borderBottom: `1px solid ${t.color.border}` }}>
+      <div style={{ position: "absolute", left: rx(MAIN.x), top: ry(g.comHdrY), width: MAIN.w, display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: t.type.ui.sm, lineHeight: 1.25, color: ink, paddingBottom: 8, borderBottom: `1px solid ${t.color.border}` }}>
         <span data-qa-ignore="min-size" /* rótulo de la interfaz recreada: con la cámara alejándose queda por debajo de 18 px, se lee al acercar */>Comentarios</span>
         <span data-qa-ignore={cut} /* encuadre del panel: el contador queda cortado a propósito */ style={{ color: t.color.textMuted, fontSize: t.type.ui.xs, whiteSpace: "pre" }}><span>Total de comentarios: </span><span data-qa-decor /* el contador sube de 4 a 5 en el cuadro final: no se lee a este zoom */>{f >= C.fly[1] ? 5 : 4}</span></span>
       </div>
@@ -207,7 +210,40 @@ export const TicketView: React.FC<{ zoomed: boolean; recede: number }> = ({ zoom
         </div>
       </div>
 
-      {/* columna derecha */}
+      {/* columna derecha: en la disposición angosta, una tira plegada de dos filas con lo esencial de cada bloque */}
+      {g.angosta ? (
+        <div style={{ position: "absolute", left: rx(MAIN.x), top: ry(g.stripY), width: MAIN.w, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 16px", boxSizing: "border-box" }}>
+          {[
+            ["Empresa asociada", <span key="e">Tienda 18</span>],
+            ["Participantes", <span key="p">Agente de soporte, Agente de guardia</span>],
+            ["Categorización", <span key="c">Consulta/incidente, Integraciones</span>],
+            [
+              "SLA",
+              <div key="s" style={{ display: "flex", gap: 14 }}>
+                {[
+                  ["1° Respuesta", t.color.success, 0.12],
+                  ["Resolución", t.color.warning, 0.46],
+                ].map(([l, c, v]) => (
+                  <div key={l as string} style={{ flex: 1 }}>
+                    {l as string}
+                    <div style={{ height: 6, borderRadius: cornerRadius(t, "bar"), background: t.color.surfaceAlt, marginTop: 6 }}>
+                      <div style={{ height: 6, borderRadius: cornerRadius(t, "bar"), width: `${(v as number) * 100}%`, background: c as string }} />
+                    </div>
+                  </div>
+                ))}
+              </div>,
+            ],
+          ].map(([title, body]) => (
+            <div key={title as string} data-qa-ignore={cut} /* encuadre del panel y del editor: la tira de datos queda cortada a propósito */ style={{ minHeight: 62, boxSizing: "border-box" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: t.type.ui.sm, lineHeight: 1.25, color: t.color.text, paddingBottom: 8, borderBottom: `1px solid ${t.color.border}` }}>
+                {title}
+                <Icon d={ICON.chevron} size={18} />
+              </div>
+              <div style={{ paddingTop: 8, fontSize: t.type.ui.xs, lineHeight: 1.25, color: t.color.textMuted, whiteSpace: "nowrap" }}>{body}</div>
+            </div>
+          ))}
+        </div>
+      ) : (
       <div data-qa-ignore={[cut, lifting ? "contrast covered" : undefined].filter(Boolean).join(" ") || undefined} /* encuadre del panel (corta la columna) y, mientras el panel se levanta, pasa por encima de ella */ style={{ position: "absolute", left: rx(SIDE.x), top: ry(312), width: SIDE.w }}>
         <SideBlock title="Empresa asociada" minHeight={94}>
           <Field h={38} size={t.type.ui.sm}>Tienda 18</Field>
@@ -247,6 +283,7 @@ export const TicketView: React.FC<{ zoomed: boolean; recede: number }> = ({ zoom
           ))}
         </SideBlock>
       </div>
+      )}
     </div>
   );
 };

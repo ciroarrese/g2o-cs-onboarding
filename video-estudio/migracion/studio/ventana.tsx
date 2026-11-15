@@ -19,10 +19,10 @@ const abs = (x: number, y: number, extra?: React.CSSProperties): React.CSSProper
 // ---------- ventana ----------
 export const Ventana: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
-  const WIN = useLay().win;
+  const { win: WIN, winFade } = useLay();
   const dots = [t.color.danger, t.color.warning, t.color.success];
   return (
-    <div style={{ ...abs(WIN.x, WIN.y), width: WIN.w, height: WIN.h, boxSizing: "border-box", ...surfaceStyle(t, "window"), opacity: op(kf(f, [20, 60], [0, 1])) }}>
+    <div style={{ ...abs(WIN.x, WIN.y), width: WIN.w, height: WIN.h, boxSizing: "border-box", ...surfaceStyle(t, "window"), opacity: op(kf(f, winFade, [0, 1])) }}>
       <div style={{ height: WIN.bar, display: "flex", alignItems: "center", gap: 10, padding: "0 24px", boxSizing: "border-box", borderBottom: `1px solid ${t.color.border}` }}>
         {dots.map((c, i) => <span key={i} style={{ width: 14, height: 14, borderRadius: cornerRadius(t, "chip"), background: c }} />)}
         <span style={{ marginLeft: 14, lineHeight: 1.25 }}><Eyebrow color={t.color.text}>Video Studio</Eyebrow></span>
@@ -58,8 +58,8 @@ export const LineaDeTiempo: React.FC<{ f: number }> = ({ f }) => {
               <>
                 {/* miniatura real de la escena (560x340) a escala 0,2: es adorno de la línea de tiempo y se mide con el estrés de tipografía aparte */}
                 {/* data-qa-ignore="clip": la miniatura es otra escena dibujada para su propia tipografía; con la tipografía ancha de reemplazo sus rótulos chicos se cortan dentro de ella, no en esta escena */}
-                <div data-qa-decor data-qa-fixed-scale data-qa-ignore="clip" style={{ position: "relative", width: 112, height: 68, flex: "none", overflow: "hidden", borderRadius: cornerRadius(t, "control") }}>
-                  <div style={{ position: "absolute", left: 0, top: 0, width: 560, height: 340, transformOrigin: "0 0", transform: "scale(0.2)" }}><Mini /></div>
+                <div data-qa-decor data-qa-fixed-scale data-qa-ignore="clip" style={{ position: "relative", width: Math.round(560 * TL.mini), height: Math.round(340 * TL.mini), flex: "none", overflow: "hidden", borderRadius: cornerRadius(t, "control") }}>
+                  <div style={{ position: "absolute", left: 0, top: 0, width: 560, height: 340, transformOrigin: "0 0", transform: `scale(${TL.mini})` }}><Mini /></div>
                 </div>
                 <span style={{ fontSize: t.type.display.sm, lineHeight: 1.2 }}><Numeral frame={f}>{b.label}</Numeral></span>
               </>
@@ -70,8 +70,8 @@ export const LineaDeTiempo: React.FC<{ f: number }> = ({ f }) => {
         );
       })}
       {/* cabezal parado donde estamos: casi al final del bloque 04 (Health Score) */}
-      <div style={{ ...abs(TL.x + TL.ws.reduce((a, w) => a + w + gap, 0) - gap - 52, TL.blockY - TL.cabUp), width: 4, height: TL.blockH + TL.cabExt, background: t.color.accent, borderRadius: cornerRadius(t, "bar") }} />
-      <div style={{ ...abs(TL.x + TL.ws.reduce((a, w) => a + w + gap, 0) - gap - 52 - 9, TL.blockY - TL.cabUp - 10), width: 22, height: 14, background: t.color.accent, borderRadius: cornerRadius(t, "control") }} />
+      <div style={{ ...abs(TL.x + TL.ws.reduce((a, w) => a + w + gap, 0) - gap - TL.cabX, TL.blockY - TL.cabUp), width: 4, height: TL.blockH + TL.cabExt, background: t.color.accent, borderRadius: cornerRadius(t, "bar") }} />
+      <div style={{ ...abs(TL.x + TL.ws.reduce((a, w) => a + w + gap, 0) - gap - TL.cabX - 9, TL.blockY - TL.cabUp - 10), width: 22, height: 14, background: t.color.accent, borderRadius: cornerRadius(t, "control") }} />
     </div>
   );
 };

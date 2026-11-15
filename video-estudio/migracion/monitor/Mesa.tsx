@@ -37,14 +37,14 @@ const Chrome: React.FC<{ search?: boolean }> = ({ search }) => {
   );
 };
 
-const Badge: React.FC<{ n: number; color?: string }> = ({ n, color }) => {
+export const Badge: React.FC<{ n: number; color?: string }> = ({ n, color }) => {
   const t = useTheme();
   return (
     <span style={{ minWidth: 24, height: 24, boxSizing: "border-box", padding: "0 7px", borderRadius: 12, background: color ?? t.color.accent, color: t.color.onAccent, fontSize: t.type.ui.xs, ...textStyle(t, "label", { strong: true }), display: "inline-flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>{n}</span>
   );
 };
 
-const SlaPill: React.FC<{ s: Sla }> = ({ s }) => {
+export const SlaPill: React.FC<{ s: Sla }> = ({ s }) => {
   const t = useTheme();
   const c = s.tone === "ok" ? t.color.success : s.tone === "warn" ? t.color.warning : t.color.danger;
   const bg = tint(t, c, 0.11);
@@ -59,7 +59,7 @@ const SlaPill: React.FC<{ s: Sla }> = ({ s }) => {
 };
 
 /** Triángulo rojo para incidentes, engranaje verde para consultas (como en la herramienta real). */
-const TypeIcon: React.FC<{ inc?: boolean }> = ({ inc }) => {
+export const TypeIcon: React.FC<{ inc?: boolean }> = ({ inc }) => {
   const t = useTheme();
   return inc ? (
     <svg width={24} height={24} viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
@@ -308,13 +308,13 @@ const TicketView: React.FC<{ f: number }> = ({ f }) => {
 };
 
 /** La mesa de ayuda completa (lista, ticket en vuelo y ticket abierto), en su ámbito de tema. */
-export const MesaDeAyuda: React.FC<{ peek?: string }> = ({ peek }) => {
+export const MesaDeAyuda: React.FC<{ peek: boolean }> = ({ peek }) => {
   const f = useFrame();
   return (
     <ThemeScope theme={mesaTheme}>
       {/* reproducción de la herramienta real (mesa de ayuda) con tamaños fijos: no se agranda con el estrés de tipografía */}
       {/* si la cámara está en otra ventana, la mesa asoma por el borde del cuadro a propósito: es la vecina, no el sujeto (`peek`) */}
-      <div data-qa-fixed-scale data-qa-ignore={peek} style={{ position: "absolute", left: 0, top: 0, color: mesaTheme.color.text, fontFamily: mesaTheme.font.family }}>
+      <div data-qa-fixed-scale data-qa-ignore={peek ? "offscreen" : undefined} style={{ position: "absolute", left: 0, top: 0, color: mesaTheme.color.text, fontFamily: mesaTheme.font.family }}>
         {/* con el ticket abierto cubriendo la ventana, la lista de abajo no se dibuja (no hay texto oculto bajo otro) */}
         {f < T.opened[1] && <Desk f={f} />}
         <FlyingTicket f={f} />

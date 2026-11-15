@@ -14,7 +14,8 @@ import { TopicHeadline, useTopic } from "video-estudio/stories";
 import { ThemeProvider, cornerRadius, dark, editorial, neon, neutral, papel, entrance, surfaceStyle, textStyle, useTheme } from "video-estudio/themes";
 import { Easing } from "video-estudio/engine";
 import { theme as brand } from "../theme";
-import { C, COMMENT_Y, DURACION, EDITOR, KEYS, KEYS_CUADRADO, KEYS_VERTICAL, MAIN, NEW_TICKET, P, TILT_RX, TILT_RY, TILT_T, TOPIC } from "./datos";
+import { C, DURACION, KEYS, NEW_TICKET, P as PH, TILT_RX, TILT_RY, TILT_T, TOPIC } from "./datos";
+import { KEYS_CUADRADO, KEYS_VERTICAL, useGeo } from "./geo";
 import { Panel } from "./Panel";
 import { ICON, Icon, TicketView } from "./Ticket";
 
@@ -26,6 +27,7 @@ const OUT = Easing.out;
 const Waveform: React.FC = () => {
   const f = useFrame();
   const t = useTheme();
+  const { MAIN, EDITOR } = useGeo();
   const a = kf(f, [C.dictar + 8, C.dictar + 20], [0, 1], OUT) * (1 - kf(f, [C.dictStop, C.dictStop + 10], [0, 1], Easing.linear));
   if (a <= 0) return null;
   return (
@@ -48,14 +50,15 @@ const Waveform: React.FC = () => {
 const FlyingTicket: React.FC = () => {
   const f = useFrame();
   const t = useTheme();
-  const from = { x: P.x + 290 + 120, y: 690 + 35 };
+  const { MAIN, COMMENT_Y, P, angosta } = useGeo();
+  const from = { x: P.x + 290 + 120, y: P.y + 520 + 35 };
   const to = { x: MAIN.x + MAIN.w / 2, y: COMMENT_Y + 35 };
   const { t: p } = flight(f, C.fly, from, to, {});
   // parte del ancho que necesita su contenido medido (el original partía de 240 px y lo dejaba cortado) y crece hasta el del comentario
   const need = Math.ceil(textWidth(t, `#${NEW_TICKET}`, { size: t.type.ui.sm, role: "title" }) + textWidth(t, "Ticket interno · Desarrollo", { size: t.type.ui.sm, role: "title" })) + 40 + 22 + 28 + 8;
   const w = Math.round(need + (MAIN.w - need) * p);
   return (
-    <FlyingCard range={C.fly} from={from} to={to} arc={-300} width={MAIN.w} height={70} hideAfter>
+    <FlyingCard range={C.fly} from={from} to={to} arc={angosta ? -220 : -300} width={MAIN.w} height={70} hideAfter>
       <div style={{ position: "absolute", left: Math.round((MAIN.w - w) / 2), top: 0, width: w, height: 70, boxSizing: "border-box", ...surfaceStyle(t, "card", { on: true, corner: "panel", level: "lg", glow: 0.6 }), display: "flex", alignItems: "center", gap: 14, padding: "0 20px", fontSize: t.type.ui.sm, lineHeight: 1.25, ...textStyle(t, "title"), color: t.color.accent, whiteSpace: "nowrap", overflow: "hidden" }}>
         <Icon d={ICON.tag} c={t.color.accent} />#{NEW_TICKET}
         <span style={{ color: t.color.text }}>Ticket interno · Desarrollo</span>
@@ -67,6 +70,8 @@ const FlyingTicket: React.FC = () => {
 export function SceneBody() {
   const f = useFrame();
   const { width, height, pick } = useFormat();
+  const g = useGeo();
+  const { MAIN, COMMENT_Y, pc } = g;
   const keys = pick({ horizontal: KEYS, vertical: KEYS_VERTICAL, cuadrado: KEYS_CUADRADO });
   const topic = useTopic({ name: TOPIC.name, line: TOPIC.line, index: 0 });
   const cam0 = useCameraAt(f, keys, {
@@ -76,8 +81,15 @@ export function SceneBody() {
   // la inclinación de base del original (por cuadro) se suma a la que el design system da por velocidad
   const tilt = pick({ horizontal: 1, vertical: 0.4, cuadrado: 0.4 }); // en los formatos angostos la inclinación de base es menor: no deja las líneas del mismo renglón pisándose
   const cam = { ...cam0, rx: cam0.rx + tilt * kf(f, TILT_T, TILT_RX), ry: cam0.ry + tilt * kf(f, TILT_T, TILT_RY) };
-  const zoomed = cam.scale > 1.05; // la cámara encuadra el panel o el editor y deja cortado el resto de la mesa
-  const zoomIn = Math.max(0, Math.min(1, (cam.scale - 1.1) / 0.3));
+  // la cámara encuadra el panel o el editor y deja cortado el resto de la mesa; en los formatos angostos la vista general ya viene acercada
+  const zoomed = cam.scale > pick({ horizontal: 1.05, vertical: 1.42, cuadrado: 1.3 });
+  const zoomIn = Math.max(0, Math.min(1, (cam.scale - pick({ horizontal: 1.1, vertical: 1.5, cuadrado: 1.4 })) / 0.3));
+  // en los formatos angostos la vista general ya viene acercada y las de trabajo cambian poco de escala: el titular se aparta cuando el panel se levanta y no vuelve
+  const hide = pick({
+    horizontal: hideFromScale(cam.scale, 1, 0.08),
+    vertical: kf(f, [C.lift[0] - 12, C.lift[0] + 4], [0, 1], Easing.inOut),
+    cuadrado: kf(f, [C.lift[0] - 12, C.lift[0] + 4], [0, 1], Easing.inOut),
+  });
   const recede = kf(f, [C.lift[0], C.lift[1]], [0, 1], Easing.inOut);
   return (
     <>
@@ -86,29 +98,29 @@ export function SceneBody() {
         <Waveform />
         <Panel />
         <FlyingTicket />
-        <DoodleCircle start={C.formato + 6} end={C.formatoDone + 4} cx={P.x + 270} cy={P.y + 60 + 68} rx={282} ry={36} id="dc-formato" />
-        <DoodleCircle start={C.cards + 26} end={C.cwClose - 4} cx={P.x + 150} cy={P.y + 274 + 158} rx={150} ry={26} id="dc-cards" />
-        <DoodleArrow start={C.fly[1] + 2} end={C.through[0] + 10} x1={MAIN.x + 470} y1={COMMENT_Y + 50} x2={MAIN.x + 470} y2={300} bend={-0.35} id="da-link" />
+        <DoodleCircle start={C.formato + 6} end={C.formatoDone + 4} cx={pc(PH.x + 270, PH.y + 60 + 68).x} cy={pc(PH.x + 270, PH.y + 60 + 68).y} rx={282} ry={36} id="dc-formato" />
+        <DoodleCircle start={C.cards + 26} end={C.cwClose - 4} cx={pc(PH.x + 150, PH.y + 274 + 158).x} cy={pc(PH.x + 150, PH.y + 274 + 158).y} rx={150} ry={26} id="dc-cards" />
+        <DoodleArrow start={C.fly[1] + 2} end={C.through[0] + 10} x1={MAIN.x + 470} y1={COMMENT_Y + 50} x2={MAIN.x + 470} y2={g.angosta ? COMMENT_Y - 330 : 300} bend={-0.35} id="da-link" />
         <Cursor
           show={[205, 790]}
           clicks={[C.dictar, C.dictStop, C.formato, C.cw, C.buscar, C.cwClose, C.reportar, C.crear]}
           keys={[
-            [205, 1250, 700],
-            [226, 1729, 346],
-            [C.dictStop - 8, 1729, 346],
-            [C.formato - 8, 1600, 300],
-            [C.cw - 8, 1416, P.y + 254],
-            [C.buscar - 8, 1600, P.y + 274 + 87],
-            [C.cwClose - 8, 1416, P.y + 254],
-            [C.reportar - 8, 1416, P.y + 294],
-            [C.crear - 8, 1729, P.y + 274 + 40 + 233],
-            [C.creado + 4, 1729, P.y + 274 + 40 + 233],
-            [770, 1500, 900],
+            [205, ...(g.angosta ? ([620, 1250] as const) : ([1250, 700] as const))],
+            [226, pc(1729, 346).x, pc(1729, 346).y],
+            [C.dictStop - 8, pc(1729, 346).x, pc(1729, 346).y],
+            [C.formato - 8, pc(1600, 300).x, pc(1600, 300).y],
+            [C.cw - 8, pc(1416, PH.y + 254).x, pc(1416, PH.y + 254).y],
+            [C.buscar - 8, pc(1600, PH.y + 274 + 87).x, pc(1600, PH.y + 274 + 87).y],
+            [C.cwClose - 8, pc(1416, PH.y + 254).x, pc(1416, PH.y + 254).y],
+            [C.reportar - 8, pc(1416, PH.y + 294).x, pc(1416, PH.y + 294).y],
+            [C.crear - 8, pc(1729, PH.y + 274 + 40 + 233).x, pc(1729, PH.y + 274 + 40 + 233).y],
+            [C.creado + 4, pc(1729, PH.y + 274 + 40 + 233).x, pc(1729, PH.y + 274 + 40 + 233).y],
+            [770, ...(g.angosta ? ([680, 1210] as const) : ([1500, 900] as const))],
           ]}
         />
       </World>
       <Vignette amount={zoomIn * (1 - kf(f, [C.through[0], C.through[1]], [0, 1], Easing.linear))} />
-      <TopicHeadline title={topic.name} number={topic.index + 1} subtitle={topic.line} start={-30} hide={hideFromScale(cam.scale, 1, 0.08)} />
+      <TopicHeadline title={topic.name} number={topic.index + 1} subtitle={topic.line} start={-30} hide={hide} />
       <Wash range={[C.through[1] - 14, C.through[1]]} />
     </>
   );

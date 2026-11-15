@@ -1,7 +1,7 @@
 // El panel de monitoreo (Sincro Monitor): encabezado, filtros por estado, cifras, dona, tabla con el detalle del log y el botón "Crear ticket".
 // Herramienta recreada (no es una captura): vive en su propio design system (`monitorTheme`) y se marca `data-qa-fixed-scale`.
 import React from "react";
-import { Easing, random, useFormat, useFrame } from "video-estudio/engine";
+import { Easing, random, useFrame } from "video-estudio/engine";
 import { CountUp, Eyebrow, ThemeScope, calloutState, coveredOpacity, kf, typed } from "video-estudio/kit";
 import { fade as op } from "video-estudio/fx/core"; // opacidad solo mientras cambia: en reposo no se emite (residuos que rompen --check)
 import { borderWidth, cornerRadius, dimOpacity, entrance, staggerFrames, surfaceStyle, textStyle, useTheme, withAlpha } from "video-estudio/themes";
@@ -15,7 +15,7 @@ const dataColor = (t: Theme, rol: string) => (t.data as Record<string, string>)[
 /** Color de un estado del monitor. */
 export const statusColor = (t: Theme, i: number) => dataColor(t, STATUS[i]!.rol);
 /** Texto de un estado sobre su pastilla teñida: el mismo matiz, oscurecido hasta llegar a 4,5:1 (el amarillo y el naranja de relleno no leen como letra chica). */
-const statusText = (t: Theme, i: number) => inkOn(statusColor(t, i), tint(t, statusColor(t, i)));
+export const statusText = (t: Theme, i: number) => inkOn(statusColor(t, i), tint(t, statusColor(t, i)));
 
 // ---------- encabezado ----------
 const Header: React.FC<{ f: number; bellOn: boolean }> = ({ f, bellOn }) => {
@@ -168,7 +168,7 @@ const DonutPanel: React.FC<{ f: number; filterOn: number; shell: number }> = ({ 
 };
 
 // ---------- botón "Crear ticket" ----------
-const Spinner: React.FC<{ f: number }> = ({ f }) => {
+export const Spinner: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
   return (
     <svg width={20} height={20} viewBox="0 0 20 20" style={{ transform: `rotate(${(f * 18) % 360}deg)` }}>
@@ -178,7 +178,7 @@ const Spinner: React.FC<{ f: number }> = ({ f }) => {
   );
 };
 
-const TicketButton: React.FC<{ f: number }> = ({ f }) => {
+export const TicketButton: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
   const btnIn = appear(f, 395, 412);
   const press = kf(f, [T.ticketClick - 3, T.ticketClick + 1, T.ticketClick + 8], [0, 1, 0]);
@@ -247,7 +247,7 @@ const Detail: React.FC<{ f: number }> = ({ f }) => {
 };
 
 // ---------- tabla ----------
-const StatusPill: React.FC<{ st: number }> = ({ st }) => {
+export const StatusPill: React.FC<{ st: number }> = ({ st }) => {
   const t = useTheme();
   const c = statusColor(t, st);
   return (
@@ -317,14 +317,14 @@ const Table: React.FC<{ f: number; filterOn: number }> = ({ f, filterOn }) => {
 };
 
 /** Todo el panel, en su ámbito de tema. `bellOn`: ya llegó el aviso (la campana suena). */
-export const MonitorPanel: React.FC<{ filterOn: number; peek?: string }> = ({ filterOn, peek }) => {
+export const MonitorPanel: React.FC<{ filterOn: number; peek: boolean }> = ({ filterOn, peek }) => {
   const f = useFrame();
   const shell = kf(f, [112, 150], [0, 1], OUT);
   return (
     <ThemeScope theme={monitorTheme}>
       {/* reproducción de la herramienta real (panel de monitoreo) con tamaños fijos: no se agranda con el estrés de tipografía */}
       {/* si la cámara está en otra ventana, el panel asoma por el borde del cuadro a propósito: es el vecino, no el sujeto (`peek`) */}
-      <div data-qa-fixed-scale data-qa-ignore={peek} style={{ position: "absolute", left: 0, top: 0, width: CW, height: CH, color: monitorTheme.color.text, fontFamily: monitorTheme.font.family }}>
+      <div data-qa-fixed-scale data-qa-ignore={peek ? "offscreen" : undefined} style={{ position: "absolute", left: 0, top: 0, width: CW, height: CH, color: monitorTheme.color.text, fontFamily: monitorTheme.font.family }}>
         <PanelBody f={f} shell={shell} filterOn={filterOn} />
       </div>
     </ThemeScope>
@@ -350,15 +350,10 @@ const PanelBody: React.FC<{ f: number; shell: number; filterOn: number }> = ({ f
 export const DotField: React.FC<{ s: number }> = ({ s }) => {
   const f = useFrame();
   const t = useTheme();
-  const { width, height, pick } = useFormat();
-  // la rejilla de puntos sigue el centro del cuadro; en vertical es más alta que ancha (14 x 20 = 280 puntos)
-  const cols = pick({ horizontal: 21, vertical: 14 });
-  const rows = Math.ceil(TOTAL / cols);
-  const sp = pick({ horizontal: 40, vertical: 56 });
-  const cx = width / 2;
-  const cy = height / 2;
-  const ox = cx - ((cols - 1) * sp) / 2;
-  const oy = cy - (rows * sp) / 2;
+  const cols = 21;
+  const sp = 40;
+  const ox = 960 - ((cols - 1) * sp) / 2;
+  const oy = 540 - (14 * sp) / 2;
   const fade = kf(f, [104, 122], [1, 0], Easing.linear);
   if (fade <= 0) return null;
   const statusOf: number[] = [];
@@ -376,8 +371,8 @@ export const DotField: React.FC<{ s: number }> = ({ s }) => {
         const lit = kf(f, [26 + (col + row) * 1.1, 34 + (col + row) * 1.1], [0, 1]);
         const a = -Math.PI / 2 + ((d.ringIdx + 0.5) / TOTAL) * Math.PI * 2;
         const m = kf(f, [58 + d.ringIdx * 0.08, 96 + d.ringIdx * 0.08], [0, 1]);
-        const x = ox + col * sp + (cx + Math.cos(a) * R - (ox + col * sp)) * m;
-        const y = oy + row * sp + (cy + Math.sin(a) * R - (oy + row * sp)) * m;
+        const x = ox + col * sp + (960 + Math.cos(a) * R - (ox + col * sp)) * m;
+        const y = oy + row * sp + (540 + Math.sin(a) * R - (oy + row * sp)) * m;
         const size = 16 + (13 - 16) * m;
         const k = p * (1 + Math.sin(lit * Math.PI) * 0.6);
         if (k <= 0) return null;

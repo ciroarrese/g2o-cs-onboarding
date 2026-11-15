@@ -1,20 +1,28 @@
 // El aviso del monitor: cae de la campana del encabezado, se pliega en una campanita redonda y vuela hacia la IZQUIERDA, al chat del equipo.
 // El vuelo y la estela son de `FlyingCard`; el aviso se dibuja con el tema del panel (`monitorTheme`).
 import React from "react";
-import { Easing, useFrame } from "video-estudio/engine";
+import { Easing, useFormat, useFrame } from "video-estudio/engine";
 import { FlyingCard, ThemeScope, kf } from "video-estudio/kit";
 import { fade as op } from "video-estudio/fx/core";
 import { cornerRadius, surfaceStyle, textStyle, useTheme, withAlpha } from "video-estudio/themes";
 import { ICON, appear } from "./piezas";
 import { ALERT, BELL_LAND, STORE, T } from "./mundo";
+import { ALERTV, BELL_LAND_V } from "./angosto";
 import { monitorTheme } from "./temas";
 
 const SIGNAL = T.teams.signal;
-const ALERT_C = { x: ALERT.x + ALERT.w / 2, y: ALERT.y + ALERT.h / 2 };
+/** Dónde está el aviso y dónde cae la campanita: en horizontal, a la derecha del panel y en el chat de la izquierda; en vertical y cuadrado, sobre la última fila de cifras y en el chat de arriba a la derecha. */
+const useLugares = () => {
+  const { format } = useFormat();
+  const alert = format === "horizontal" ? ALERT : ALERTV;
+  const land = format === "horizontal" ? BELL_LAND : BELL_LAND_V;
+  return { alert, land, c: { x: alert.x + alert.w / 2, y: alert.y + alert.h / 2 } };
+};
 
 /** El aviso de incidente: cae desde la campana y después se pliega en un círculo con una campana. */
 const AlertToast: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
+  const { alert: ALERT, c: ALERT_C } = useLugares();
   if (f < T.alert || f > T.fold[1] + 2) return null;
   const drop = appear(f, T.alert, T.alert + 16);
   const fold = kf(f, T.fold, [0, 1], Easing.bezier(0.6, 0, 0.3, 1));
@@ -44,6 +52,7 @@ const AlertToast: React.FC<{ f: number }> = ({ f }) => {
 /** La campanita vuela con estela del panel al chat (hacia la izquierda, con arco hacia arriba) y al llegar suelta dos ondas. */
 const BellFlight: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
+  const { land: BELL_LAND, c: ALERT_C } = useLugares();
   const [a, b] = SIGNAL;
   if (f < a - 2 || f > b + 26) return null;
   const p = kf(f, [a, b], [0, 1], Easing.inOut);

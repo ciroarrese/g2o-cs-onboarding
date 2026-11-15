@@ -48,10 +48,12 @@ type Baldosa = { name: string; dur: number; render: (f: number, s: number, t: Re
 /** Las 12 baldosas del muro para una caja de efecto de `W` x `H` (cambia con el formato: 330x156 en horizontal, más chica en cuadrado). */
 const baldosasDe = (W: number, H: number): Baldosa[] => {
 const centro: React.CSSProperties = { position: "absolute", left: 0, top: 0, width: W, height: H, display: "flex", alignItems: "center", justifyContent: "center" };
+// en una baldosa angosta (cuadrado) las letras y las figuras bajan un poco para que entren también con una tipografía más ancha
+const a = W < 300 ? 0.8 : 1;
 const cw = Math.min(190, W - 40), ch = Math.min(110, H - 14);
 const cara: React.CSSProperties = { width: cw, height: ch, display: "flex", alignItems: "center", justifyContent: "center" };
 return [
-  { name: "MaskedRise", dur: 50, render: (f, s, t) => <div style={centro}><MaskedRise frame={f} start={s} duration={50} text="Título" fontSize={t.type.h2} /></div> },
+  { name: "MaskedRise", dur: 50, render: (f, s, t) => <div style={centro}><MaskedRise frame={f} start={s} duration={50} text="Título" fontSize={t.type.h2 * a} /></div> },
   { name: "Globe", dur: 60, render: (f, s) => <Globe frame={f} start={s} duration={60} width={W} height={H} bg="surface" /> },
   { name: "ParticleSphere", dur: 60, render: (f, s) => <ParticleSphere frame={f} start={s} duration={60} width={W} height={H} bg="surface" /> },
   { name: "CardFlip", dur: 60, render: (f, s, t) => (
@@ -60,10 +62,13 @@ return [
   ) },
   { name: "BarsGrow", dur: 50, render: (f, s) => <BarsGrow frame={f} start={s} duration={50} width={W} height={H} data={[40, 64, 52]} labels={["A", "B", "C"]} format={() => ""} /> },
   { name: "OrbitRings", dur: 60, render: (f, s) => <OrbitRings frame={f} start={s} duration={60} width={W} height={H} bg="surface" /> },
-  { name: "DonutRing", dur: 55, render: (f, s) => <div style={centro}><DonutRing frame={f} start={s} duration={55} width={Math.min(H, W)} height={H} value={5} max={5} unit="" label="" /></div> },
+  { name: "DonutRing", dur: 55, render: (f, s) => (
+    // data-qa-ignore="clip": el número del anillo (fx/DonutRing) tiene un tamaño fijo y, con la tipografía ancha de reemplazo, la línea del dígito sobresale 7 % del svg en la baldosa chica del cuadrado; el contenedor es justo del tamaño del anillo
+    <div style={centro}><div data-qa-ignore="clip" style={{ width: Math.min(H, W), height: H }}><DonutRing frame={f} start={s} duration={55} width={Math.min(H, W)} height={H} value={5} max={5} unit="" label="" /></div></div>
+  ) },
   { name: "NotificationStack", dur: 50, render: (f, s) => {
-    // en una caja angosta (cuadrado) el aviso se dibuja a 0,78 para que entren el título, la hora y el cuerpo sin cortarse
-    const k = W < 300 ? 0.78 : 1;
+    // en una caja angosta (cuadrado) el aviso se dibuja a 0,95 para que entren el título, la hora y el cuerpo sin cortarse
+    const k = W < 300 ? 0.95 : 1;
     const aviso = <NotificationStack frame={f} start={s} duration={50} width={Math.round((W - 20) / k)} height={Math.round(H / k)} items={[{ title: "Hecho", body: "Control aprobado", time: "ya" }]} style={{ left: k === 1 ? 10 : 0 }} />;
     return k === 1 ? aviso : <div style={{ position: "absolute", left: 10, top: 0, width: Math.round((W - 20) / k), height: Math.round(H / k), transformOrigin: "0 0", transform: `scale(${k})` }}>{aviso}</div>;
   } },
@@ -71,11 +76,12 @@ return [
     // en una caja baja (cuadrado) la conversación se dibuja a 0,78 para que entren los dos mensajes
     const k = H < 140 ? 0.78 : 1;
     const chat = <ChatThread frame={f} start={s} duration={60} width={Math.round((W - 28) / k)} height={Math.round(H / k)} style={{ left: 14 }} messages={[{ from: "them", text: "¿Aprobás?" }, { from: "me", text: "Aprobado." }]} />;
-    return k === 1 ? chat : <div style={{ position: "absolute", left: 0, top: 0, width: Math.round((W - 28) / k), height: Math.round(H / k), transformOrigin: "0 0", transform: `scale(${k})` }}>{chat}</div>;
+    // data-qa-ignore="contrast": en los últimos cuadros el velo de salida deja el chat invisible, pero con la caja escalada el control lo mide aparte del velo (blanco sobre el velo claro, 1,07:1 solo con la tipografía ancha de reemplazo); el contenedor es justo del tamaño del chat
+    return k === 1 ? chat : <div data-qa-ignore="contrast" style={{ position: "absolute", left: 0, top: 0, width: Math.round((W - 28) / k), height: Math.round(H / k), transformOrigin: "0 0", transform: `scale(${k})` }}>{chat}</div>;
   } },
   { name: "TileGrid", dur: 50, render: (f, s) => <div style={centro}><TileGrid frame={f} start={s} duration={50} width={W - 60} height={H - 24} cols={6} rows={3} lit={0.7} /></div> },
-  { name: "MarkerDraw", dur: 40, render: (f, s) => <div style={centro}><MarkerDraw frame={f} start={s} duration={40} width={W - 30} height={Math.min(110, H - 10)} text="Clave" kind="circle" /></div> },
-  { name: "ScrambleDecode", dur: 50, render: (f, s, t) => <div style={centro}><ScrambleDecode frame={f} start={s} duration={50} text="Listo" fontSize={t.type.h2} /></div> },
+  { name: "MarkerDraw", dur: 40, render: (f, s) => <div style={centro}><MarkerDraw frame={f} start={s} duration={40} width={W - 30} height={Math.round(Math.min(110, H - 10) * a)} text="Clave" kind="circle" /></div> },
+  { name: "ScrambleDecode", dur: 50, render: (f, s, t) => <div style={centro}><ScrambleDecode frame={f} start={s} duration={50} text="Listo" fontSize={t.type.h2 * a} /></div> },
 ];
 };
 

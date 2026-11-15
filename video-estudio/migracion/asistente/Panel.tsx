@@ -6,7 +6,8 @@ import { ThemeScope, kf, typed } from "video-estudio/kit";
 import { Easing, useFrame } from "video-estudio/engine";
 import { fade as op } from "video-estudio/fx/core";
 import { cornerRadius, surfaceStyle, textStyle, useTheme, withAlpha } from "video-estudio/themes";
-import { BTN_GAP, BTN_H, C, CW_H, GROUPS, NEW_TICKET, P, PMIN, REPORT_TITLE, RP_H, TICKET } from "./datos";
+import { BTN_GAP, BTN_H, C, CW_H, GROUPS, NEW_TICKET, REPORT_TITLE, RP_H, TICKET } from "./datos";
+import { useGeo } from "./geo";
 import { panelTheme } from "./tema";
 
 const OUT = Easing.out;
@@ -48,14 +49,14 @@ const Input: React.FC<{ children?: React.ReactNode; ph?: string; h?: number; lig
 const press = (f: number, c: number) => kf(f, [c - 3, c + 1, c + 8], [0, 1, 0]);
 const after = (f: number, c: number, lag = 2) => f >= c + lag;
 
-const Section: React.FC<{ label: string; open: number }> = ({ label, open }) => {
+const Section: React.FC<{ label: string; open: number; cover?: string }> = ({ label, open, cover }) => {
   const t = useTheme();
   return (
     <div style={{ minHeight: 40, boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: `1px solid ${t.color.border}`, fontSize: t.type.ui.sm, lineHeight: 1.25, ...textStyle(t, "title"), color: t.color.text, whiteSpace: "nowrap" }}>
-      <span>
+      <span data-qa-ignore={cover} /* el ticket que vuela (disposición angosta) cruza el panel */>
         {open > 0.5 ? "▾" : "▸"} {label}
       </span>
-      {open > 0.5 && <span style={{ fontSize: t.type.ui.xs, lineHeight: 1.25, fontWeight: t.font.weights.regular, background: t.color.surfaceAlt, padding: "4px 10px", borderRadius: cornerRadius(t, "control") }}>Pantalla completa</span>}
+      {open > 0.5 && <span data-qa-ignore={cover} /* ídem */ style={{ fontSize: t.type.ui.xs, lineHeight: 1.25, fontWeight: t.font.weights.regular, background: t.color.surfaceAlt, padding: "4px 10px", borderRadius: cornerRadius(t, "control") }}>Pantalla completa</span>}
     </div>
   );
 };
@@ -77,10 +78,12 @@ const PanelBody: React.FC<{ open: number }> = ({ open }) => {
   const bodyH = 16 + (BTN_H * 3 + BTN_GAP * 2) + 30 + 40 + cwOpen * CW_H + 40 + rpOpen * RP_H + 16;
   const total = GROUPS.reduce((a, g) => a + g.n, 0);
   const d = t.data;
+  // en vertical y cuadrado el panel está debajo del comentario y el ticket que vuela lo cruza de punta a punta: su texto queda tapado unos cuadros
+  const cover = useGeo().angosta && f >= C.fly[0] && f <= C.fly[1] + 6 ? "contrast covered" : undefined;
   return (
     <>
       <div style={{ height: 44, boxSizing: "border-box", background: t.color.surface, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 14px", borderBottom: open > 0 ? `1px solid ${t.color.border}` : "none" }}>
-        <span style={{ fontSize: t.type.ui.sm, lineHeight: 1.25, whiteSpace: "nowrap", ...textStyle(t, "title") }}>Sugerencia IA - Ticket {TICKET}</span>
+        <span data-qa-ignore={cover} /* el ticket que vuela cruza el panel */ style={{ fontSize: t.type.ui.sm, lineHeight: 1.25, whiteSpace: "nowrap", ...textStyle(t, "title") }}>Sugerencia IA - Ticket {TICKET}</span>
         <span data-qa-decor /* botón de minimizar del marco del panel */ style={{ width: 24, height: 24, borderRadius: cornerRadius(t, "control"), background: t.color.surfaceAlt, fontSize: t.type.ui.sm, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>{open > 0.5 ? "—" : "▢"}</span>
       </div>
       {open > 0 && <div style={{ height: bodyH * open, overflow: "hidden" }}>
@@ -94,7 +97,7 @@ const PanelBody: React.FC<{ open: number }> = ({ open }) => {
           </div>
           <div style={{ height: 30, display: "flex", alignItems: "center", fontSize: t.type.ui.sm, lineHeight: 1.25, color: t.color.textMuted }}>{status}</div>
 
-          <Section label="CloudWatch" open={cwOpen} />
+          <Section label="CloudWatch" open={cwOpen} cover={cover} />
           <div style={{ height: cwOpen * CW_H, overflow: "hidden" }}>
             {/* cerrada no se monta: el texto de una sección de alto 0 no existe para el espectador (ni para qa) */}
             {cwShow > 0 && <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 4, opacity: op(cwShow) }}>
@@ -125,10 +128,10 @@ const PanelBody: React.FC<{ open: number }> = ({ open }) => {
             </div>}
           </div>
 
-          <Section label="Reportar" open={rpOpen} />
+          <Section label="Reportar" open={rpOpen} cover={cover} />
           <div style={{ height: rpOpen * RP_H, overflow: "hidden" }}>
             {rpShow > 0 && (created ? (
-              <div data-qa-ignore="min-size" /* texto de la interfaz recreada: con la cámara alejándose queda por debajo de 18 px, se lee al acercar */ style={{ fontSize: t.type.ui.md, lineHeight: 1.25, color: t.color.success, paddingTop: 10, opacity: op(rpShow) }}>Reporte creado (ticket #{NEW_TICKET}).</div>
+              <div data-qa-ignore={cover ? `min-size ${cover}` : "min-size"} /* texto de la interfaz recreada: con la cámara alejándose queda por debajo de 18 px, se lee al acercar; en angosta lo cruza el ticket que vuela */ style={{ fontSize: t.type.ui.md, lineHeight: 1.25, color: t.color.success, paddingTop: 10, opacity: op(rpShow) }}>Reporte creado (ticket #{NEW_TICKET}).</div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 4, opacity: op(rpShow) }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
@@ -163,6 +166,7 @@ const PanelBody: React.FC<{ open: number }> = ({ open }) => {
 /** El panel en su lugar: del rincón de la mesa (minimizado) a la derecha (abierto), con un vaivén suave una vez levantado. */
 export const Panel: React.FC = () => {
   const f = useFrame();
+  const { P, PMIN } = useGeo();
   const p = kf(f, [C.lift[0], C.lift[1]], [0, 1], IN_OUT);
   const open = kf(f, [C.lift[0] + 40, C.lift[1] + 10], [0, 1], OUT);
   const x = PMIN.x + (P.x - PMIN.x) * p;

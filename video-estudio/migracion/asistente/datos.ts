@@ -64,19 +64,4 @@ export const KEYS = CAM_T.map((f, i) => ({ f, x: FX[i]!, y: FY[i]!, scale: S[i]!
 export const TILT_T = [0, 110, 190, 300, 500, 640, 760, 840];
 export const TILT_RX = [8, 4, 2, 0, 0, 0, 4, 0];
 export const TILT_RY = [-12, -6, -4, 0, 0, 0, -4, 0];
-
-// ---------- cámara en vertical y cuadrado (mismos cuadros clave, otro encuadre) ----------
-// El mundo sigue siendo el de 1920x1080; lo que cambia es dónde mira la cámara y cuánto acerca: con 1080 de ancho el panel (540) entra a 1,75 y la
-// columna principal (720) a 1,38, así que se encuadra cada zona en vez de achicar la vista general.
-const camTabla = (x: number[], y: number[], s: number[]) => CAM_T.map((f, i) => ({ f, x: x[i]!, y: y[i]!, scale: s[i]! }));
-const FXV = [680, 700, 880, 1600, 1600, 516, 516, 1600, 1600, 516, 516, 1600, 1600, 1600, 1600, 1600, 990, 560];
-export const KEYS_VERTICAL = camTabla(
-  FXV,
-  [560, 560, 560, 480, 480, 640, 640, 480, 480, 640, 640, 520, 520, 520, 520, 520, 800, 800],
-  [0.84, 0.86, 0.72, 1.75, 1.75, 1.38, 1.38, 1.75, 1.75, 1.38, 1.38, 1.75, 1.75, 1.75, 1.75, 1.75, 0.6, 1.3],
-);
-export const KEYS_CUADRADO = camTabla(
-  FXV,
-  [560, 560, 560, 495, 495, 560, 560, 495, 495, 560, 560, 495, 495, 495, 495, 495, 800, 650],
-  [0.86, 0.88, 0.74, 1.45, 1.45, 1.38, 1.38, 1.45, 1.45, 1.38, 1.38, 1.45, 1.45, 1.45, 1.45, 1.45, 0.6, 1.3],
-);
+// La cámara de vertical y cuadrado (otra disposición de la ventana) vive en ./geo.ts.
