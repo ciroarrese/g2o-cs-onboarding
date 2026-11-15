@@ -122,7 +122,8 @@ function SceneBodyV() {
     <>
       <World camera={cam} width={width} height={height} perspective={2400}>
         {/* cada ventana tiene su lugar fijo entre los hijos (aunque no se dibuje): `qa` identifica un texto entre cuadros por su ruta */}
-        <div>{visible(PANEL_RECT) && <MonitorPanelV filterOn={filterOn} peek={peek(PANEL_RECT)} />}</div>
+        {/* entre los cuadros 736 y 800 la cámara hace el latigazo del panel a la campanita: el panel sale por el borde izquierdo a propósito, aunque el foco todavía esté sobre él */}
+        <div>{visible(PANEL_RECT) && <MonitorPanelV filterOn={filterOn} peek={peek(PANEL_RECT) || (f >= 736 && f <= 800)} />}</div>
         <Cursor
           show={[182, 490]}
           clicks={[T.filterClick, T.rowClick, T.ticketClick]}

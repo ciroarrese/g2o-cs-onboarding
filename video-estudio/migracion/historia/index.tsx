@@ -80,6 +80,6 @@ const Video: React.FC = () => (
 );
 
 export default defineVideo({
-  id: "migracion", component: Video, fps: 30, width: 1920, height: 1080, durationInFrames,
+  id: "migracion", component: Video, fps: 30, width: 1920, height: 1080, durationInFrames, formats: ["horizontal", "vertical", "cuadrado"],
   scenes: timeline.map((e) => ({ id: e.id, name: e.kind === "topic" && e.topic !== undefined ? spec.topics[e.topic]?.name : undefined, from: e.from, durationInFrames: e.durationInFrames })),
 });
