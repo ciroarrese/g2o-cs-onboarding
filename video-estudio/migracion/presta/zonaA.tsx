@@ -5,7 +5,9 @@ import { Easing } from "video-estudio/engine";
 import { kf } from "video-estudio/kit";
 import { fade as op, xform } from "video-estudio/fx/core"; // opacidad y transform solo mientras cambian (en reposo no se emiten: residuos que rompen --check)
 import { cornerRadius, entrance, readableOn, surfaceStyle, textStyle, useTheme, withAlpha } from "video-estudio/themes";
-import { ART, EW, HUB, NAME, PRODUCTS, SW, T, TILE } from "./datos";
+import { ART, NAME, PRODUCTS, T, TILE } from "./datos";
+import { useGeo } from "./geo";
+import type { Geo } from "./geo";
 import { erpTheme, tiendaTheme } from "./temas";
 import { BarraNavegador, Chip, Icon, Ventana, inkOn, money, useZoomed } from "./ui";
 
@@ -100,11 +102,14 @@ const TiendaInterior: React.FC<{ f: number }> = ({ f }) => {
   );
 };
 
-export const Tienda: React.FC<{ f: number }> = ({ f }) => (
-  <Ventana tool={tiendaTheme} x={SW.x} y={SW.y} w={SW.w} h={SW.h}>
-    <TiendaInterior f={f} />
-  </Ventana>
-);
+export const Tienda: React.FC<{ f: number }> = ({ f }) => {
+  const { SW } = useGeo();
+  return (
+    <Ventana tool={tiendaTheme} x={SW.x} y={SW.y} w={SW.w} h={SW.h}>
+      <TiendaInterior f={f} />
+    </Ventana>
+  );
+};
 
 // ---------- el ERP ----------
 const CINTA: [string, string][] = [
@@ -195,22 +200,26 @@ const ErpInterior: React.FC<{ f: number }> = ({ f }) => {
   );
 };
 
-export const Erp: React.FC<{ f: number }> = ({ f }) => (
-  <Ventana tool={erpTheme} x={EW.x} y={EW.y} w={EW.w} h={EW.h}>
-    <ErpInterior f={f} />
-  </Ventana>
-);
+export const Erp: React.FC<{ f: number }> = ({ f }) => {
+  const { EW } = useGeo();
+  return (
+    <Ventana tool={erpTheme} x={EW.x} y={EW.y} w={EW.w} h={EW.h}>
+      <ErpInterior f={f} />
+    </Ventana>
+  );
+};
 
 // ---------- el módulo en el medio y las pastillas que viajan ----------
-const LANES = (t: ReturnType<typeof useTheme>) => [
+const LANES = (t: ReturnType<typeof useTheme>, { EW, SW }: Pick<Geo, "EW" | "SW">) => [
   { label: "Precios", c: t.color.accent, r: T.chipPrice, from: [EW.x + 600, EW.y + 210], to: [SW.x + 260, SW.y + 300] },
   { label: "Stock", c: t.color.accent2, r: T.chipStock, from: [EW.x + 760, EW.y + 300], to: [SW.x + 700, SW.y + 560] },
   { label: "Catálogo", c: t.color.chart[2]!, r: T.chipCat, from: [EW.x + 300, EW.y + 360], to: [SW.x + 700, SW.y + 560] },
-  { label: "Pedidos", c: t.color.success, r: T.chipOrder, from: [SW.x + 480, SW.y + 320], to: [EW.x + 680, EW.y + 620] },
+  { label: "Pedidos", c: t.color.success, r: T.chipOrder, from: [SW.x + 480, SW.y + 320], to: [EW.x + 680, EW.y + EW.h - 80] },
 ];
 
 export const Modulo: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
+  const { HUB, EW, SW } = useGeo();
   return (
     <>
       <div style={{ position: "absolute", left: HUB.x - 190, top: HUB.y - 34, width: 380, height: 68, ...surfaceStyle(t, "card", { corner: "chip", level: "lg" }), boxShadow: `0 18px 40px -14px ${withAlpha(t.color.accent, 0.5)}`, display: "flex", alignItems: "center", justifyContent: "center", gap: 12, boxSizing: "border-box" }}>
@@ -225,7 +234,7 @@ export const Modulo: React.FC<{ f: number }> = ({ f }) => {
         </svg>
         <span style={{ fontSize: t.type.eyebrow, ...textStyle(t, "title"), whiteSpace: "nowrap", lineHeight: 1.25 }}>{NAME}</span>
       </div>
-      {LANES(t).map((l) => {
+      {LANES(t, { EW, SW }).map((l) => {
         if (f < l.r[0] || f > l.r[1] + 2) return null;
         const q = kf(f, [l.r[0], l.r[1]], [0, 1], Easing.bezier(0.45, 0, 0.25, 1));
         const [sx, sy] = l.from as [number, number];

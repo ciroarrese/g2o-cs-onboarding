@@ -17,7 +17,7 @@ import { Aviso } from "./Aviso";
 import { ChatWindow } from "./Chat";
 import { MesaDeAyuda } from "./Mesa";
 import { DotField, MonitorPanel } from "./Panel";
-import { BTN, CH, CW, DURACION, ED, KEYS, MESA, T, TABLE, TEAMS, TEAMS_CX, TICKET, TILT_F, TILT_RX, TILT_RY, TVX, chipX, firstRowY, CHIP, FOCUS_STATUS } from "./mundo";
+import { BTN, CH, CW, DURACION, ED, KEYS, MESA, T, TABLE, TEAMS, TEAMS_CX, TICKET, TILT_F, TILT_RX, TILT_RY, TVX, keysPara, chipX, firstRowY, CHIP, FOCUS_STATUS } from "./mundo";
 
 export { DURACION };
 
@@ -25,11 +25,11 @@ const OUT = Easing.out;
 const TT = T.teams;
 
 /** Claves del original; las de vista general (escala 1, titular a la vista) se corren lo mínimo para que el sujeto quede bajo la franja del titular. */
-const clearKeys = (strip: { x: number; y: number; w: number; h: number }, width: number, height: number): CameraKey[] => {
+const clearKeys = (strip: { x: number; y: number; w: number; h: number }, width: number, height: number, keys: CameraKey[]): CameraKey[] => {
   const panel = { x: 0, y: 0, w: CW, h: 880 }; // el panel sin su margen inferior
   const mesa = { x: MESA.x, y: MESA.y, w: MESA.w, h: MESA.h };
   const subject: Record<number, typeof panel> = { 160: panel, 190: panel, 630: panel, 644: panel, 546: mesa, 560: mesa, 1092: mesa, 1140: mesa, 1150: mesa, 1292: mesa, 1320: mesa };
-  return KEYS.map((k) => {
+  return keys.map((k) => {
     const s = subject[k.f];
     if (!s) return k;
     const c = cameraKeepClear(k, s, { strip, format: { width, height }, margin: 10 });
@@ -40,10 +40,10 @@ const clearKeys = (strip: { x: number; y: number; w: number; h: number }, width:
 export function SceneBody() {
   const f = useFrame();
   const t = useTheme();
-  const { width, height } = useFormat();
+  const { width, height, format } = useFormat();
   const topic = useTopic({ name: "Sincro Monitor", line: "avisa antes de que el cliente reclame", index: 2 });
   const strip = headlineStrip(t, { width, height });
-  const keys = clearKeys(strip, width, height);
+  const keys = clearKeys(strip, width, height, keysPara(format));
   // la cámara recorre el mismo camino del original; la inclinación en reposo (al llegar de la apertura y al seguir al ticket) se suma a la de la velocidad
   const c = useCameraAt(f, keys, {
     maxTilt: 9,

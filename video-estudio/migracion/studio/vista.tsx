@@ -15,15 +15,18 @@ import type { Theme } from "video-estudio/themes";
 import { SceneBody as Health } from "../health/Scene";
 import { theme as marca } from "../theme";
 import { spec } from "../historia/spec";
-import { HEALTH_FRAME, PREVIEW } from "./datos";
+import { HEALTH_FRAME } from "./datos";
+import { BK } from "./layout";
+import type { Lay } from "./layout";
 
 const NATIVE: Record<FormatName, [number, number]> = { horizontal: [1920, 1080], vertical: [1080, 1920], cuadrado: [1080, 1080] };
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 
-type Layer = { key: string; kind: "health" | "demo"; theme: Theme; fmt: FormatName; origin: number; at: number };
+type Layer = { key: string; kind: "health" | "demo"; theme: Theme; fmt: FormatName | "actual"; origin: number; at: number };
 /** Capas de la vista previa en orden: cada una entra con un fundido corto (`at`) sobre la anterior; `origin` es su cuadro 0. */
 const LAYERS: Layer[] = [
-  { key: "health", kind: "health", theme: marca, fmt: "horizontal", origin: 0, at: -100000 },
+  // la escena real de Health Score se dibuja en el formato del video en curso: el cuadro 0 es su cuadro `HEALTH_FRAME` en ese formato
+  { key: "health", kind: "health", theme: marca, fmt: "actual", origin: 0, at: -100000 },
   { key: "marca", kind: "demo", theme: marca, fmt: "horizontal", origin: 450, at: 446 },
   { key: "editorial", kind: "demo", theme: editorial as unknown as Theme, fmt: "horizontal", origin: 510, at: 506 },
   { key: "neon", kind: "demo", theme: neon as unknown as Theme, fmt: "horizontal", origin: 570, at: 566 },
@@ -34,14 +37,12 @@ const LAYERS: Layer[] = [
 const FADE = 10;
 
 /**
- * Medidas de la caja de la vista previa en el cuadro `f`: 1008x567 (56 % de la ventana) hasta la tercera parte; después crece (horizontal 1120x630),
- * y cada formato ocupa todo el alto útil de la ventana (vertical 394x700, cuadrado 700x700).
+ * Medidas de la caja de la vista previa en el cuadro `f` (`lay.box`): hasta la tercera parte la forma exacta del formato (horizontal 1008x567);
+ * después crece y cambia de forma (horizontal, vertical y cuadrado) y de lugar. `cx` es su centro.
  */
-export function previewRect(f: number) {
-  const k = [446, 466, 690, 702, 735, 747];
-  const w = kf(f, k, [1008, 1120, 1120, 394, 394, 700]);
-  const h = kf(f, k, [567, 630, 630, 700, 700, 700]);
-  return { w: Math.round(w), h: Math.round(h), top: PREVIEW.top };
+export function previewRect(f: number, lay: Lay) {
+  const b = lay.box;
+  return { w: Math.round(kf(f, BK, b.w)), h: Math.round(kf(f, BK, b.h)), top: Math.round(kf(f, BK, b.top)), cx: Math.round(kf(f, BK, b.cx)) };
 }
 
 // ---------- contenido de la tercera parte ----------
@@ -109,14 +110,16 @@ export const Demo: React.FC = () => {
 // ---------- capas ----------
 const LayerView: React.FC<{ layer: Layer; f: number; rect: { w: number; h: number }; opacity: number }> = ({ layer, f, rect, opacity }) => {
   const cfg = useVideoConfig();
-  const [nw, nh] = NATIVE[layer.fmt];
+  const actualFmt = useFormat().format;
+  const fmt: FormatName = layer.fmt === "actual" ? actualFmt : layer.fmt;
+  const [nw, nh] = NATIVE[fmt];
   const s = Math.min(rect.w / nw, rect.h / nh);
   const left = Math.round((rect.w - nw * s) / 2);
   const top = Math.round((rect.h - nh * s) / 2);
   const local = layer.kind === "health" ? HEALTH_FRAME : f - layer.origin;
   return (
     <div style={{ position: "absolute", left, top, width: nw, height: nh, transformOrigin: "0 0", transform: `scale(${s.toFixed(5)})`, opacity: op(opacity) }}>
-      <FrameProvider frame={local} config={{ ...cfg, width: nw, height: nh, format: layer.fmt }}>
+      <FrameProvider frame={local} config={{ ...cfg, width: nw, height: nh, format: fmt }}>
         {/* cada capa fija su design system: la escena de Health Score y la pieza de ejemplo no cambian con el sistema del video */}
         <ThemeScope theme={layer.theme} paint style={{ position: "absolute", left: 0, top: 0, width: nw, height: nh, overflow: "hidden" }}>
           <Stage>

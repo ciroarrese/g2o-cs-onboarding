@@ -140,3 +140,35 @@ export const KEYS: CameraKey[] = ([
 export const TILT_F = [0, 112, 136, 168, 470, 520];
 export const TILT_RX = [0, 0, 12, 0, 0, 4];
 export const TILT_RY = [0, 0, -10, 0, 0, -3];
+
+/** Cámara de vertical y cuadrado (1080 de ancho). El mundo sigue siendo el mismo (panel al centro, chat a la izquierda, mesa a la derecha) y la
+ *  cámara lo recorre más cerca: en vez de mostrar una herramienta entera, encuadra la zona donde pasa la acción. Cada fila es
+ *  `cuadro: [x, y, escala vertical, escala cuadrado, y del cuadrado si difiere]`; todas las claves del horizontal tienen su fila. */
+const VERT: Record<number, [number, number, number, number, number?]> = {
+  0: [300, 668, 2, 2], 112: [300, 668, 2, 2],
+  160: [640, 460, 0.95, 0.88, 340], 190: [640, 460, 0.95, 0.88, 340],
+  225: [420, 460, 1.5, 1.5, 330], 270: [420, 460, 1.5, 1.5, 330],
+  305: [1070, 560, 1.1, 1.1, 600], 470: [1070, 560, 1.1, 1.1, 600],
+  500: [1700, 470, 0.62, 0.62],
+  546: [2330, 440, 1.3, 1.1], 560: [2330, 440, 1.3, 1.1],
+  576: [2300, 360, 1.4, 1.3], 600: [2300, 360, 1.4, 1.3],
+  630: [640, 460, 0.95, 0.88, 340], 644: [640, 460, 0.95, 0.88, 340],
+  658: [1340, 330, 1.7, 1.7, 250], 700: [1340, 330, 1.7, 1.7, 250], 730: [1300, 330, 1.4, 1.4, 260],
+  762: [300, 260, 0.62, 0.62],
+  792: [TEAMS_CX, TEAMS.y + 520, 1.1, 1], 998: [TEAMS_CX, TEAMS.y + 520, 1.1, 1],
+  1012: [TEAMS_CX, TEAMS.y + 690, 1.15, 1.1], 1042: [TEAMS_CX, TEAMS.y + 690, 1.15, 1.1],
+  1068: [900, 420, 0.3, 0.3],
+  1092: [2330, 440, 1.3, 1.1], 1106: [2300, 381, 1.3, 1.3], 1118: [2300, 381, 1.3, 1.3],
+  1140: [2330, 460, 1.3, 1.1], 1150: [2330, 460, 1.3, 1.1],
+  1166: [2264, 640, 1.4, 1.3], 1268: [2264, 640, 1.4, 1.3],
+  1292: [2330, 460, 1.3, 1.1], 1320: [2330, 460, 1.3, 1.1],
+  1352: [970, 440, 0.27, 0.27], 1396: [970, 440, 0.27, 0.27], 1404: [970, 440, 0.27, 0.27],
+};
+export const keysPara = (format: string): CameraKey[] => {
+  if (format === "horizontal") return KEYS;
+  const col = format === "vertical" ? 2 : 3;
+  return KEYS.map((k) => {
+    const v = VERT[k.f];
+    return v ? { f: k.f, x: v[0], y: format === "cuadrado" ? (v[4] ?? v[1]) : v[1], scale: v[col] } : k;
+  });
+};

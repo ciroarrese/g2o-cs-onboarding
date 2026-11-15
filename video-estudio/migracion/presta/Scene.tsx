@@ -19,18 +19,21 @@ import type { CameraKey } from "video-estudio/kit";
 import { TopicHeadline, useTopic } from "video-estudio/stories";
 import { ThemeProvider, cameraOptions, dark, editorial, neon, neutral, papel, useTheme } from "video-estudio/themes";
 import { theme as marca } from "../theme";
-import { CFG, DURACION, EW, PHONE, QR, SE, SW, T, VIS, ZB, ZC, ZD, enVentana } from "./datos";
+import { DURACION, T, VIS, enVentana } from "./datos";
+import { encuadre, useGeo } from "./geo";
+import type { Geo } from "./geo";
 import { ZoomCtx } from "./ui";
 import { ZonaA } from "./zonaA";
-import { CAJA_C, ZonaB, ZonaC, medidasB } from "./zonaBC";
+import { ZonaB, ZonaC, medidasB } from "./zonaBC";
 import { ZonaD, interruptor } from "./zonaD";
-import { Cuenta, DESCARGA, Pdf, Telefono, filaMov } from "./zonaE";
+import { Cuenta, DESCARGA, Pdf, Telefono } from "./zonaE";
 
 export { DURACION };
 
 /** Cámara: cuadros clave [cuadro, foco x, foco y, escala]. Las vistas generales van a 0,88; los acercamientos rápidos (1,25 a 1,9) caen sobre la acción. */
-const claves = (t: ReturnType<typeof useTheme>): CameraKey[] => {
-  const b = medidasB(t);
+const clavesHorizontal = (t: ReturnType<typeof useTheme>, g: Geo): CameraKey[] => {
+  const { EW, SW, ZB, ZC, ZD, PHONE } = g;
+  const b = medidasB(t, g);
   // la zona B es más ancha con la letra del tema: la vista general se achica lo justo para que entren las cinco columnas, y el acercamiento
   // a las últimas semanas se calcula con el ancho real
   const sB = Math.min(0.9, 1800 / b.total);
@@ -62,18 +65,89 @@ const claves = (t: ReturnType<typeof useTheme>): CameraKey[] => {
   return ks.map(([f, x, y, scale]) => ({ f, x, y, scale }));
 };
 
+/**
+ * Cámara de vertical y cuadrado: los mismos momentos (mismos cuadros) sobre el mundo apilado. Las vistas generales encuadran cada zona entera
+ * (en cuadrado, la zona A y la D muestran solo la franja donde pasa la acción) y los acercamientos caen sobre lo que cambia.
+ */
+const clavesApiladas = (t: ReturnType<typeof useTheme>, g: Geo, W: number, H: number): CameraKey[] => {
+  const { EW, SW, ZB, ZC, ZD, CFG, SE, PDF, PHONE, cajaC } = g;
+  const v = g.formato === "vertical";
+  const R = v ? 250 : 215; // franja del titular
+  const lejos = v ? 0.45 : 0.4; // escala de los vuelos entre zonas
+  const b = medidasB(t, g);
+  const k = (f: number, x: number, y: number, scale: number): CameraKey => ({ f, x: Math.round(x), y: Math.round(y), scale: +scale.toFixed(3) });
+  const kk = (f: number, e: { x: number; y: number; s: number }): CameraKey => k(f, e.x, e.y, e.s);
+  // zona A: en vertical toda la pila (ERP, módulo y tienda); en cuadrado la franja entre las filas del ERP y los productos de la tienda
+  const overA = v ? encuadre({ x: EW.x, y: EW.y, w: EW.w, h: SW.y + SW.h - EW.y }, W, H, { top: R }) : { x: g.HUB.x, y: g.HUB.y + 95, s: 0.8 };
+  const zA = v ? 1.7 : 1.6;
+  const precio = { x: EW.x + 560, y: EW.y + 250, s: zA };
+  const tienda = { x: SW.x + 300, y: SW.y + 300, s: zA };
+  const pedido = { x: EW.x + 560, y: EW.y + EW.h - 60, s: zA };
+  // zona B: la grilla de semanas entera; el acercamiento va a las últimas (filas de abajo)
+  const overB = encuadre({ x: ZB.x - b.ancho / 2, y: b.top, w: b.ancho, h: b.bottom - b.top }, W, H, { top: R, max: 0.98 });
+  const ultimas = [3, 4].map((w) => b.pos[w]!);
+  const topUlt = Math.min(...ultimas.map((p) => p.base)) - 5 * (b.chipH + b.chipGap);
+  const zonaUlt = v
+    ? encuadre({ x: ZB.x - b.ancho / 2, y: b.pos[2]!.base - 4 * (b.chipH + b.chipGap), w: b.ancho, h: b.bottom - (b.pos[2]!.base - 4 * (b.chipH + b.chipGap)) }, W, H, { top: R, max: 0.98 })
+    : encuadre({ x: Math.min(...ultimas.map((p) => p.x)), y: topUlt, w: 2 * b.colW + b.gap, h: b.bottom - topUlt }, W, H, { top: 70, max: 1.45 });
+  // zona C: las dos cajas; el acercamiento va a cada caja
+  const cajasC = encuadre({ x: cajaC.x, y: cajaC.top, w: cajaC.w, h: cajaC.bot + cajaC.h - cajaC.top }, W, H, { top: R });
+  const zC = v ? 1.2 : 1.25;
+  const muro = { x: cajaC.x + cajaC.w / 2, y: cajaC.top + 262, s: zC };
+  const srv = { x: cajaC.x + cajaC.w / 2, y: cajaC.bot + 262, s: zC };
+  // zona D: tarjetas arriba y pantalla de configuración abajo (en cuadrado la cámara baja de una a otra mientras se funden)
+  const cw = 390;
+  const tarj = encuadre({ x: ZD.x - cw - 20, y: g.tarjeta(0, cw).y, w: 2 * cw + 40, h: 650 }, W, H, { top: R, max: 1.15 });
+  const ventana = encuadre({ x: CFG.x, y: CFG.y, w: CFG.w, h: CFG.h }, W, H, { top: R, max: 1.15 });
+  const overD = v ? encuadre({ x: CFG.x, y: ZD.y - 800, w: CFG.w, h: CFG.y + CFG.h - (ZD.y - 800) }, W, H, { top: R }) : null;
+  const zD = v ? 1.25 : 1.2;
+  const interr = { x: CFG.x + CFG.w * 0.58, y: CFG.y + 334, s: zD };
+  const guardar = { x: CFG.x + CFG.w * 0.55, y: CFG.y + 600, s: zD };
+  // zona E: la cuenta corriente, y debajo la factura con el teléfono
+  const cuenta = encuadre({ x: SE.x, y: SE.y, w: SE.w, h: SE.h }, W, H, { top: R });
+  const detalle = v ? { x: SE.x + SE.w / 2, y: SE.y + 560, s: 1.1 } : { x: SE.x + SE.w / 2, y: SE.y + 600, s: 1.08 };
+  const fila = encuadre({ x: PDF.x, y: PDF.y, w: PHONE.x + PHONE.w - PDF.x, h: PDF.h }, W, H, { top: R });
+  const telefono = { x: PHONE.x + PHONE.w / 2, y: PHONE.y + 390, s: v ? 1.75 : 1.2 };
+  const ks: CameraKey[] = [
+    kk(0, overA), kk(28, overA),
+    kk(40, precio), kk(62, precio), // el precio cambia en el ERP
+    kk(76, tienda), kk(104, tienda), // y llega a la tienda
+    kk(118, overA), kk(184, overA),
+    kk(198, pedido), kk(228, pedido), // el pedido de la web llega al ERP
+    k(242, (EW.x + EW.w / 2 + ZB.x) / 2, 900, lejos), kk(258, overB), kk(384, overB),
+    kk(396, zonaUlt), kk(434, zonaUlt), // una semana entera de arreglos y mejoras
+    kk(446, overB), k(460, ZB.x, (b.bottom + cajaC.top) / 2, lejos), kk(474, cajasC), kk(540, cajasC),
+    kk(550, muro), kk(572, muro), // el muro corta la sincro
+    kk(584, cajasC), kk(624, cajasC),
+    kk(634, srv), kk(664, srv), // la corrida del servidor pasa los 2:00
+    kk(676, cajasC), kk(716, cajasC),
+    k(730, (ZC.x + ZD.x) / 2, ZC.y, lejos),
+    ...(v ? [kk(744, overD!), kk(858, overD!)] : [kk(744, tarj), kk(782, tarj), kk(858, ventana)]),
+    kk(866, interr), kk(904, interr), // se encienden los interruptores
+    kk(912, guardar), kk(926, guardar),
+    k(940, (ZD.x + SE.x + SE.w / 2) / 2, (ZD.y + CFG.h + SE.y) / 2, lejos), kk(954, cuenta), kk(1000, cuenta),
+    kk(1010, detalle), kk(1042, detalle), // detalle del movimiento
+    kk(1060, fila), kk(1086, fila),
+    kk(1098, fila), kk(1116, fila),
+    kk(1126, telefono), kk(1166, telefono), // ARCA en el teléfono
+  ];
+  return ks;
+};
+
+const claves = (t: ReturnType<typeof useTheme>, g: Geo, W: number, H: number): CameraKey[] => (g.apilada ? clavesApiladas(t, g, W, H) : clavesHorizontal(t, g));
+
 /** Inclinación del plano por tramos (grados; el original la tenía en cuadros clave) y el vaivén lento que se le sumaba. */
 const TT = [0, 226, 258, 474, 744, 954, 1080, 1124, 1166];
 const RX = [5, 3, 4, 3, 4, 3, 2, 3, 0];
 const RY = [-8, 3, -5, 4, -5, 4, -3, 3, 0];
 
-const useCamera = (f: number) => {
+const useCamera = (f: number, g: Geo, W: number, H: number) => {
   const t = useTheme();
-  const keys = claves(t);
+  const keys = claves(t, g, W, H);
   // sin inclinación por velocidad: la del original es solo la de los cuadros clave, que el design system escala (`motion.cameraTilt`)
   const c = useCameraAt(f, keys, {
     tiltGain: 0,
-    map: (fr, cam) => zoomThrough(fr, T.through, cam, { x: PHONE.x + 190, y: PHONE.y + 300 }, 40),
+    map: (fr, cam) => zoomThrough(fr, T.through, cam, { x: g.PHONE.x + 190, y: g.PHONE.y + 300 }, 40),
     noBlurFrom: T.through[0],
   });
   const tk = (cameraOptions(t).tiltGain ?? 0.05) / 0.05;
@@ -83,10 +157,17 @@ const useCamera = (f: number) => {
 export function SceneBody() {
   const f = useFrame();
   const { width, height } = useFormat();
+  const g = useGeo();
+  const { CFG, SE, QR, PHONE, cajaC } = g;
   const topic = useTopic({ name: "Módulo Sincro Presta", line: "la tienda y el ERP, siempre sincronizados", index: 1 });
-  const cam = useCamera(f);
+  const cam = useCamera(f, g, width, height);
   const zoomIn = Math.max(0, Math.min(1, (cam.scale - 1.05) / 0.4));
-  const cfgCursor = (i: number) => interruptor(i);
+  const cfgCursor = (i: number) => interruptor(i, g);
+  // centro del carril de la caja (la barra) y medidas de los garabatos de la zona C
+  const barY = (y0: number) => y0 + (cajaC.v ? 328 : 198);
+  const muroX = cajaC.x + cajaC.trackX + cajaC.trackW * cajaC.limite;
+  const nolimX = cajaC.x + cajaC.trackX + cajaC.trackW * 0.48;
+  const dm = cajaC.v ? { rx: 70, ry: 100, rx2: 80 } : { rx: 64, ry: 84, rx2: 72 };
   return (
     <>
       <World camera={cam} width={width} height={height} perspective={2400}>
@@ -105,9 +186,11 @@ export function SceneBody() {
           )}
         </ZoomCtx.Provider>
         {/* garabatos */}
-        <DoodleCircle start={T.fail + 4} end={T.move[0]} cx={CAJA_C.x + CAJA_C.trackX + CAJA_C.trackW * CAJA_C.limite} cy={CAJA_C.top + 198} rx={64} ry={84} id="dc-wall" />
-        <DoodleArrow start={T.move[0] - 6} end={T.srv[0] + 16} x1={CAJA_C.x + 250} y1={ZC.y - 120} x2={CAJA_C.x + 250} y2={ZC.y + 150} bend={0.35} id="da-move" />
-        <DoodleCircle start={T.srv[0] + 34} end={T.srv[1] + 20} cx={CAJA_C.x + CAJA_C.trackX + CAJA_C.trackW * 0.48} cy={CAJA_C.bot + 198} rx={72} ry={84} id="dc-nolimit" />
+        <DoodleCircle start={T.fail + 4} end={T.move[0]} cx={muroX} cy={barY(cajaC.top)} rx={dm.rx} ry={dm.ry} id="dc-wall" />
+        {cajaC.v
+          ? <DoodleArrow start={T.move[0] - 6} end={T.srv[0] + 16} x1={cajaC.x + 850} y1={g.ZC.y - 160} x2={cajaC.x + 850} y2={g.ZC.y + 100} bend={0.35} id="da-move" />
+          : <DoodleArrow start={T.move[0] - 6} end={T.srv[0] + 16} x1={cajaC.x + 250} y1={g.ZC.y - 120} x2={cajaC.x + 250} y2={g.ZC.y + 150} bend={0.35} id="da-move" />}
+        <DoodleCircle start={T.srv[0] + 34} end={T.srv[1] + 20} cx={nolimX} cy={barY(cajaC.bot)} rx={dm.rx2} ry={dm.ry} id="dc-nolimit" />
         <DoodleCircle start={T.click2 + 10} end={T.save + 20} cx={CFG.x + CFG.w - 130} cy={cfgCursor(3).y} rx={90} ry={34} id="dc-switch" />
         <DoodleCircle start={T.scan[0] - 10} end={T.arca + 20} cx={QR.x + QR.size / 2} cy={QR.y + QR.size / 2} rx={98} ry={98} id="dc-qr" />
         <DoodleArrow start={T.scan[0] - 8} end={T.arca + 10} x1={QR.x + QR.size + 24} y1={QR.y + 40} x2={PHONE.x - 16} y2={PHONE.y + 330} bend={-0.2} id="da-phone" />
@@ -128,9 +211,9 @@ export function SceneBody() {
           clicks={[T.detail, T.pdfClick]}
           keys={[
             [968, SE.x + 500, SE.y + 760],
-            [T.detail - 8, SE.x + 26 + 84 + 120, filaMov(1)],
-            [T.pdfClick - 10, SE.x + SE.w - 220, SE.y + 266 + DESCARGA.top + DESCARGA.h / 2],
-            [1062, SE.x + SE.w - 220, SE.y + 266 + DESCARGA.top + DESCARGA.h / 2],
+            [T.detail - 8, SE.x + 26 + 84 + 120, g.filaMov(1)],
+            [T.pdfClick - 10, SE.x + SE.w - g.detalle.w / 2, SE.y + g.detalle.top + DESCARGA.top + DESCARGA.h / 2],
+            [1062, SE.x + SE.w - g.detalle.w / 2, SE.y + g.detalle.top + DESCARGA.top + DESCARGA.h / 2],
           ]}
         />
       </World>

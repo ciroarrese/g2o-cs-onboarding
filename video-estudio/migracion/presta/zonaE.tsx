@@ -7,7 +7,8 @@ import { fade as op, xform } from "video-estudio/fx/core";
 import { PhoneFrame } from "video-estudio/fx";
 import { ThemeScope } from "video-estudio/kit";
 import { cornerRadius, entrance, readableOn, surfaceStyle, textStyle, useTheme, withAlpha } from "video-estudio/themes";
-import { DATOS_ARCA, LINEAS_FACTURA, MOVES, PDF, PHONE, QR, SE, T } from "./datos";
+import { DATOS_ARCA, LINEAS_FACTURA, MOVES, T } from "./datos";
+import { useGeo } from "./geo";
 import { arcaTheme, camaraTheme, tiendaTheme } from "./temas";
 import { theme as marca } from "../theme";
 import { BarraNavegador, Icon, Ventana, inkOn, money, useZoomed } from "./ui";
@@ -15,14 +16,13 @@ import { BarraNavegador, Icon, Ventana, inkOn, money, useZoomed } from "./ui";
 const OUT = Easing.out;
 const COLS = "84px 1fr 100px 100px 100px";
 
-/** Centro de la fila `i` del historial, en el mundo (el cursor hace clic ahí). */
 /** Botón "Descargar factura (PDF)" del detalle: posición fija dentro del panel (el cursor hace clic en su centro). */
 export const DESCARGA = { top: 330, h: 46 };
-export const filaMov = (i: number) => SE.y + 266 + 18 + 44 + i * 47 + 22;
 
 // ---------- la cuenta corriente de la tienda ----------
 const CuentaInterior: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
+  const { SE, detalle } = useGeo();
   const detail = kf(f, [T.detail + 2, T.detail + 22], [0, 1], OUT);
   const acento = inkOn(t, t.color.accent);
   const ctl = cornerRadius(t, "control");
@@ -46,7 +46,7 @@ const CuentaInterior: React.FC<{ f: number }> = ({ f }) => {
           </div>
         ))}
       </div>
-      <div style={{ margin: "18px 26px 0", width: detail > 0 ? 640 : SE.w - 52, fontSize: t.type.ui.sm }}>
+      <div style={{ margin: "18px 26px 0", width: detalle.lateral && detail > 0 ? 640 : SE.w - 52, fontSize: t.type.ui.sm }}>
         <div data-qa-ignore={cut ?? "min-size" /* encabezado de la tabla: se lee en el acercamiento de 1010 a 1042 */} style={{ display: "grid", gridTemplateColumns: COLS, padding: "10px 0", minHeight: 40, boxSizing: "border-box", alignItems: "center", color: t.color.textMuted, borderBottom: `2px solid ${t.color.border}`, lineHeight: 1.25 }}>
           <span>Fecha</span>
           <span>Comprobante</span>
@@ -70,7 +70,7 @@ const CuentaInterior: React.FC<{ f: number }> = ({ f }) => {
         })}
       </div>
       {/* detalle del movimiento */}
-      <div data-qa-ignore={cut} style={{ position: "absolute", right: 0, top: 266, bottom: 0, width: 440, background: t.color.surface, borderLeft: `1px solid ${t.color.border}`, boxShadow: t.shadow.md, padding: "20px 24px", boxSizing: "border-box", ...entrance(t, detail, 0, { native: "slide", side: "right", distance: 460 }) }}>
+      <div data-qa-ignore={cut} style={{ position: "absolute", right: 0, top: detalle.top, bottom: 0, width: detalle.w, background: t.color.surface, ...(detalle.lateral ? { borderLeft: `1px solid ${t.color.border}` } : { borderTop: `1px solid ${t.color.border}` }), boxShadow: t.shadow.md, padding: detalle.lateral ? "20px 24px" : "20px 26px", boxSizing: "border-box", ...(detalle.lateral ? entrance(t, detail, 0, { native: "slide", side: "right", distance: 460 }) : { opacity: op(detail), transform: detail < 1 ? `translateY(${Math.round((1 - detail) * 160)}px)` : undefined }) }}>
         <div style={{ fontSize: t.type.ui.sm, color: t.color.textMuted, lineHeight: 1.25 }}>Detalle del movimiento</div>
         <div style={{ fontSize: t.type.eyebrow, ...textStyle(t, "title"), margin: "4px 0 14px", lineHeight: 1.25 }}>Factura A 0004-00012911</div>
         {LINEAS_FACTURA.map(([n, q, p]) => (
@@ -100,6 +100,7 @@ const CuentaInterior: React.FC<{ f: number }> = ({ f }) => {
 };
 
 export const Cuenta: React.FC<{ f: number }> = ({ f }) => {
+  const { SE } = useGeo();
   const winIn = kf(f, [T.rows - 20, T.rows], [0, 1], OUT);
   return (
     <div style={{ opacity: op(winIn) }}>
@@ -138,12 +139,13 @@ export const QrCode: React.FC<{ size: number; ink: string; seed?: string }> = ({
 
 // ---------- la factura en PDF ----------
 export const Pdf: React.FC<{ f: number }> = ({ f }) => {
+  const { PDF, QR, vueloPdf } = useGeo();
   const pdfIn = kf(f, [T.pdfFly[0], T.pdfFly[1]], [0, 1], Easing.bezier(0.3, 0, 0.2, 1));
   const scan = kf(f, [T.scan[0], T.scan[1]], [0, 1], Easing.linear);
   if (pdfIn <= 0) return null;
   const sc = +(0.4 + pdfIn * 0.6).toFixed(4);
   return (
-    <div data-qa-fixed-scale style={{ position: "absolute", left: Math.round(PDF.x + (1 - pdfIn) * -300), top: Math.round(PDF.y + (1 - pdfIn) * 220), width: PDF.w, height: PDF.h, transform: sc === 1 ? undefined : `scale(${sc})`, opacity: op(pdfIn), zIndex: 10 }}>
+    <div data-qa-fixed-scale style={{ position: "absolute", left: Math.round(PDF.x + (1 - pdfIn) * vueloPdf[0]), top: Math.round(PDF.y + (1 - pdfIn) * vueloPdf[1]), width: PDF.w, height: PDF.h, transform: sc === 1 ? undefined : `scale(${sc})`, opacity: op(pdfIn), zIndex: 10 }}>
       {/* la hoja es papel blanco con tinta de la marca, sea cual sea el design system del video */}
       <ThemeScope theme={marca} paint style={{ position: "absolute", inset: 0, ...surfaceStyle(marca, "card", { corner: "control", level: "lg" }), padding: "34px 38px", boxSizing: "border-box" }}>
         <PdfHoja />
@@ -194,11 +196,12 @@ const PdfHoja: React.FC = () => {
 
 // ---------- el teléfono: cámara que escanea el QR y página móvil de ARCA ----------
 export const Telefono: React.FC<{ f: number }> = ({ f }) => {
+  const { PHONE, vueloTel } = useGeo();
   const inP = kf(f, [T.pdfFly[1] + 8, T.scan[0]], [0, 1], OUT);
   if (inP <= 0) return null;
   const rot = +(-6 + inP * 4).toFixed(3);
   return (
-    <div style={{ position: "absolute", left: Math.round(PHONE.x + (1 - inP) * 260), top: Math.round(PHONE.y + (1 - inP) * 120), width: PHONE.w, height: PHONE.h, transform: `rotate(${rot}deg)`, opacity: op(inP), zIndex: 12 }}>
+    <div style={{ position: "absolute", left: Math.round(PHONE.x + (1 - inP) * vueloTel[0]), top: Math.round(PHONE.y + (1 - inP) * vueloTel[1]), width: PHONE.w, height: PHONE.h, transform: `rotate(${rot}deg)`, opacity: op(inP), zIndex: 12 }}>
       <PhoneFrame start={T.pdfFly[1] + 8} width={PHONE.w} height={PHONE.h} bezel={12}>
         <PantallaTelefono f={f} />
       </PhoneFrame>
@@ -207,6 +210,7 @@ export const Telefono: React.FC<{ f: number }> = ({ f }) => {
 };
 
 const PantallaTelefono: React.FC<{ f: number }> = ({ f }) => {
+  const { PHONE } = useGeo();
   const W = PHONE.w - 24;
   const scan = kf(f, [T.scan[0], T.scan[1]], [0, 1], Easing.linear);
   const found = f >= T.scan[1] - 2;

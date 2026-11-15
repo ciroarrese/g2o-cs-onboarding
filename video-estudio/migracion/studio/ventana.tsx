@@ -10,7 +10,8 @@ import { MiniAsistente } from "../asistente/thumb";
 import { MiniPresta } from "../presta/thumb";
 import { MiniMonitor } from "../monitor/thumb";
 import { MiniHealth } from "../historia/thumbs";
-import { BLOQUES, CINCO, FORMATOS, PREVIEW, SISTEMAS, WIN } from "./datos";
+import { BLOQUES, CINCO, FORMATOS, SISTEMAS } from "./datos";
+import { useLay } from "./layout";
 
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 const abs = (x: number, y: number, extra?: React.CSSProperties): React.CSSProperties => ({ position: "absolute", left: x, top: y, ...extra });
@@ -18,6 +19,7 @@ const abs = (x: number, y: number, extra?: React.CSSProperties): React.CSSProper
 // ---------- ventana ----------
 export const Ventana: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
+  const WIN = useLay().win;
   const dots = [t.color.danger, t.color.warning, t.color.success];
   return (
     <div style={{ ...abs(WIN.x, WIN.y), width: WIN.w, height: WIN.h, boxSizing: "border-box", ...surfaceStyle(t, "window"), opacity: op(kf(f, [20, 60], [0, 1])) }}>
@@ -31,11 +33,11 @@ export const Ventana: React.FC<{ f: number }> = ({ f }) => {
 
 // ---------- línea de tiempo ----------
 const MINIS = [MiniAsistente, MiniPresta, MiniMonitor, MiniHealth];
-const TL = { x: 105, y: 914, blockY: 950, blockH: 80 };
 
 export const LineaDeTiempo: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
-  const gap = 10;
+  const TL = useLay().tl;
+  const gap = TL.gap;
   let x = TL.x;
   const hide = kf(f, [430, 452], [0, 1]);
   if (hide >= 1) return null;
@@ -44,13 +46,14 @@ export const LineaDeTiempo: React.FC<{ f: number }> = ({ f }) => {
   const last = BLOQUES.length - 1;
   return (
     <div style={{ ...abs(0, 0), width: 1, height: 1, ...out }}>
-      <div style={{ ...abs(TL.x, TL.y - 6), whiteSpace: "nowrap", lineHeight: 1.25 }}><Eyebrow>Línea de tiempo</Eyebrow></div>
+      <div style={{ ...abs(TL.label!.x, TL.label!.y), whiteSpace: "nowrap", lineHeight: 1.25 }}><Eyebrow>Línea de tiempo</Eyebrow></div>
       {BLOQUES.map((b, i) => {
         const left = x;
-        x += b.w + gap;
+        const bw = TL.ws[i]!;
+        x += bw + gap;
         const Mini = i > 0 ? MINIS[i - 1]! : null;
         return (
-          <div key={b.id} style={{ ...abs(left, TL.blockY), width: b.w, height: TL.blockH, boxSizing: "border-box", display: "flex", alignItems: "center", gap: 12, padding: "0 10px", ...surfaceStyle(t, "card", { level: "sm", corner: "panel" }), ...(i === last ? { borderColor: t.color.accent } : {}) }}>
+          <div key={b.id} style={{ ...abs(left, TL.blockY), width: bw, height: TL.blockH, boxSizing: "border-box", display: "flex", alignItems: "center", gap: 12, padding: "0 10px", ...surfaceStyle(t, "card", { level: "sm", corner: "panel" }), ...(i === last ? { borderColor: t.color.accent } : {}) }}>
             {Mini ? (
               <>
                 {/* miniatura real de la escena (560x340) a escala 0,2: es adorno de la línea de tiempo y se mide con el estrés de tipografía aparte */}
@@ -67,8 +70,8 @@ export const LineaDeTiempo: React.FC<{ f: number }> = ({ f }) => {
         );
       })}
       {/* cabezal parado donde estamos: casi al final del bloque 04 (Health Score) */}
-      <div style={{ ...abs(TL.x + BLOQUES.reduce((a, b) => a + b.w + gap, 0) - gap - 52, TL.blockY - 16), width: 4, height: TL.blockH + 24, background: t.color.accent, borderRadius: cornerRadius(t, "bar") }} />
-      <div style={{ ...abs(TL.x + BLOQUES.reduce((a, b) => a + b.w + gap, 0) - gap - 52 - 9, TL.blockY - 26), width: 22, height: 14, background: t.color.accent, borderRadius: cornerRadius(t, "control") }} />
+      <div style={{ ...abs(TL.x + TL.ws.reduce((a, w) => a + w + gap, 0) - gap - 52, TL.blockY - TL.cabUp), width: 4, height: TL.blockH + TL.cabExt, background: t.color.accent, borderRadius: cornerRadius(t, "bar") }} />
+      <div style={{ ...abs(TL.x + TL.ws.reduce((a, w) => a + w + gap, 0) - gap - 52 - 9, TL.blockY - TL.cabUp - 10), width: 22, height: 14, background: t.color.accent, borderRadius: cornerRadius(t, "control") }} />
     </div>
   );
 };
@@ -85,6 +88,8 @@ export const LINEAS: Linea[] = [
 ];
 export const Banda: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
+  const B = useLay().banda;
+  const fs = t.type.display[B.size];
   return (
     <>
       {LINEAS.map((l, i) => {
@@ -92,8 +97,8 @@ export const Banda: React.FC<{ f: number }> = ({ f }) => {
         const p = kf(f, [l.from, l.from + 16], [0, 1]);
         const out = kf(f, [l.to, l.to + 8], [0, 1]);
         return (
-          <div key={i} style={{ ...abs(0, 186), width: 1920, minHeight: 72, textAlign: "center", fontSize: t.type.display.md, lineHeight: 1.25, whiteSpace: "nowrap", color: t.color.text, ...textStyle(t, "title"), ...entrance(t, p, 0, { distance: 20 }), opacity: op(Math.min(p, 1 - out)) }}>
-            {l.before}<Highlight frame={f}>{l.hl}</Highlight>{l.after}
+          <div key={i} style={{ ...abs(B.x, B.y), width: B.w, minHeight: B.minH, textAlign: "center", fontSize: fs, lineHeight: 1.25, whiteSpace: B.wrap ? "normal" : "nowrap", ...(B.wrap ? { display: "flex", alignItems: "center", justifyContent: "center" } : {}), color: t.color.text, ...textStyle(t, "title"), ...entrance(t, p, 0, { distance: 20 }), opacity: op(Math.min(p, 1 - out)) }}>
+            {B.wrap ? <div style={{ textWrap: "balance" as const }}>{l.before}<Highlight frame={f}>{l.hl}</Highlight>{l.after}</div> : <>{l.before}<Highlight frame={f}>{l.hl}</Highlight>{l.after}</>}
           </div>
         );
       })}
@@ -102,13 +107,12 @@ export const Banda: React.FC<{ f: number }> = ({ f }) => {
 };
 
 // ---------- segunda parte: tarjetas de contexto ----------
-const CARD = { x: 84, y: PREVIEW.top, w: 340, h: 176, gap: 20 };
-const cardTop = (i: number) => CARD.y + i * (CARD.h + CARD.gap);
 const IN = (i: number) => 188 + i * 10;
 const GO = (i: number) => 262 + i * 16;
 
 const Tarjeta: React.FC<{ i: number; titulo: string; children: React.ReactNode }> = ({ i, titulo, children }) => {
   const t = useTheme();
+  const CARD = useLay().card;
   return (
     <div style={{ width: CARD.w, height: CARD.h, boxSizing: "border-box", padding: "12px 20px", ...surfaceStyle(t, "card", { level: "sm" }) }}>
       <div style={{ fontSize: t.type.caption, lineHeight: 1.25, color: t.color.text, whiteSpace: "nowrap", ...textStyle(t, "title") }}>{titulo}</div>
@@ -119,13 +123,14 @@ const Tarjeta: React.FC<{ i: number; titulo: string; children: React.ReactNode }
 
 const Capturas: React.FC = () => {
   const t = useTheme();
+  const cw = useLay().card.capW;
   return (
     <div style={{ display: "flex", gap: 14 }}>
       {[0, 1, 2].map((i) => (
-        <div key={i} style={{ position: "relative", width: 90, height: 76, boxSizing: "border-box", background: t.color.surfaceAlt, border: `1px solid ${t.color.border}`, borderRadius: cornerRadius(t, "control"), overflow: "hidden" }}>
-          <span style={abs(8, 8, { width: 34 + i * 10, height: 8, borderRadius: cornerRadius(t, "bar"), background: t.color.chart[i % t.color.chart.length] })} />
-          <span style={abs(8, 24, { width: 72, height: 6, borderRadius: cornerRadius(t, "bar"), background: t.color.border })} />
-          <span style={abs(8, 38, { width: 56 - i * 8, height: 6, borderRadius: cornerRadius(t, "bar"), background: t.color.border })} />
+        <div key={i} style={{ position: "relative", width: cw, height: 76, boxSizing: "border-box", background: t.color.surfaceAlt, border: `1px solid ${t.color.border}`, borderRadius: cornerRadius(t, "control"), overflow: "hidden" }}>
+          <span style={abs(8, 8, { width: Math.round((34 + i * 10) * cw / 90), height: 8, borderRadius: cornerRadius(t, "bar"), background: t.color.chart[i % t.color.chart.length] })} />
+          <span style={abs(8, 24, { width: cw - 18, height: 6, borderRadius: cornerRadius(t, "bar"), background: t.color.border })} />
+          <span style={abs(8, 38, { width: Math.round((56 - i * 8) * cw / 90), height: 6, borderRadius: cornerRadius(t, "bar"), background: t.color.border })} />
           <span style={abs(8, 56, { width: 28, height: 10, borderRadius: cornerRadius(t, "bar"), background: t.color.accent })} />
         </div>
       ))}
@@ -135,10 +140,11 @@ const Capturas: React.FC = () => {
 
 const DesignSystem: React.FC = () => {
   const t = useTheme();
+  const cs = useLay().card.chip;
   const chips = [t.color.accent, t.color.accent2, t.color.success, t.color.warning, t.color.danger];
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, height: 90 }}>
-      {chips.map((c, i) => <span key={i} style={{ width: 34, height: 34, flex: "none", borderRadius: cornerRadius(t, "chip"), background: c, border: `1px solid ${t.color.border}` }} />)}
+      {chips.map((c, i) => <span key={i} style={{ width: cs, height: cs, flex: "none", borderRadius: cornerRadius(t, "chip"), background: c, border: `1px solid ${t.color.border}` }} />)}
       <span style={{ marginLeft: 6, fontSize: t.type.display.sm, lineHeight: 1.2, color: t.color.text, ...textStyle(t, "title") }}>Aa</span>
     </div>
   );
@@ -161,25 +167,28 @@ const Guion: React.FC = () => {
 
 /** Tres tarjetas entran desde la izquierda y vuelan hacia la vista previa, que se enciende cuando cada una llega. */
 export const Tarjetas: React.FC<{ f: number }> = ({ f }) => {
-  const targets = { x: PREVIEW.cx, y: PREVIEW.top + PREVIEW.h / 2 };
+  const { pv, card: CARD } = useLay();
+  const cardTop = (i: number) => CARD.pos(i).y;
+  const targets = { x: pv.cx, y: pv.top + pv.h / 2 };
+  const cx0 = (i: number) => CARD.pos(i).x;
   const items: [string, React.ReactNode][] = [["Capturas", <Capturas key="c" />], ["Design system", <DesignSystem key="d" />], ["Guion", <Guion key="g" />]];
   return (
     <>
       {items.map(([titulo, cont], i) => {
         const dx = Math.round(kf(f, [IN(i), IN(i) + 22], [-560, 0], Easing.out));
-        const fl = flight(f, [GO(i), GO(i) + 34], { x: CARD.x + CARD.w / 2, y: cardTop(i) + CARD.h / 2 }, targets, { arc: (i - 1) * 90 });
+        const fl = flight(f, [GO(i), GO(i) + 34], { x: cx0(i) + CARD.w / 2, y: cardTop(i) + CARD.h / 2 }, targets, { arc: (i - 1) * 90 });
         if (f < IN(i)) return null;
         // cuando la tarjeta ya voló, en su lugar queda una huella tenue (la tarjeta ya está en el video): el riel izquierdo no se vacía
         if (f >= GO(i) + 34) {
           const ghost = 0.3 * (1 - kf(f, [428, 444], [0, 1]));
-          return ghost > 0 ? <div key={i} style={{ ...abs(CARD.x, cardTop(i)), width: CARD.w, height: CARD.h, opacity: op(ghost) }}><Tarjeta i={i} titulo={titulo}>{cont}</Tarjeta></div> : null;
+          return ghost > 0 ? <div key={i} style={{ ...abs(cx0(i), cardTop(i)), width: CARD.w, height: CARD.h, opacity: op(ghost) }}><Tarjeta i={i} titulo={titulo}>{cont}</Tarjeta></div> : null;
         }
-        const tx = Math.round(fl.x - (CARD.x + CARD.w / 2)) + dx;
+        const tx = Math.round(fl.x - (cx0(i) + CARD.w / 2)) + dx;
         const ty = Math.round(fl.y - (cardTop(i) + CARD.h / 2));
         const s = 1 - 0.65 * fl.t;
         const o = 1 - kf(f, [GO(i) + 22, GO(i) + 34], [0, 1]);
         return (
-          <div key={i} style={{ ...abs(CARD.x, cardTop(i)), width: CARD.w, height: CARD.h, transform: fl.t > 0 ? `translate(${tx}px, ${ty}px) scale(${s.toFixed(4)})` : dx !== 0 ? `translate(${dx}px, 0px)` : undefined, opacity: op(o), zIndex: 5 }}>
+          <div key={i} style={{ ...abs(cx0(i), cardTop(i)), width: CARD.w, height: CARD.h, transform: fl.t > 0 ? `translate(${tx}px, ${ty}px) scale(${s.toFixed(4)})` : dx !== 0 ? `translate(${dx}px, 0px)` : undefined, opacity: op(o), zIndex: 5 }}>
             <Tarjeta i={i} titulo={titulo}>{cont}</Tarjeta>
           </div>
         );
@@ -192,14 +201,13 @@ export const Tarjetas: React.FC<{ f: number }> = ({ f }) => {
 export const pulso = (f: number) => Math.max(...[0, 1, 2].map((i) => kf(f, [GO(i) + 30, GO(i) + 36, GO(i) + 50], [0, 1, 0])));
 
 // ---------- segunda parte: etapas y conversación ----------
-const RAIL = { x: 1496, w: 340 };
 const ETAPAS = ["Cuestionario", "Guion", "Escenas", "Controles"];
 const HECHA = [250, 310, 370, 430];
-const ROW = 52;
 
 export const Etapas: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
-  const top = PREVIEW.top;
+  const { etapas: E } = useLay();
+  const RAIL = E, ROW = E.row, top = E.y;
   const total = kf(f, [190, 250, 310, 370], [0, 1 / 3, 2 / 3, 1], Easing.linear);
   const lineH = ROW * 3;
   return (
@@ -232,12 +240,12 @@ const MENSAJES = [
   { who: "agente", text: "Armo escenas.", at: 366 },
   { who: "persona", text: "Dale.", at: 398 },
 ];
-const PITCH = 72;
-const SLOTS = 4; // mensajes a la vista: al llegar el quinto, el primero sale
+// mensajes a la vista (`conv.slots`): al llegar el siguiente, el primero sale
 
 export const Conversacion: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
-  const top = PREVIEW.top + ROW * 4 + 18;
+  const { conv: C } = useLay();
+  const RAIL = C, PITCH = C.pitch, SLOTS = C.slots, top = C.y;
   const base = MENSAJES.reduce((a, m, j) => a + (j >= SLOTS ? kf(f, [m.at, m.at + 12], [0, 1]) : 0), 0);
   return (
     <>
@@ -258,13 +266,13 @@ export const Conversacion: React.FC<{ f: number }> = ({ f }) => {
 };
 
 // ---------- tercera parte: rótulos ----------
-const LEFT = { x: 84, w: 296 };
-const RIGHT = { x: 1540, w: 296 };
 
 const Pastilla: React.FC<{ text: string; on: boolean }> = ({ text, on }) => {
   const t = useTheme();
+  const { pill } = useLay().rl;
+  const fs = pill.size === "caption" ? t.type.caption : t.type.eyebrow;
   return (
-    <div style={{ boxSizing: "border-box", minWidth: 190, padding: "4px 22px", fontSize: t.type.caption, lineHeight: 1.25, whiteSpace: "nowrap", textAlign: "center", color: t.color.text, ...surfaceStyle(t, "chip", { on, faint: !on }), ...textStyle(t, "label", { strong: on }) }}>{text}</div>
+    <div style={{ boxSizing: "border-box", minWidth: pill.min, padding: pill.size === "caption" ? "4px 22px" : "4px 16px", fontSize: fs, lineHeight: 1.25, whiteSpace: "nowrap", textAlign: "center", color: t.color.text, ...surfaceStyle(t, "chip", { on, faint: !on }), ...textStyle(t, "label", { strong: on }) }}>{text}</div>
   );
 };
 
@@ -279,25 +287,43 @@ export const actual = (f: number) => {
 
 export const RielesTercera: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
+  const { rl } = useLay();
   const a = kf(f, [452, 470], [0, 1]) * (1 - kf(f, [758, 776], [0, 1]));
   if (f < 440 || a <= 0) return null;
   const { sistema, formato } = actual(f);
-  const top = 330;
   const sis = SISTEMAS[Math.max(0, sistema)]!;
   const nombre = sis.label;
+  const nameSize = rl.name === "xs" ? t.type.display.sm * 0.78 : t.type.display[rl.name];
+  const col: React.CSSProperties = { marginTop: 10, display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-start" };
+  const nombreEl = (
+    <div key={sis.id} style={{ marginTop: 4, minHeight: rl.name === "lg" ? 80 : rl.name === "md" ? 72 : 52, fontSize: nameSize, lineHeight: 1.25, whiteSpace: "nowrap", color: t.color.text, ...textStyle(t, "title"), ...entrance(t, kf(f, [sis.at, sis.at + 14], [0, 1]), 0, { distance: 16 }) }}>{nombre}</div>
+  );
+  const formatos = (
+    <div style={col}>
+      {FORMATOS.map((x, i) => <Pastilla key={x.id} text={x.id} on={f >= 626 && i === formato} />)}
+    </div>
+  );
   return (
     <>
-      <div style={{ ...abs(LEFT.x, top), width: LEFT.w, opacity: op(a) }}>
+      <div style={{ ...abs(rl.sis.x, rl.sis.y), width: rl.sis.w, opacity: op(a) }}>
         <div style={{ lineHeight: 1.25 }}><Eyebrow>Sistema</Eyebrow></div>
-        <div key={sis.id} style={{ marginTop: 4, minHeight: 72, fontSize: t.type.display.md, lineHeight: 1.25, whiteSpace: "nowrap", color: t.color.text, ...textStyle(t, "title"), ...entrance(t, kf(f, [sis.at, sis.at + 14], [0, 1]), 0, { distance: 16 }) }}>{nombre}</div>
-        <div style={{ marginTop: 34, lineHeight: 1.25 }}><Eyebrow>Formato</Eyebrow></div>
-        <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-start" }}>
-          {FORMATOS.map((x, i) => <Pastilla key={x.id} text={x.id} on={f >= 626 && i === formato} />)}
-        </div>
+        {nombreEl}
+        {rl.juntos && (
+          <>
+            <div style={{ marginTop: 34, lineHeight: 1.25 }}><Eyebrow>Formato</Eyebrow></div>
+            {formatos}
+          </>
+        )}
       </div>
-      <div style={{ ...abs(RIGHT.x, top), width: RIGHT.w, opacity: op(a) }}>
+      {!rl.juntos && (
+        <div style={{ ...abs(rl.fmt.x, rl.fmt.y), width: rl.fmt.w, opacity: op(a) }}>
+          <div style={{ lineHeight: 1.25 }}><Eyebrow>Formato</Eyebrow></div>
+          {formatos}
+        </div>
+      )}
+      <div style={{ ...abs(rl.ej.x, rl.ej.y), width: rl.ej.w, opacity: op(a) }}>
         <div style={{ lineHeight: 1.25 }}><Eyebrow>Ejemplos</Eyebrow></div>
-        <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-start" }}>
+        <div style={rl.ejWrap ? { marginTop: 10, display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 12, alignItems: "flex-start" } : col}>
           {CINCO.map((c) => <Pastilla key={c} text={c} on={(c === "neon" && sis.id === "neon") || c === sis.id} />)}
         </div>
       </div>

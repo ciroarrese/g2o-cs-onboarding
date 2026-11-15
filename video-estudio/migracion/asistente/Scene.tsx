@@ -14,7 +14,7 @@ import { TopicHeadline, useTopic } from "video-estudio/stories";
 import { ThemeProvider, cornerRadius, dark, editorial, neon, neutral, papel, entrance, surfaceStyle, textStyle, useTheme } from "video-estudio/themes";
 import { Easing } from "video-estudio/engine";
 import { theme as brand } from "../theme";
-import { C, COMMENT_Y, DURACION, EDITOR, KEYS, MAIN, NEW_TICKET, P, TILT_RX, TILT_RY, TILT_T, TOPIC } from "./datos";
+import { C, COMMENT_Y, DURACION, EDITOR, KEYS, KEYS_CUADRADO, KEYS_VERTICAL, MAIN, NEW_TICKET, P, TILT_RX, TILT_RY, TILT_T, TOPIC } from "./datos";
 import { Panel } from "./Panel";
 import { ICON, Icon, TicketView } from "./Ticket";
 
@@ -66,9 +66,10 @@ const FlyingTicket: React.FC = () => {
 
 export function SceneBody() {
   const f = useFrame();
-  const { width, height } = useFormat();
+  const { width, height, pick } = useFormat();
+  const keys = pick({ horizontal: KEYS, vertical: KEYS_VERTICAL, cuadrado: KEYS_CUADRADO });
   const topic = useTopic({ name: TOPIC.name, line: TOPIC.line, index: 0 });
-  const cam0 = useCameraAt(f, KEYS, {
+  const cam0 = useCameraAt(f, keys, {
     map: (fr, c) => zoomThrough(fr, C.through, c, { x: MAIN.x + 230, y: COMMENT_Y + 48 }, 40),
     noBlurFrom: C.through[0],
   });

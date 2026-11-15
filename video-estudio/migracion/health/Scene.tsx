@@ -68,30 +68,108 @@ const T = {
 };
 
 // ---------- mundo ----------
-const COLS = { cx: 960, base: -560, colW: 240, gap: 34, dot: 20, step: 24 };
-const colX = (i: number) => COLS.cx - (7 * COLS.colW + 6 * COLS.gap) / 2 + i * (COLS.colW + COLS.gap);
-const DONUT = { cx: 230, cy: 420, r: 150, w: 34 };
-const TR = { x: 2100, y: 200, w: 1420, h: 880 };
+// Horizontal: el tablero es ancho (1880 de contenido) y la ventana de transiciones queda a su derecha. Vertical y cuadrado comparten otro mundo:
+// el tablero es una columna de 960 de contenido (los paneles se apilan, las fichas pasan de cuatro a cuatro por fila, las siete columnas de la lluvia
+// se angostan a cinco puntos de ancho) y la ventana de transiciones, también apilada, queda a su derecha, centrada en la altura del tablero.
+// Lo que cambia entre formatos es solo la maquetación y la cámara: los cuadros en que pasa cada cosa son los mismos.
+type Lay = {
+  v: boolean;
+  COLS: { cx: number; base: number; colW: number; gap: number; dot: number; step: number; per: number };
+  DONUT: { cx: number; cy: number; r: number; w: number };
+  TR: { x: number; y: number; w: number; h: number };
+  W: number; // ancho del contenido del tablero
+  shell: { w: number; h: number };
+  dp: { x: number; y: number; w: number; h: number }; // panel de la dona
+  legLeft: number; // izquierda de la leyenda dentro del panel de la dona
+  est: { x: number; y: number; w: number; h: number }; // estado consolidado por cliente
+  fresc: { x: number; y: number; w: number; h: number };
+  cambio: { x: number; y: number; w: number; h: number };
+  yCola: number; yFichas: number; fichaW: number; fichaX: (i: number) => number;
+  q: { x: number; y: number; w: number; h: number; cols: string };
+  yCartera: number; yCart: number; cartW: number; cartX: (i: number) => number;
+  srcX0: number; srcY0: number; // grilla de origen de las transiciones, relativa a la ventana
+  box: (i: number) => { x: number; y: number }; // caja de destino i, relativa a la ventana
+  hoy: { x: number; y: number }; src: { x: number; y: number }; // rótulos "Hoy" y "Hace 30 días"
+  arrow: [number, number, number, number]; // flecha de la ventana (relativa a ella)
+};
+const LAY_H: Lay = {
+  v: false,
+  COLS: { cx: 960, base: -560, colW: 240, gap: 34, dot: 20, step: 24, per: 10 },
+  DONUT: { cx: 230, cy: 420, r: 150, w: 34 },
+  TR: { x: 2100, y: 200, w: 1420, h: 880 },
+  W: 1880, shell: { w: 1960, h: 1640 },
+  dp: { x: 20, y: 180, w: 640, h: 460 }, legLeft: 410,
+  est: { x: 680, y: 180, w: 760, h: 460 }, fresc: { x: 1460, y: 180, w: 440, h: 140 }, cambio: { x: 1460, y: 340, w: 440, h: 300 },
+  yCola: 672, yFichas: 710, fichaW: 455, fichaX: (i) => 20 + 475 * i,
+  q: { x: 20, y: 860, w: 1880, h: 420, cols: "200px 200px 160px 220px 140px 1fr" },
+  yCartera: 1300, yCart: 1340, cartW: 930, cartX: (i) => 20 + 950 * i,
+  srcX0: 50, srcY0: 160,
+  box: (i) => ({ x: 640 + (i % 3) * 250, y: 170 + Math.floor(i / 3) * 330 }),
+  hoy: { x: 640, y: 92 }, src: { x: 40, y: 92 }, arrow: [520, 120, 640, 120],
+};
+const LAY_V: Lay = {
+  v: true,
+  COLS: { cx: 500, base: -560, colW: 120, gap: 24, dot: 20, step: 24, per: 5 },
+  DONUT: { cx: 220, cy: 420, r: 150, w: 34 },
+  TR: { x: 1100, y: 680, w: 960, h: 1080 },
+  W: 960, shell: { w: 1040, h: 2440 },
+  dp: { x: 20, y: 180, w: 960, h: 460 }, legLeft: 724,
+  est: { x: 20, y: 660, w: 960, h: 460 }, fresc: { x: 20, y: 1140, w: 470, h: 300 }, cambio: { x: 510, y: 1140, w: 470, h: 300 },
+  yCola: 1460, yFichas: 1498, fichaW: 228, fichaX: (i) => 20 + 244 * i,
+  q: { x: 20, y: 1658, w: 960, h: 420, cols: "150px 150px 130px 170px 110px 1fr" },
+  yCartera: 2098, yCart: 2138, cartW: 472, cartX: (i) => 20 + 488 * i,
+  srcX0: 240, srcY0: 110,
+  box: (i) => ({ x: 70 + (i % 3) * 300, y: 430 + Math.floor(i / 3) * 330 }),
+  hoy: { x: 440, y: 496 }, src: { x: 240, y: 66 }, arrow: [480, 440, 480, 492],
+};
+const layFor = (format: string): Lay => (format === "horizontal" ? LAY_H : LAY_V);
+const useLay = (): Lay => layFor(useFormat().format);
+const colX = (L: Lay, i: number) => L.COLS.cx - (7 * L.COLS.colW + 6 * L.COLS.gap) / 2 + i * (L.COLS.colW + L.COLS.gap);
 
 // ---------- cámara (foco x, y y escala; misma tabla que el original) ----------
 // Vista general del tablero entero: el foco está más arriba que en el original (780) para que la barra superior y los filtros del tablero (mundo y 0 a 140)
 // queden por debajo de la franja del titular (hasta y = 170, docs/guia-escenas.md §13a): el cartel del titular cambia de ancho y de alto con el design system.
 const VISTA_Y = 640;
-const KEYS: CameraKey[] = ([
+const mk = (k: [number, number, number, number][]): CameraKey[] => k.map(([f, x, y, scale]) => ({ f, x, y, scale }));
+const KEYS_H: CameraKey[] = mk([
   [0, 960, -800, 0.95], [140, 960, -800, 0.95],
-  [196, DONUT.cx + 100, DONUT.cy, 1.2], [232, 960, VISTA_Y, 0.6], [330, 960, VISTA_Y, 0.6],
+  [196, LAY_H.DONUT.cx + 100, LAY_H.DONUT.cy, 1.2], [232, 960, VISTA_Y, 0.6], [330, 960, VISTA_Y, 0.6],
   [346, 380, 420, 1.45], [556, 380, 420, 1.45], // las cuatro preguntas
   [584, 960, 1060, 0.95], [632, 960, 1060, 0.95], [652, 620, 1000, 1.45], [720, 620, 1000, 1.45], // cola de atención
-  [760, 960, 1060, 0.95], [782, 1900, 700, 0.5], [804, TR.x + TR.w / 2, TR.y + TR.h / 2, 0.98],
-  [912, TR.x + TR.w / 2, TR.y + TR.h / 2, 0.98], [930, TR.x + 1040, TR.y + 470, 1.35], [990, TR.x + 1040, TR.y + 470, 1.35],
+  [760, 960, 1060, 0.95], [782, 1900, 700, 0.5], [804, LAY_H.TR.x + LAY_H.TR.w / 2, LAY_H.TR.y + LAY_H.TR.h / 2, 0.98],
+  [912, LAY_H.TR.x + LAY_H.TR.w / 2, LAY_H.TR.y + LAY_H.TR.h / 2, 0.98], [930, LAY_H.TR.x + 1040, LAY_H.TR.y + 470, 1.35], [990, LAY_H.TR.x + 1040, LAY_H.TR.y + 470, 1.35],
   [1020, 1760, 780, 0.42], [1044, 1760, 780, 0.42],
-] as [number, number, number, number][]).map(([f, x, y, scale]) => ({ f, x, y, scale }));
+]);
+// Vertical y cuadrado: el tablero es una columna (x de 0 a 1000); la cámara recorre sus zonas de arriba abajo con la misma tabla de cuadros que el horizontal.
+// Con escala mayor que 1,08 el titular se aparta (`hideFromScale`): las vistas acercadas lo ocultan y las generales dejan libre su franja (el tablero empieza bajo ella).
+// En el cuadro 1032 la cámara está quieta (claves 1020 a 1044) en la vista general: el tablero entero y la ventana de transiciones, bajo el titular.
+const TRV = LAY_V.TR, TRC = { x: TRV.x + TRV.w / 2, y: TRV.y + TRV.h / 2 };
+const KEYS_VERT: CameraKey[] = mk([
+  [0, 500, -800, 1.0], [140, 500, -800, 1.0],
+  [196, 500, 900, 1.1], [232, 500, 850, 0.9], [330, 500, 850, 0.9],
+  [346, 500, 900, 1.1], [556, 500, 900, 1.1], // las cuatro preguntas: la dona y su leyenda, de borde a borde
+  [584, 500, 1580, 1.1], [632, 500, 1580, 1.1], [652, 500, 1720, 1.1], [720, 500, 1720, 1.1], // cola de atención
+  [760, 500, 1580, 1.1], [782, 1040, 1400, 0.55], [804, TRC.x, TRC.y, 1.1],
+  [912, TRC.x, TRC.y, 1.1], [930, TRC.x, TRV.y + 700, 1.15], [990, TRC.x, TRV.y + 700, 1.15],
+  [1020, 1020, 1020, 0.5], [1044, 1020, 1020, 0.5],
+]);
+const KEYS_CUAD: CameraKey[] = mk([
+  [0, 500, -800, 1.0], [140, 500, -800, 1.0],
+  [196, 500, 520, 1.1], [232, 500, 431, 0.8], [330, 500, 431, 0.8],
+  [346, 500, 520, 1.1], [556, 500, 520, 1.1],
+  [584, 500, 1770, 1.0], [632, 500, 1770, 1.0], [652, 500, 1868, 1.1], [720, 500, 1868, 1.1],
+  [760, 500, 1770, 1.0], [782, 1040, 1300, 0.5], [804, TRC.x, TRV.y + 403, 0.8],
+  [912, TRC.x, TRV.y + 403, 0.8], [930, TRC.x, TRV.y + 700, 1.1], [990, TRC.x, TRV.y + 700, 1.1],
+  [1020, 1020, 941, 0.34], [1044, 1020, 941, 0.34],
+]);
+const keysFor = (format: string): CameraKey[] => (format === "horizontal" ? KEYS_H : format === "vertical" ? KEYS_VERT : KEYS_CUAD);
 
 /** Cámara: la inclinación por velocidad y el desenfoque del viaje salen del design system (`useCameraAt`); acá solo la composición. */
 const useCamera = (f: number) => {
-  const c = useCameraAt(f, KEYS, {
+  const L = useLay();
+  const c = useCameraAt(f, keysFor(useFormat().format), {
     baseTilt: { rx: 4, ry: -4 }, maxTilt: 9,
-    map: (fr, cam) => zoomThrough(fr, T.through, cam, { x: DONUT.cx, y: DONUT.cy }, 70),
+    map: (fr, cam) => zoomThrough(fr, T.through, cam, { x: L.DONUT.cx, y: L.DONUT.cy }, 70),
     noBlurFrom: T.through[0],
   });
   // el original sumaba un vaivén lento a la inclinación
@@ -99,16 +177,17 @@ const useCamera = (f: number) => {
 };
 
 // ---------- puntos: llueven a las columnas y después a la dona ----------
-type DotInfo = { st: number; col: number; row: number; slot: number; ring: number; land: number };
+type DotInfo = { st: number; col: number; row: number; slot: number; prow: number; pslot: number; ring: number; land: number };
 /** Los 300 puntos y el cuadro en que cae cada uno: el paso entre columnas (8) y entre filas (6) lo escala el design system (`staggerFrames`). */
-const dotsFor = (theme: Theme): DotInfo[] => {
+const dotsFor = (theme: Theme, L: Lay): DotInfo[] => {
   const out: DotInfo[] = [];
   let ring = 0;
   STATES.forEach((s, si) => {
     const col = COL_ORDER.indexOf(si);
     for (let j = 0; j < s.n; j++) {
       const row = Math.floor(j / 10);
-      out.push({ st: si, col, row, slot: j % 10, ring: ring++, land: T.rain[0] + staggerFrames(theme, col, { base: 8 }) + staggerFrames(theme, row, { base: 6 }) + random(`l${si}-${j}`) * 14 });
+      // `row` y `slot` (de a diez) fijan CUÁNDO cae cada punto, igual en los tres formatos; `prow` y `pslot` (de a `per`) fijan DÓNDE cae
+      out.push({ st: si, col, row, slot: j % 10, prow: Math.floor(j / L.COLS.per), pslot: j % L.COLS.per, ring: ring++, land: T.rain[0] + staggerFrames(theme, col, { base: 8 }) + staggerFrames(theme, row, { base: 6 }) + random(`l${si}-${j}`) * 14 });
     }
   });
   return out;
@@ -118,14 +197,16 @@ const estado = (i: number) => tableroTheme.data![COLOR_KEY[i]!]!;
 
 const Dots: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
+  const L = useLay();
+  const { COLS, DONUT } = L;
   if (f > T.morph[1] + 14) return null;
-  const DOTS = dotsFor(t);
+  const DOTS = dotsFor(t, L);
   const fade = kf(f, [T.morph[1] - 4, T.morph[1] + 14], [1, 0]);
   return (
     <>
       {DOTS.map((d, i) => {
-        const tx = colX(d.col) + d.slot * COLS.step + COLS.dot / 2;
-        const ty = COLS.base - d.row * COLS.step - COLS.dot / 2;
+        const tx = colX(L, d.col) + d.pslot * COLS.step + COLS.dot / 2;
+        const ty = COLS.base - d.prow * COLS.step - COLS.dot / 2;
         const fall = kf(f, [d.land - 18, d.land], [0, 1], bez(0.5, 0, 0.75, 1));
         const bounce = kf(f, [d.land, d.land + 4, d.land + 9], [0, -5, 0]);
         let x = tx, y = ty - (1 - fall) * 700 + bounce;
@@ -146,26 +227,29 @@ const Dots: React.FC<{ f: number }> = ({ f }) => {
 
 const ColumnLabels: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
+  const L = useLay();
+  const { COLS } = L;
   // los rótulos se van antes de que la cámara arranque el viaje a la dona (a 8 cuadros del inicio el último, a la derecha, ya sobresalía del cuadro con tipografías anchas)
   const out = kf(f, [T.morph[0] - 14, T.morph[0] - 2], [1, 0]);
   if (out <= 0) return null;
-  const DOTS = dotsFor(t);
+  const DOTS = dotsFor(t, L);
   return (
     <>
       {COL_ORDER.map((si, ci) => {
         const s = STATES[si]!;
-        const rows = Math.ceil(s.n / 10);
+        const rows = Math.ceil(s.n / COLS.per);
         const shown = DOTS.filter((d) => d.st === si && f >= d.land).length;
         const at = T.rain[0] + staggerFrames(t, ci, { base: 8 });
         const a = kf(f, [at, at + 14], [0, 1], OUT) * out;
         return (
           <React.Fragment key={s.key}>
-            <div style={{ position: "absolute", left: colX(ci), top: COLS.base - rows * COLS.step - 84, width: COLS.colW, textAlign: "center", fontSize: t.type.display.md, fontWeight: t.font.weights.stat, color: estado(si), opacity: op(a) }} data-qa-ignore="contrast">{shown}</div>
-            <div style={{ position: "absolute", left: colX(ci) - 20, top: COLS.base + 18, width: COLS.colW + 40, textAlign: "center", opacity: op(a) }}><Eyebrow color={t.color.text}>{s.l}</Eyebrow></div>
+            <div style={{ position: "absolute", left: colX(L, ci), top: COLS.base - rows * COLS.step - 84, width: COLS.colW, textAlign: "center", fontSize: t.type.display.md, fontWeight: t.font.weights.stat, color: estado(si), opacity: op(a) }} data-qa-ignore="contrast">{shown}</div>
+            {/* en vertical las siete columnas comparten 1000 de ancho: el rótulo lleva la letra más chica y se parte en dos renglones */}
+            <div style={{ position: "absolute", left: L.v ? colX(L, ci) - COLS.gap / 2 : colX(L, ci) - 20, top: COLS.base + 18, width: L.v ? COLS.colW + COLS.gap : COLS.colW + 40, textAlign: "center", lineHeight: L.v ? 1.15 : undefined, opacity: op(a) }}><Eyebrow color={t.color.text} size={L.v ? 22 : undefined}>{s.l}</Eyebrow></div>
           </React.Fragment>
         );
       })}
-      <div style={{ position: "absolute", left: COLS.cx - 400, top: COLS.base + 80, width: 800, textAlign: "center", opacity: op(kf(f, [T.rain[1] - 20, T.rain[1]], [0, 1]) * out) }}>
+      <div style={{ position: "absolute", left: COLS.cx - 400, top: COLS.base + (L.v ? 120 : 80), width: 800, textAlign: "center", opacity: op(kf(f, [T.rain[1] - 20, T.rain[1]], [0, 1]) * out) }}>
         <Eyebrow size={28} weight="regular">{TOTAL} canales · un punto por canal</Eyebrow>
       </div>
     </>
@@ -224,9 +308,9 @@ const qState = (f: number) => {
 const TABLA = { top: 180 + 52, headH: 27, rowH: 47 }; // alto total con el borde de 1 px (encabezado: 18 + 8 de relleno + 1; fila: 46 + 1)
 const PILL_H = 56; // cota del alto de la píldora de respuesta (relleno 10 + 10 y una línea de 22 px)
 /** Cuánto se apaga el texto de la primera columna de la fila `i` (-1 = encabezado) bajo la píldora de respuesta. */
-const underAnswer = (f: number, i: number) => {
+const underAnswer = (f: number, i: number, v = false) => {
   const { qi, a, ans } = qState(f);
-  if (qi < 0) return 1;
+  if (qi < 0 || v) return 1; // en vertical la respuesta queda sobre el panel de la dona, no sobre la tabla
   const firstRow = STATES.findIndex((_, k) => QUESTIONS[qi]!.sts.includes(k));
   const pillTop = 180 + 70 + firstRow * 36 + 18 - 24;
   const top = i < 0 ? TABLA.top : TABLA.top + TABLA.headH + i * TABLA.rowH;
@@ -237,14 +321,16 @@ const underAnswer = (f: number, i: number) => {
 
 const DonutPanel: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
+  const L = useLay();
+  const { DONUT, dp } = L;
   const draw = kf(f, [T.morph[1] - 10, T.morph[1] + 16], [0, 1], OUT);
   const qi = activeQ(f);
   const focus = qi >= 0 ? QUESTIONS[qi]!.sts : [];
   let acc = 0;
   const dim = dimOpacity(t.color.text, t.color.surface); // las filas que no son la pregunta se apagan sin bajar de 4,5:1 (texto)
   return (
-    <Panel x={20} y={180} w={640} h={460} f={f} at={T.build - 30} title="Distribución de estados (por canal)" titleOpacity={1 - Math.min(1, qState(f).a * 2)}>
-      <svg style={{ position: "absolute", left: 0, top: 0 }} width={640} height={460}>
+    <Panel x={dp.x} y={dp.y} w={dp.w} h={dp.h} f={f} at={T.build - 30} title="Distribución de estados (por canal)" titleOpacity={1 - Math.min(1, qState(f).a * 2)}>
+      <svg style={{ position: "absolute", left: 0, top: 0 }} width={dp.w} height={dp.h}>
         {STATES.map((s, si) => {
           const a0 = -Math.PI / 2 + (acc / TOTAL) * Math.PI * 2;
           acc += s.n;
@@ -262,7 +348,7 @@ const DonutPanel: React.FC<{ f: number }> = ({ f }) => {
         </text>
         <text x={DONUT.cx - 20} y={DONUT.cy - 180 + 42} textAnchor="middle" fontSize={t.type.ui.sm} fill={t.color.textMuted} style={{ color: t.color.textMuted }} fontFamily={t.font.family}>canales</text>
       </svg>
-      <div style={{ position: "absolute", left: 410, top: 70, width: 216, fontSize: t.type.ui.xs }}>
+      <div style={{ position: "absolute", left: L.legLeft, top: 70, width: 216, fontSize: L.v ? t.type.ui.sm : t.type.ui.xs }}>
         {STATES.map((s, si) => {
           const hot = focus.includes(si);
           return (
@@ -281,6 +367,7 @@ const DonutPanel: React.FC<{ f: number }> = ({ f }) => {
 /** Preguntas y respuestas: píldoras de la marca sobre el tablero oscuro (fuera del ThemeScope oscuro). */
 const Questions: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
+  const L = useLay();
   const qi = activeQ(f);
   if (qi < 0) return null;
   const Q = QUESTIONS[qi]!;
@@ -295,11 +382,19 @@ const Questions: React.FC<{ f: number }> = ({ f }) => {
       <div style={{ position: "absolute", left: 60, top: 196, padding: "10px 20px", ...surfaceStyle(t, "card", { corner: "chip", level: "lg" }), color: t.color.text, fontSize: t.type.ui.md, ...textStyle(t, "label", { strong: true }), ...entrance(t, a, 0, { native: "rise", distance: -16 }), whiteSpace: "nowrap", lineHeight: 1.2 }}>
         {Q.q}
       </div>
-      <div style={{ position: "absolute", left: 680, top: rowY - 24, padding: "10px 22px", ...surfaceStyle(t, "chip", { on: false, level: "sm" }), border: "none", background: t.gradient.brand, color: t.color.onAccent, fontSize: t.type.ui.md, ...textStyle(t, "label", { strong: true }), ...entrance(t, ans * a, 0, { native: "scale", from: 0.8 }), whiteSpace: "nowrap", lineHeight: 1.2 }}>
-        {Q.a}
-      </div>
+      {/* horizontal: la respuesta queda a la derecha del panel de la dona; vertical: a la izquierda de la leyenda, pegada a ella (contenedor de ancho fijo que la alinea a la derecha) */}
+      {(() => {
+        const pill: React.CSSProperties = { padding: "10px 22px", ...surfaceStyle(t, "chip", { on: false, level: "sm" }), border: "none", background: t.gradient.brand, color: t.color.onAccent, fontSize: t.type.ui.md, ...textStyle(t, "label", { strong: true }), ...entrance(t, ans * a, 0, { native: "scale", from: 0.8 }), whiteSpace: "nowrap", lineHeight: 1.2 };
+        return L.v ? (
+          <div style={{ position: "absolute", left: L.dp.x + L.legLeft - 14 - 340, top: rowY - 24, width: 340, display: "flex", justifyContent: "flex-end" }}>
+            <div style={pill}>{Q.a}</div>
+          </div>
+        ) : (
+          <div style={{ position: "absolute", left: 680, top: rowY - 24, ...pill }}>{Q.a}</div>
+        );
+      })()}
       {Q.sts.map((si) => (
-        <DoodleCircle key={si} start={start + 8} end={end - 6} cx={20 + 410 + 108} cy={180 + 70 + si * 36 + 18} rx={128} ry={28} id={`dq${qi}-${si}`} />
+        <DoodleCircle key={si} start={start + 8} end={end - 6} cx={L.dp.x + L.legLeft + 108} cy={180 + 70 + si * 36 + 18} rx={L.v ? 116 : 128} ry={28} id={`dq${qi}-${si}`} />
       ))}
     </>
   );
@@ -322,12 +417,13 @@ const SEV = [
 
 const QueueTable: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
+  const L = useLay();
   const sorted = [...CLIENTS].sort((a, b) => b.sev - a.sev || a.p0 - b.p0);
   const p = kf(f, [T.sort[0], T.sort[1]], [0, 1], bez(0.5, 0, 0.2, 1));
-  const cols = "200px 200px 160px 220px 140px 1fr";
+  const cols = L.q.cols;
   const rowH = 52;
   return (
-    <Panel x={20} y={860} w={1880} h={420} f={f} at={T.build + 30} title="En caída — contacto prioritario">
+    <Panel x={L.q.x} y={L.q.y} w={L.q.w} h={L.q.h} f={f} at={T.build + 30} title="En caída — contacto prioritario">
       <div style={{ position: "absolute", left: 16, right: 16, top: 50, display: "grid", gridTemplateColumns: cols, fontSize: t.type.ui.xs, color: t.color.textMuted, paddingBottom: 8, borderBottom: `1px solid ${t.color.border}` }}>
         {["Cliente", "Canal", "Severidad", "Tendencia", "Pedidos P0", "Base mensual pedidos"].map((h) => (
           <span key={h}>{h}</span>
@@ -362,14 +458,15 @@ const FILTROS = [["Base de datos", "Prod"], ["Cliente", "Todos"], ["Meses de bas
 
 const Dashboard: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
+  const L = useLay();
   const shell = kf(f, [T.build - 40, T.build - 10], [0, 1], OUT);
   const b = T.build;
   const qi = activeQ(f);
   const hotStat = (sts: number[]) => (qi >= 0 && QUESTIONS[qi]!.sts.some((s) => sts.includes(s)) ? kf(f, [T.q[qi]! + 6, T.q[qi]! + 14], [0, 1]) : 0);
   return (
     <>
-      <div style={{ position: "absolute", left: -20, top: 0, width: 1960, height: 1640, ...surfaceStyle(t, "window"), background: t.color.bg, border: "none", opacity: op(shell), boxShadow: t.shadow.lg }} />
-      <div data-qa-ignore="covered contrast min-size" style={{ position: "absolute", left: 20, top: 20, width: 1880, height: 50, display: "flex", alignItems: "center", gap: 16, color: t.color.text, fontSize: t.type.ui.sm, opacity: op(shell) }}>
+      <div style={{ position: "absolute", left: -20, top: 0, width: L.shell.w, height: L.shell.h, ...surfaceStyle(t, "window"), background: t.color.bg, border: "none", opacity: op(shell), boxShadow: t.shadow.lg }} />
+      <div data-qa-ignore="covered contrast min-size" style={{ position: "absolute", left: 20, top: 20, width: L.W, height: 50, display: "flex", alignItems: "center", gap: 16, color: t.color.text, fontSize: t.type.ui.sm, opacity: op(shell) }}>
         <span style={{ width: 26, height: 26, borderRadius: cornerRadius(t, "control"), background: `linear-gradient(135deg, ${t.data.logoA}, ${t.data.logoB})` }} />
         <span style={{ color: t.color.textMuted }}>Paneles de control ›</span> Health Score
         <span style={{ marginLeft: "auto", padding: "6px 14px", border: `1px solid ${t.color.border}`, borderRadius: cornerRadius(t, "control") }}>Exportar</span>
@@ -385,42 +482,42 @@ const Dashboard: React.FC<{ f: number }> = ({ f }) => {
       </div>
       <div style={{ position: "absolute", left: 24, top: 140, whiteSpace: "nowrap", fontSize: t.type.ui.md, color: t.data.strong, ...textStyle(t, "title"), opacity: op(shell) }}>⌄ Vista general</div>
       <DonutPanel f={f} />
-      <Panel x={680} y={180} w={760} h={460} f={f} at={b} qa="min-size" title="Estado consolidado por cliente">
+      <Panel x={L.est.x} y={L.est.y} w={L.est.w} h={L.est.h} f={f} at={b} qa="min-size" title="Estado consolidado por cliente">
         <div style={{ position: "absolute", left: 16, right: 16, top: 52, fontSize: t.type.ui.xs }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 90px 150px", height: 18, color: t.color.textMuted, paddingBottom: 8, borderBottom: `1px solid ${t.color.border}` }}>
-            <span style={{ opacity: op(underAnswer(f, -1)) }}>Cliente</span>
+            <span style={{ opacity: op(underAnswer(f, -1, L.v)) }}>Cliente</span>
             <span>Canales</span>
             <span>Estado consolidado</span>
           </div>
           {FILAS_CLIENTE.map(([c, n, s], i) => (
             <div key={c} style={{ display: "grid", gridTemplateColumns: "1fr 90px 150px", alignItems: "center", height: 46, borderBottom: `1px solid ${t.color.border}`, color: t.color.text }}>
-              <span style={{ opacity: op(underAnswer(f, i)) }}>{c}</span>
+              <span style={{ opacity: op(underAnswer(f, i, L.v)) }}>{c}</span>
               <span>{n}</span>
               <span style={{ height: 46, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 10, background: t.data[COLOR_KEY[s]!], color: onFill(t, t.data[COLOR_KEY[s]!]) }}>{STATES[s]!.l}</span>
             </div>
           ))}
         </div>
       </Panel>
-      <Panel x={1460} y={180} w={440} h={140} f={f} at={b + 8} qa="min-size" title="Frescura de los datos">
+      <Panel x={L.fresc.x} y={L.fresc.y} w={L.fresc.w} h={L.fresc.h} f={f} at={b + 8} qa="min-size" title="Frescura de los datos">
         <div style={{ position: "absolute", left: 0, right: 0, top: 46, bottom: 0, background: t.data.fichaFresco, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, color: t.data.strong, fontSize: t.type.ui.md }}>
           Último pedido: hoy <b style={{ fontSize: t.type.body * 0.9 }}>0</b> días
         </div>
       </Panel>
-      <Panel x={1460} y={340} w={440} h={300} f={f} at={b + 14} qa="min-size" title="Canales que cambiaron de estado en 30 días">
+      <Panel x={L.cambio.x} y={L.cambio.y} w={L.cambio.w} h={L.cambio.h} f={f} at={b + 14} qa="min-size" title="Canales que cambiaron de estado en 30 días">
         <div style={{ position: "absolute", left: 0, right: 0, top: 60, textAlign: "center", fontSize: t.type.h1, fontWeight: t.font.weights.stat, color: t.data.strong }}>
           <CountUp to={86} start={b + 20} duration={30} />
         </div>
         <div style={{ position: "absolute", left: 0, right: 0, top: 200, textAlign: "center", fontSize: t.type.ui.sm, color: t.color.textMuted }}>de {TOTAL} canales</div>
       </Panel>
-      <div style={{ position: "absolute", left: 24, top: 672, whiteSpace: "nowrap", fontSize: t.type.ui.md, color: t.data.strong, ...textStyle(t, "title"), opacity: op(kf(f, [b + 10, b + 26], [0, 1])) }}>⌄ Cola de atención</div>
-      <Stat x={20} y={710} w={455} label="Inactivos" n={96} bg={t.data.fichaInactivos} f={f} at={b + 18} glow={hotStat([0])} />
-      <Stat x={495} y={710} w={455} label="Operación detenida" n={4} bg={t.data.fichaDetenida} f={f} at={b + 22} />
-      <Stat x={970} y={710} w={455} label="En caída" n={22} bg={t.data.fichaCaida} f={f} at={b + 26} glow={hotStat([4])} />
-      <Stat x={1445} y={710} w={455} label="Severidad alta" n={71} bg={t.color.surface} numColor={t.color.danger} f={f} at={b + 30} qa="min-size" />
+      <div style={{ position: "absolute", left: 24, top: L.yCola, whiteSpace: "nowrap", fontSize: t.type.ui.md, color: t.data.strong, ...textStyle(t, "title"), opacity: op(kf(f, [b + 10, b + 26], [0, 1])) }}>⌄ Cola de atención</div>
+      <Stat x={L.fichaX(0)} y={L.yFichas} w={L.fichaW} label="Inactivos" n={96} bg={t.data.fichaInactivos} f={f} at={b + 18} glow={hotStat([0])} />
+      <Stat x={L.fichaX(1)} y={L.yFichas} w={L.fichaW} label="Operación detenida" n={4} bg={t.data.fichaDetenida} f={f} at={b + 22} />
+      <Stat x={L.fichaX(2)} y={L.yFichas} w={L.fichaW} label="En caída" n={22} bg={t.data.fichaCaida} f={f} at={b + 26} glow={hotStat([4])} />
+      <Stat x={L.fichaX(3)} y={L.yFichas} w={L.fichaW} label="Severidad alta" n={71} bg={t.color.surface} numColor={t.color.danger} f={f} at={b + 30} qa="min-size" />
       <QueueTable f={f} />
-      <div style={{ position: "absolute", left: 24, top: 1300, whiteSpace: "nowrap", fontSize: t.type.ui.md, color: t.data.strong, ...textStyle(t, "title"), opacity: op(kf(f, [b + 40, b + 56], [0, 1])) }}>⌄ Cartera sana</div>
-      <Stat x={20} y={1340} w={930} label="Maduros" n={52} bg={t.data.fichaMaduros} f={f} at={b + 44} glow={hotStat([2])} />
-      <Stat x={970} y={1340} w={930} label="En crecimiento" n={64} bg={t.data.fichaCrecimiento} f={f} at={b + 48} glow={hotStat([1])} qa="min-size" />
+      <div style={{ position: "absolute", left: 24, top: L.yCartera, whiteSpace: "nowrap", fontSize: t.type.ui.md, color: t.data.strong, ...textStyle(t, "title"), opacity: op(kf(f, [b + 40, b + 56], [0, 1])) }}>⌄ Cartera sana</div>
+      <Stat x={L.cartX(0)} y={L.yCart} w={L.cartW} label="Maduros" n={52} bg={t.data.fichaMaduros} f={f} at={b + 44} glow={hotStat([2])} />
+      <Stat x={L.cartX(1)} y={L.yCart} w={L.cartW} label="En crecimiento" n={64} bg={t.data.fichaCrecimiento} f={f} at={b + 48} glow={hotStat([1])} qa="min-size" />
     </>
   );
 };
@@ -436,9 +533,11 @@ const DEST = [
 ] as const;
 const Transitions: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
+  const L = useLay();
+  const { TR } = L;
   const a = kf(f, [T.trans[0] - 30, T.trans[0] - 6], [0, 1], OUT);
   if (a <= 0) return null;
-  const box = (i: number) => ({ x: TR.x + 640 + (i % 3) * 250, y: TR.y + 170 + Math.floor(i / 3) * 330 });
+  const box = (i: number) => ({ x: TR.x + L.box(i).x, y: TR.y + L.box(i).y });
   const dots: { d: number; idx: number }[] = [];
   DEST.forEach((d, di) => {
     for (let j = 0; j < d.n; j++) dots.push({ d: di, idx: j });
@@ -447,8 +546,8 @@ const Transitions: React.FC<{ f: number }> = ({ f }) => {
     <>
       <div style={{ position: "absolute", left: TR.x, top: TR.y, width: TR.w, height: TR.h, ...surfaceStyle(t, "window"), opacity: op(a), boxShadow: t.shadow.lg }}>
         <div style={{ padding: "22px 30px 0", fontSize: t.type.ui.md, color: t.color.text, ...textStyle(t, "title") }}>Transiciones de estado: hace 30 días → hoy</div>
-        <div style={{ position: "absolute", left: 40, top: 92, fontSize: 22, color: t.color.textMuted }}>Hace 30 días · En activación</div>
-        <div style={{ position: "absolute", left: 640, top: 92, fontSize: 22, color: t.color.textMuted }}>Hoy</div>
+        <div style={{ position: "absolute", left: L.src.x, top: L.src.y, fontSize: 22, color: t.color.textMuted }}>Hace 30 días · En activación</div>
+        <div style={{ position: "absolute", left: L.hoy.x, top: L.hoy.y, fontSize: 22, color: t.color.textMuted }}>Hoy</div>
       </div>
       {DEST.map((d, i) => {
         const b = box(i);
@@ -456,12 +555,12 @@ const Transitions: React.FC<{ f: number }> = ({ f }) => {
         return (
           <div key={d.l} style={{ position: "absolute", left: b.x, top: b.y + 210, width: 230, textAlign: "center", opacity: op(a) }}>
             <div data-qa-ignore="contrast" style={{ fontSize: t.type.body * 0.9, fontWeight: t.font.weights.stat, color: t.data[d.c] }}>{n}</div>
-            <div style={{ fontSize: 18, color: t.color.text }}>{d.l}</div>
+            <div style={{ fontSize: L.v ? t.type.ui.md : 18, color: t.color.text }}>{d.l}</div>
           </div>
         );
       })}
       {dots.map((q, qi) => {
-        const sx = TR.x + 50 + (qi % 12) * 40 + 20, sy = TR.y + 160 + Math.floor(qi / 12) * 40 + 20;
+        const sx = TR.x + L.srcX0 + (qi % 12) * 40 + 20, sy = TR.y + L.srcY0 + Math.floor(qi / 12) * 40 + 20;
         const b = box(q.d);
         const tx = b.x + 20 + (q.idx % 10) * 19 + 9, ty = b.y + 200 - Math.floor(q.idx / 10) * 19 - 9;
         const p = kf(f, [T.trans[0] + qi * 0.6, T.trans[0] + qi * 0.6 + 26], [0, 1], bez(0.45, 0, 0.2, 1));
@@ -477,6 +576,8 @@ const Transitions: React.FC<{ f: number }> = ({ f }) => {
 export function SceneBody() {
   const f = useFrame();
   const { width, height } = useFormat();
+  const L = useLay();
+  const { TR } = L;
   const topic = useTopic({ name: "Health Score", line: "a quién contactar primero", index: 3 });
   const cam = useCamera(f);
   const zoomIn = Math.max(0, Math.min(1, (cam.scale - 1.05) / 0.4));
@@ -497,8 +598,8 @@ export function SceneBody() {
             <Transitions f={f} />
           </div>
         </ThemeScope>
-        <DoodleCircle start={T.sort[1] + 4} end={760} cx={20 + 16 + 100} cy={860 + 90 + 26} rx={120} ry={32} id="dc-first" />
-        <DoodleArrow start={T.trans[0] + 10} end={1000} x1={TR.x + 520} y1={TR.y + 120} x2={TR.x + 640} y2={TR.y + 120} bend={-0.4} id="da-trans" />
+        <DoodleCircle start={T.sort[1] + 4} end={760} cx={L.q.x + 16 + 100} cy={L.q.y + 90 + 26} rx={120} ry={32} id="dc-first" />
+        <DoodleArrow start={T.trans[0] + 10} end={1000} x1={TR.x + L.arrow[0]} y1={TR.y + L.arrow[1]} x2={TR.x + L.arrow[2]} y2={TR.y + L.arrow[3]} bend={-0.4} id="da-trans" />
       </World>
       {/* la viñeta del original es del color del texto (tinta) y de intensidad 0,28: ambos son del design system (`decor.vignetteColor`, `decor.vignette`) */}
       <Vignette amount={zoomIn * (1 - kf(f, [T.through[0], T.through[0] + 10], [0, 1]))} />

@@ -11,34 +11,40 @@ import { TopicHeadline, useTopicOrNull } from "video-estudio/stories";
 import { ThemeProvider, dark, editorial, neon, neutral, papel } from "video-estudio/themes";
 import type { Theme } from "video-estudio/themes";
 import { theme as brand } from "../theme";
-import { DURACION, PREVIEW, T, WALL_X } from "./datos";
+import { DURACION, T } from "./datos";
+import { useLay } from "./layout";
 import { Muro } from "./muro";
 import { Preview, previewRect } from "./vista";
 import { Banda, Conversacion, Etapas, LineaDeTiempo, RielesTercera, Tarjetas, Ventana, pulso } from "./ventana";
 
 export { DURACION };
 
-const KEYS: CameraKey[] = [
-  // arranca con la vista previa llenando el cuadro (1008x567 a escala 1,9) y se aleja hasta ver el estudio entero
-  { f: 0, x: PREVIEW.cx, y: PREVIEW.top + PREVIEW.h / 2, scale: 1920 / PREVIEW.w },
-  { f: T.pull[0], x: PREVIEW.cx, y: PREVIEW.top + PREVIEW.h / 2, scale: 1920 / PREVIEW.w },
-  { f: T.pull[1], x: 960, y: 540, scale: 1 },
-  { f: T.b4, x: 960, y: 540, scale: 1 },
-  { f: T.travel[1], x: WALL_X + 960, y: 540, scale: 1 },
-  { f: DURACION - 1, x: WALL_X + 960, y: 540, scale: 1 },
-];
+/** Claves de cámara del formato: arranca con la vista previa llenando el cuadro (la caja tiene la forma del formato, a escala 1/k) y se aleja hasta ver el estudio entero. */
+const keysOf = (lay: ReturnType<typeof useLay>): CameraKey[] => {
+  const cx = lay.pv.cx, cy = lay.pv.top + lay.pv.h / 2, k = lay.W / lay.pv.w;
+  const W2 = lay.W / 2, H2 = lay.H / 2, wx = lay.mu.wx;
+  return [
+    { f: 0, x: cx, y: cy, scale: k },
+    { f: T.pull[0], x: cx, y: cy, scale: k },
+    { f: T.pull[1], x: W2, y: H2, scale: 1 },
+    { f: T.b4, x: W2, y: H2, scale: 1 },
+    { f: T.travel[1], x: wx + W2, y: H2, scale: 1 },
+    { f: DURACION - 1, x: wx + W2, y: H2, scale: 1 },
+  ];
+};
 
 export function SceneBody() {
   const f = useFrame();
   const { width, height } = useFormat();
+  const lay = useLay();
   // En la historia: llega de la escena anterior (Health Score cortada en su cuadro `HEALTH_FRAME`, sin velo de entrada: el cuadro 0 es el suyo)
   // y entrega al listado (cierra con el velo de siempre). Fuera de la historia (`handoff` indefinido) cierra igual.
   const topic = useTopicOrNull();
   const cierraConVelo = topic?.handoff !== "next-scene" && topic?.handoff !== "closing";
   // el viaje al muro se aleja a mitad de camino sin detenerse (una escala de 0,5 quieta dejaría la letra del estudio chica y quieta)
   // (la escala baja según el avance de la posición: la letra solo es chica cuando la cámara va rápido)
-  const cam = useCameraAt(f, KEYS, { map: (fr, c) => ({ ...c, scale: c.scale * (1 - 0.5 * Math.sin(Math.PI * kf(fr, [T.travel[0], T.travel[1]], [0, 1], Easing.inOut))) }) });
-  const rect = previewRect(f);
+  const cam = useCameraAt(f, keysOf(lay), { map: (fr, c) => ({ ...c, scale: c.scale * (1 - 0.5 * Math.sin(Math.PI * kf(fr, [T.travel[0], T.travel[1]], [0, 1], Easing.inOut))) }) });
+  const rect = previewRect(f, lay);
   const radius = Math.round(kf(f, [T.pull[0], T.pull[0] + 40], [0, 14]));
   const studio = f < T.travel[1] + 10;
   return (
@@ -48,7 +54,7 @@ export function SceneBody() {
           <>
             <Ventana f={f} />
             <LineaDeTiempo f={f} />
-            <Preview f={f} cx={PREVIEW.cx} rect={rect} bezel={kf(f, [30, 70], [0, 1])} radius={radius} pulse={pulso(f)} />
+            <Preview f={f} cx={rect.cx} rect={rect} bezel={kf(f, [30, 70], [0, 1])} radius={radius} pulse={pulso(f)} />
             <Banda f={f} />
             {f >= 170 && f < 452 && (
               <>

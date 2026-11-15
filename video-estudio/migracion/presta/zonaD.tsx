@@ -5,19 +5,23 @@ import { Easing } from "video-estudio/engine";
 import { kf, textWidth } from "video-estudio/kit";
 import { fade as op, xform } from "video-estudio/fx/core";
 import { cornerRadius, readableOn, surfaceStyle, textStyle, useTheme, withAlpha } from "video-estudio/themes";
-import { CFG, FEATURES, NAME, T, ZD } from "./datos";
+import { FEATURES, NAME, T } from "./datos";
+import { useGeo } from "./geo";
+import type { Geo } from "./geo";
 import { tiendaTheme } from "./temas";
 import { Ventana, inkOn, useZoomed } from "./ui";
 
 const OUT = Easing.out;
 
 /** Fila `i` de la pantalla de configuración (esquina superior izquierda en el mundo). */
-export const filaCfg = (i: number) => ({ x: CFG.x + 26, y: CFG.y + CFG.rowY + i * CFG.rowH - 50, w: CFG.w - 52, h: CFG.rowH - 12 });
+export const filaCfg = (i: number, { CFG }: Pick<Geo, "CFG">) => ({ x: CFG.x + 26, y: CFG.y + CFG.rowY + i * CFG.rowH - 50, w: CFG.w - 52, h: CFG.rowH - 12 });
 /** Centro del interruptor SÍ / NO de la fila `i` (el cursor hace clic ahí). */
-export const interruptor = (i: number) => ({ x: CFG.x + CFG.w - 70, y: CFG.y + CFG.rowY + i * CFG.rowH - 50 + 42 });
+export const interruptor = (i: number, { CFG }: Pick<Geo, "CFG">) => ({ x: CFG.x + CFG.w - 70, y: CFG.y + CFG.rowY + i * CFG.rowH - 50 + 42 });
 
 const Configuracion: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
+  const g = useGeo();
+  const { CFG } = g;
   const toggledOn = (i: number) => (i === 1 ? f >= T.click1 + 2 : i === 3 ? f >= T.click2 + 2 : FEATURES[i]![2]);
   const saved = f >= T.save + 2;
   const acento = inkOn(t, t.color.accent);
@@ -39,7 +43,7 @@ const Configuracion: React.FC<{ f: number }> = ({ f }) => {
         const rowIn = kf(f, [s + 14, s + 24], [0, 1], OUT);
         const on = toggledOn(i);
         const flip = i === 1 ? kf(f, [T.click1, T.click1 + 8], [0, 1]) : i === 3 ? kf(f, [T.click2, T.click2 + 8], [0, 1]) : 1;
-        const r = filaCfg(i);
+        const r = filaCfg(i, g);
         const noFill = t.data.noRojo;
         return (
           <div key={name} data-qa-ignore={f >= 858 && f <= 940 ? "offscreen" : undefined /* las filas de abajo entran justo cuando la cámara arranca el acercamiento a los interruptores y quedan en el borde del encuadre */} style={{ position: "absolute", left: 26, top: CFG.rowY + i * CFG.rowH - 50, width: r.w, minHeight: r.h, boxSizing: "border-box", display: "flex", alignItems: "center", gap: 16, borderBottom: `1px solid ${t.color.border}`, opacity: op(rowIn) }}>
@@ -64,6 +68,7 @@ const Configuracion: React.FC<{ f: number }> = ({ f }) => {
 
 export const TarjetasFuncion: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
+  const g = useGeo();
   const cut = useZoomed(0.9) ? "offscreen" : undefined; // las últimas tarjetas se funden mientras la cámara empieza el acercamiento a los interruptores
   const cw = Math.min(390, Math.max(360, ...FEATURES.map(([n]) => Math.ceil(textWidth(t, n, { size: t.type.ui.md, role: "title" })) + 48))), ch = 190;
   return (
@@ -73,9 +78,8 @@ export const TarjetasFuncion: React.FC<{ f: number }> = ({ f }) => {
         const s = T.merge + i * 14;
         const m = kf(f, [s, s + 20], [0, 1], Easing.bezier(0.5, 0, 0.2, 1));
         if (m >= 1) return null;
-        const sx = ZD.x - 820 + (i % 2) * (cw + 40);
-        const sy = ZD.y - 330 + Math.floor(i / 2) * 230;
-        const r = filaCfg(i);
+        const { x: sx, y: sy } = g.tarjeta(i, cw);
+        const r = filaCfg(i, g);
         const x = sx + (r.x - sx) * m;
         const y = sy + (r.y - sy) * m - Math.sin(m * Math.PI) * 60;
         const w = cw + (r.w - cw) * m;
@@ -93,6 +97,7 @@ export const TarjetasFuncion: React.FC<{ f: number }> = ({ f }) => {
 };
 
 export const ZonaD: React.FC<{ f: number }> = ({ f }) => {
+  const { CFG } = useGeo();
   const winIn = kf(f, [T.cards - 6, T.cards + 20], [0, 1], OUT);
   return (
     <>
