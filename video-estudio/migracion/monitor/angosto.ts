@@ -19,10 +19,10 @@ export const PAN = {
   alert: { w: 600, h: 124 },
 };
 /** Posición del panel en el mundo. */
-export const PV = { x: 0, y: 340 };
+export const PV = { x: 0, y: 453 };
 /** Chat (arriba a la derecha) y mesa de ayuda (abajo a la derecha), con su tamaño. */
 export const CHV: Rect = { x: 1000, y: 0, w: AW, h: 1200 };
-export const MEV: Rect = { x: 1000, y: 1460, w: AW, h: 1000 };
+export const MEV: Rect = { x: 1000, y: 1700, w: AW, h: 1000 };
 export const PANEL_RECT: Rect = { x: PV.x, y: PV.y, w: PAN.w, h: PAN.h };
 
 /** Coordenadas del mundo de un punto del panel. */
@@ -64,27 +64,27 @@ const pcx = PV.x + PAN.w / 2;
 const KV: K[] = [
   [0, donutC.x, donutC.y, 2.0, [donutC.x, donutC.y, 1.55]], [112, donutC.x, donutC.y, 2.0, [donutC.x, donutC.y, 1.55]],
   // vista del panel (con el titular): arriba entero en cuadrado
-  [160, pcx, PV.y + 900, 0.96, [pcx, PV.y + 259, 1.1]], [190, pcx, PV.y + 900, 0.96, [pcx, PV.y + 259, 1.1]],
+  [160, pcx, PV.y + 900, 0.96, [pcx, PV.y + 246, 1.07]], [190, pcx, PV.y + 900, 0.96, [pcx, PV.y + 246, 1.07]],
   // el filtro: chips, cifras, dona y el arranque de la tabla
   [225, pcx, PV.y + 850, 1.3, [pcx, PV.y + 350, 1.35]], [270, pcx, PV.y + 850, 1.3, [pcx, PV.y + 350, 1.35]],
   // la fila, el log y el botón
   [305, pcx, PV.y + 1060, 1.3, [pcx, PV.y + 1330, 1.3]], [470, pcx, PV.y + 1060, 1.3, [pcx, PV.y + 1330, 1.3]],
   // sigue al ticket hasta la mesa
-  [500, 1000, 1900, 0.55, [1000, 1900, 0.55]], [546, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 420, 1.2]], [560, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 420, 1.2]],
+  [500, 1000, Math.round((BTNV.y + MESA_SLOT_V.y) / 2), 0.55, [1000, Math.round((BTNV.y + MESA_SLOT_V.y) / 2), 0.55]], [546, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 420, 1.2]], [560, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 420, 1.2]],
   [576, mesaC, MEV.y + 330, 1.35, [mesaC, MEV.y + 290, 1.35]], [600, mesaC, MEV.y + 330, 1.35, [mesaC, MEV.y + 290, 1.35]],
   // vuelta de latigazo al panel
-  [630, pcx, PV.y + 900, 0.96, [pcx, PV.y + 259, 1.1]], [644, pcx, PV.y + 900, 0.96, [pcx, PV.y + 259, 1.1]],
+  [630, pcx, PV.y + 900, 0.96, [pcx, PV.y + 246, 1.07]], [644, pcx, PV.y + 900, 0.96, [pcx, PV.y + 246, 1.07]],
   [658, pcx, PV.y + 740, 1.3, [pcx, PV.y + 400, 1.3]], [700, pcx, PV.y + 740, 1.3, [pcx, PV.y + 400, 1.3]], [730, pcx, PV.y + 740, 1.3, [pcx, PV.y + 400, 1.3]],
   // sigue a la campanita hasta el chat
-  [762, 900, 1000, 0.55, [900, 980, 0.55]], [792, chatC, 680, 1.2, [chatC, 420, 1.3]], [998, chatC, 680, 1.2, [chatC, 640, 1.3]],
+  [762, 900, 1000, 0.55, [900, 1000, 0.55]], [792, chatC, 680, 1.2, [chatC, 420, 1.3]], [998, chatC, 680, 1.2, [chatC, 640, 1.3]],
   [1012, chatC, 880, 1.32, [chatC, 880, 1.3]], [1042, chatC, 880, 1.32, [chatC, 880, 1.3]],
   // vuelo a la mesa (abajo) y apertura del ticket
-  [1068, 1400, 1500, 0.7, [1400, 1500, 0.55]], [1092, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 420, 1.2]], [1106, mesaC, MEV.y + 330, 1.35, [mesaC, MEV.y + 290, 1.35]], [1118, mesaC, MEV.y + 330, 1.35, [mesaC, MEV.y + 290, 1.35]],
+  [1068, 1400, 1450, 0.7, [1400, 1450, 0.55]], [1092, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 420, 1.2]], [1106, mesaC, MEV.y + 330, 1.35, [mesaC, MEV.y + 290, 1.35]], [1118, mesaC, MEV.y + 330, 1.35, [mesaC, MEV.y + 290, 1.35]],
   [1140, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 360, 1.2]], [1150, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 360, 1.2]],
   [1166, mesaC, MEV.y + 560, 1.4, [mesaC, MEV.y + 470, 1.4]], [1268, mesaC, MEV.y + 560, 1.4, [mesaC, MEV.y + 470, 1.4]],
   [1292, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 560, 1.2]], [1320, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 560, 1.2]],
   // todo junto
-  [1352, 900, 1270, 0.58, [900, 1270, 0.4]], [1396, 900, 1270, 0.58, [900, 1270, 0.4]], [1404, 900, 1270, 0.58, [900, 1270, 0.4]],
+  [1352, 900, 1350, 0.58, [900, 1350, 0.4]], [1396, 900, 1350, 0.58, [900, 1350, 0.4]], [1404, 900, 1350, 0.58, [900, 1350, 0.4]],
 ];
 export const keysAngostas = (format: string): CameraKey[] =>
   KV.map(([f, x, y, scale, cuad]) => (format === "cuadrado" && cuad ? { f, x: cuad[0], y: cuad[1], scale: cuad[2] } : { f, x, y, scale }));

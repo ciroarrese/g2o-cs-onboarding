@@ -112,7 +112,7 @@ function SceneBodyV() {
   const cam = { ...c, rx: c.rx + kf(f, TILT_F, TILT_RX) * 0.5, ry: c.ry + kf(f, TILT_F, TILT_RY) * 0.5 };
   const filterOn = kf(f, [T.filterClick + 4, T.filterClick + 32], [0, 1], OUT);
   const view = cameraView(cam, { width, height });
-  const m = 0.18; // la inclinación y el desenfoque corren un poco los bordes: se dibuja también lo que asoma un 18 % fuera de la vista
+  const m = 0.1; // la inclinación y el desenfoque corren un poco los bordes: se dibuja también lo que asoma un 10 % fuera de la vista
   const visible = (r: { x: number; y: number; w: number; h: number }) => r.x < view.x + view.w * (1 + m) && r.x + r.w > view.x - view.w * m && r.y < view.y + view.h * (1 + m) && r.y + r.h > view.y - view.h * m;
   // la ventana donde está el foco de la cámara es el sujeto; las vecinas que asoman por el borde se marcan (`peek`, como en horizontal)
   const within = (r: { x: number; y: number; w: number; h: number }) => cam.x >= r.x && cam.x <= r.x + r.w && cam.y >= r.y && cam.y <= r.y + r.h;
