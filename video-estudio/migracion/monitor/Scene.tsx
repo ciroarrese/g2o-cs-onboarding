@@ -58,12 +58,12 @@ export function SceneBody() {
   // la ventana donde está el foco de la cámara es el sujeto; las otras asoman por el borde a propósito (el control no las juzga por "fuera del cuadro")
   const within = (r: { x: number; y: number; w: number; h: number }) => cam.x >= r.x && cam.x <= r.x + r.w && cam.y >= r.y && cam.y <= r.y + r.h;
   // Marca de `qa` para cada ventana: "offscreen" si asoma como vecina o si, en vertical y cuadrado, es más ancha que el cuadro y el encuadre la recorta a
-  // propósito (la cámara muestra la zona de la acción); "min-size" solo en vuelo o en la vista de conjunto de esos formatos (escala < 0,7), donde la
-  // ventana es forma y no se lee. En horizontal queda como estaba: solo "offscreen" cuando la cámara está en otra ventana.
+  // propósito (la cámara muestra la zona de la acción); "min-size" solo cuando la ventana es vecina o la cámara vuela o está en la vista de conjunto de esos formatos (escala < 0,7): ahí
+  // la ventana es forma y no se lee. En horizontal queda como estaba: solo "offscreen" cuando la cámara está en otra ventana.
   const extra = format !== "horizontal";
   const marca = (r: { x: number; y: number; w: number; h: number }): string | undefined => {
-    const lejos = !within(r) || (extra && r.w * cam.scale > width);
-    const chico = extra && cam.scale < 0.7;
+    const lejos = !within(r) || (extra && (r.w * cam.scale > width || r.h * cam.scale > height));
+    const chico = extra && (cam.scale < 0.7 || !within(r));
     return [lejos ? "offscreen" : "", chico ? "min-size" : ""].filter(Boolean).join(" ") || undefined;
   };
   const hide = Math.max(hideFromScale(cam.scale, 1, 0.08), kf(f, [744, 770, 1050, 1070], [0, 1, 1, 0]));
