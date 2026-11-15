@@ -22,7 +22,7 @@ export const medidasB = (t: ReturnType<typeof useTheme>, g: Geo) => {
   const sube = g.formato === "vertical";
   const fTag = sube ? t.type.ui.md : t.type.ui.xs;
   const fTit = sube ? t.type.eyebrow : t.type.ui.sm;
-  const fSem = sube ? t.type.eyebrow : t.type.ui.md;
+  const fSem = g.apilada ? t.type.eyebrow : t.type.ui.md;
   const chipH = sube ? 72 : 56;
   const chipGap = 8;
   const tag = (s: string) => Math.ceil(textWidth(t, s, { size: fTag, role: "label" })) + 28; // etiqueta: texto + relleno
@@ -34,7 +34,7 @@ export const medidasB = (t: ReturnType<typeof useTheme>, g: Geo) => {
   const total = WEEKS.length * colW + (WEEKS.length - 1) * gap;
   const left = Math.round(ZB.x - total / 2);
   // posición de cada semana: x de la columna y línea de base de su pila
-  const labelH = sube ? 112 : 98;
+  const labelH = g.apilada ? 112 : 98;
   const rowGap = 44;
   const pos: { x: number; base: number }[] = [];
   let bottom = ZB.y + 220 + labelH;
@@ -59,6 +59,7 @@ export const ZonaB: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
   const g = useGeo();
   const { ZB } = g;
+  const zoomed = useZoomed();
   const { colW, chipH, chipGap, pos, fTag, fTit, fSem } = medidasB(t, g);
   const landed = WEEKS.map((items, w) => items.filter((_, j) => f >= T.weeks + staggerFrames(t, w, { base: 30 }) + staggerFrames(t, j, { base: 7 }) + 14).length);
   const lastWeek = landed.reduce((a, n, i) => (n > 0 ? i : a), -1);
@@ -70,8 +71,8 @@ export const ZonaB: React.FC<{ f: number }> = ({ f }) => {
           <GradientText>{lastWeek >= 0 ? VERS[lastWeek] : "v2.0"}</GradientText>
         </div>
         <div style={{ display: "flex", justifyContent: "center", gap: 18, marginTop: 4 }}>
-          <Tag c={t.color.success}>Mejora</Tag>
-          <Tag c={t.color.accent2}>Fix</Tag>
+          <Tag c={t.color.success} size={g.apilada ? t.type.eyebrow : undefined}>Mejora</Tag>
+          <Tag c={t.color.accent2} size={g.apilada ? t.type.eyebrow : undefined}>Fix</Tag>
         </div>
       </div>
       {WEEKS.map((items, w) => {
@@ -86,7 +87,7 @@ export const ZonaB: React.FC<{ f: number }> = ({ f }) => {
               const y = base - (j + 1) * (chipH + chipGap);
               const c = kind === "Mejora" ? t.color.success : t.color.accent2;
               // las pilas de las semanas 1 a 3 se ven en vista general y la cámara no las acerca (solo las últimas): su letra no llega al mínimo, la forma de la pila es el mensaje
-              const q = w < 3 ? "min-size" : undefined;
+              const q = w < 3 ? "min-size" + (g.apilada && zoomed ? " offscreen" : "") : undefined; // apilada (cuadrado): al acercar a las últimas semanas, la fila de arriba queda cortada por el borde
               return (
                 <div key={title} style={{ position: "absolute", left: x, top: Math.round(y - (1 - p) * 420), width: colW, height: chipH, boxSizing: "border-box", ...surfaceStyle(t, "card", { corner: "panel" }), border: `1.5px solid ${withAlpha(c, 0.33)}`, boxShadow: `inset 5px 0 0 ${c}, ${t.shadow.sm}`, display: "flex", alignItems: "center", gap: 10, padding: "0 12px 0 16px", opacity: op(Math.min(1, p * 2)), fontSize: fTit, lineHeight: 1.25, whiteSpace: "nowrap", overflow: "hidden" }}>
                   <Tag c={c} size={fTag} qa={q}>{kind}</Tag>
@@ -94,7 +95,7 @@ export const ZonaB: React.FC<{ f: number }> = ({ f }) => {
                 </div>
               );
             })}
-            <div style={{ position: "absolute", left: x, top: base + 12, width: colW, textAlign: "center" }}>
+            <div data-qa-ignore={w < 3 && g.apilada && zoomed ? "offscreen" : undefined /* ídem: la fila de arriba queda cortada al acercar */} style={{ position: "absolute", left: x, top: base + 12, width: colW, textAlign: "center" }}>
               <div style={{ fontSize: fSem, color: t.color.textMuted, lineHeight: 1.25 }}>Semana {w + 1}</div>
               {/* la versión se enciende cuando se completa la pila; antes está apagada con una opacidad calculada contra el fondo, no fija */}
               <div style={{ marginTop: 8 }}>
@@ -184,14 +185,14 @@ export const ZonaC: React.FC<{ f: number }> = ({ f }) => {
           {!v && <Icono d="M3 5h18v14H3zM3 9h18M7 7h.1M10 7h.1" c={t.color.textMuted} />}
           {rotulo("Petición del navegador")}
           <div data-qa-ignore={cut} style={{ position: "absolute", right: 50, top: 24, fontSize: tiempoFs, ...textStyle(t, "title", { strong: true }), lineHeight: 1.2, color: failed ? t.color.danger : t.color.text, fontVariantNumeric: "tabular-nums" }}>{mmss(webSecs)}</div>
-          <div style={{ position: "absolute", left: trackX, top: etiquetaTop, ...lbl }}>Sincronizando descuentos</div>
+          <div data-qa-ignore={v ? cut : undefined} style={{ position: "absolute", left: trackX, top: etiquetaTop, ...lbl }}>Sincronizando descuentos</div>
           <div style={{ position: "absolute", left: trackX, top: bar.top, width: trackW, height: bar.h, borderRadius: cornerRadius(t, "bar"), background: t.color.surfaceAlt, overflow: "hidden" }}>
             <div style={{ width: `${p1 * (1 - revert) * 100}%`, height: "100%", borderRadius: cornerRadius(t, "bar"), background: failed ? t.color.danger : t.gradient.brand }} />
           </div>
           {/* el muro del hosting */}
           <div style={{ position: "absolute", left: trackX + trackW * limite - 6, top: wall.top, width: 12, height: wall.h, borderRadius: cornerRadius(t, "control"), background: t.color.text, boxShadow: failed ? `0 0 0 ${+kf(f, [T.fail, T.fail + 6, T.fail + 30], [0, 10, 0]).toFixed(2)}px ${withAlpha(t.color.danger, 0.27)}` : undefined }} />
           <div style={{ position: "absolute", left: trackX + trackW * limite - 170, top: infoTop, width: 340, textAlign: "center", fontSize: wallLabelFs, ...textStyle(t, "label", { strong: true }), lineHeight: 1.25 }}>Límite del hosting · 2:00</div>
-          {failed && <div style={{ position: "absolute", ...(v ? { left: 50 } : { right: 50 }), top: avisoTop, fontSize: t.type.eyebrow, ...textStyle(t, "label", { strong: true }), lineHeight: 1.25, color: t.color.danger, opacity: op(kf(f, [T.fail, T.fail + 8], [0, 1])) }}>Se corta y se revierte todo</div>}
+          {failed && <div data-qa-ignore={v ? cut : undefined} style={{ position: "absolute", ...(v ? { left: 50 } : { right: 50 }), top: avisoTop, fontSize: t.type.eyebrow, ...textStyle(t, "label", { strong: true }), lineHeight: 1.25, color: t.color.danger, opacity: op(kf(f, [T.fail, T.fail + 8], [0, 1])) }}>Se corta y se revierte todo</div>}
         </Caja>
       </div>
 

@@ -4,6 +4,7 @@ import React from "react";
 import { ThemeScope } from "video-estudio/kit";
 import { cornerRadius, readableOn, suggestShade, surfaceStyle, textStyle, useTheme, withAlpha } from "video-estudio/themes";
 import type { Theme } from "video-estudio/themes";
+import { useGeo } from "./geo";
 
 /** La cámara está acercada (escala > 1,05): lo que el encuadre corta a propósito se marca con `data-qa-ignore="offscreen"` solo mientras dura el zoom. */
 export const ZoomCtx = React.createContext(1);
@@ -33,8 +34,9 @@ export const Tag: React.FC<{ children: React.ReactNode; c: string; size?: number
 /** Pastilla que viaja entre sistemas (Precios, Stock, Catálogo, Pedidos, Sincro de descuentos): superficie de chip con el borde y el halo del color `c`. */
 export const Chip: React.FC<{ children: React.ReactNode; c: string }> = ({ children, c }) => {
   const t = useTheme();
+  const { apilada } = useGeo(); // en vertical y cuadrado la pastilla sube un escalón de letra: la vista general es más lejana
   return (
-    <span style={{ display: "inline-block", padding: "9px 20px", lineHeight: 1.25, whiteSpace: "nowrap", ...surfaceStyle(t, "chip", { on: true }), border: `2px solid ${c}`, boxShadow: `0 12px 26px -10px ${withAlpha(c, 0.67)}`, color: inkOn(t, c), fontSize: t.type.ui.md, ...textStyle(t, "label", { strong: true }) }}>{children}</span>
+    <span style={{ display: "inline-block", padding: "9px 20px", lineHeight: 1.25, whiteSpace: "nowrap", ...surfaceStyle(t, "chip", { on: true }), border: `2px solid ${c}`, boxShadow: `0 12px 26px -10px ${withAlpha(c, 0.67)}`, color: inkOn(t, c), fontSize: apilada ? t.type.eyebrow : t.type.ui.md, ...textStyle(t, "label", { strong: true }) }}>{children}</span>
   );
 };
 

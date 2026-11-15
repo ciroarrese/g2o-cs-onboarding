@@ -136,8 +136,11 @@ const ErpInterior: React.FC<{ f: number }> = ({ f }) => {
   const tabs = ["Inicio", "Archivos", "Ventas", "Compras", "Fondos", "Contabilidad", "Stock", "Informes"];
   const ctl = cornerRadius(t, "control");
   const zoomed = useZoomed();
+  // apilada: con la franja del titular encima de la barra y la cinta del ERP (la cámara recorta la ventana por arriba), ese marco queda bajo la píldora: no es mensaje
+  const Marco: React.FC<{ children: React.ReactNode }> = ({ children }) => (apilada ? <div data-qa-ignore="overlap covered" style={{ display: "contents" }}>{children}</div> : <>{children}</>);
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <Marco>
       <div data-qa-decor style={{ height: 34, background: t.color.accent, color: t.color.onAccent, fontSize: t.type.ui.md, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", flexShrink: 0 }}>
         -Flexxus-
         <span style={{ position: "absolute", right: 16, letterSpacing: 14, fontSize: t.type.ui.sm }}>— ▢ ✕</span>
@@ -155,13 +158,14 @@ const ErpInterior: React.FC<{ f: number }> = ({ f }) => {
           </div>
         ))}
       </div>
+      </Marco>
       <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
         <div data-qa-decor style={{ width: 40, background: t.data.riel, display: "flex", flexDirection: "column", alignItems: "center", gap: 14, paddingTop: 12, flexShrink: 0 }}>
           <Icon d="M4 6h16M4 12h16M4 18h16" c={t.color.surface} size={18} />
           <Icon d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4" c={t.color.surface} size={18} />
         </div>
         <div style={{ flex: 1, padding: "14px 18px", background: t.color.bg, position: "relative" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+          <div data-qa-ignore={apilada ? "overlap covered" : undefined /* ídem: el título de la grilla queda bajo la píldora del titular en la vista general de cuadrado */} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
             <span style={{ fontSize: t.type.eyebrow, ...textStyle(t, "title"), lineHeight: 1.25 }}>Artículos</span>
             {["Nuevo", "Modificar", "Buscar", "Exportar"].map((b) => (
               <span key={b} data-qa-decor style={{ fontSize: t.type.ui.xs, padding: "5px 12px", border: `1px solid ${t.color.border}`, borderRadius: ctl, background: t.color.surface, lineHeight: 1.25 }}>{b}</span>
