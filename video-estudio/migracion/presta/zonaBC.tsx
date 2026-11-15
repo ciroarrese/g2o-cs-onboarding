@@ -146,14 +146,14 @@ export const ZonaC: React.FC<{ f: number }> = ({ f }) => {
         <Icono d="M4 4h16v6H4zM4 14h16v6H4zM8 7h.1M8 17h.1M12 7h5M12 17h5" c={t.color.chart[2]!} />
         <div data-qa-ignore={cut} style={{ position: "absolute", left: 5, top: 270, width: 300, textAlign: "center", ...lbl }}>Servidor</div>
         <div data-qa-ignore={cut} style={{ position: "absolute", right: 50, top: 24, fontSize: t.type.display.sm, ...textStyle(t, "title", { strong: true }), lineHeight: 1.2, color: done ? t.color.success : t.color.text, fontVariantNumeric: "tabular-nums" }}>{mmss(srvSecs)}</div>
-        <div style={{ position: "absolute", left: trackX, top: 136, ...lbl }}>Sincronizando descuentos · {Math.round(srvP * 486250).toLocaleString("es-AR")}</div>
+        <div data-qa-ignore="min-size" /* el contador cambia en cada cuadro: con la cámara alejada (cuadro de salida) es detalle y no se puede emparejar con una lectura a otro zoom */ style={{ position: "absolute", left: trackX, top: 136, ...lbl }}>Sincronizando descuentos · {Math.round(srvP * 486250).toLocaleString("es-AR")}</div>
         <div style={{ position: "absolute", left: trackX, top: 176, width: trackW, height: 44, borderRadius: cornerRadius(t, "bar"), background: t.color.surfaceAlt, overflow: "hidden" }}>
           <div style={{ width: `${srvP * 100}%`, height: "100%", borderRadius: cornerRadius(t, "bar"), background: done ? t.color.success : t.gradient.brand }} />
         </div>
         {/* el fantasma del límite de antes: ya no hay muro */}
         <div style={{ position: "absolute", left: trackX + trackW * 0.48 - 2, top: 150, width: 4, height: 96, borderLeft: `3px dashed ${t.color.border}` }} />
         <div style={{ position: "absolute", left: trackX + trackW * 0.48 - 170, top: 100, width: 340, textAlign: "center", ...lbl, ...textStyle(t, "label") }}>2:00 · sin límite</div>
-        {done && <div style={{ position: "absolute", right: 50, top: 268, fontSize: t.type.eyebrow, ...textStyle(t, "label", { strong: true }), lineHeight: 1.25, color: t.color.success, opacity: op(kf(f, [T.srv[1], T.srv[1] + 8], [0, 1])) }}>Completo</div>}
+        {done && <div data-qa-ignore="min-size" /* aparece sobre el final y la cámara ya se aleja: es detalle del tablero */ style={{ position: "absolute", right: 50, top: 268, fontSize: t.type.eyebrow, ...textStyle(t, "label", { strong: true }), lineHeight: 1.25, color: t.color.success, opacity: op(kf(f, [T.srv[1], T.srv[1] + 8], [0, 1])) }}>Completo</div>}
       </Caja>
 
       {/* el trabajo pasa de la petición web al servidor */}

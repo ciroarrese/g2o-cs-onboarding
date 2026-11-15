@@ -1,7 +1,8 @@
 // Cuarta parte: el muro de efectos del catálogo corriendo a la vez en baldosas chicas, el contador de efectos, los tres controles y la música al compás.
-// Los efectos son los de `fx/` con su propio escalonado: cada uno arranca en `START(i)` y queda en su imagen final (todos llevan `frame`, ninguno guarda nada).
+// Los efectos son los de `fx/` con su propio escalonado: cada uno arranca en `START(i)`, queda un momento en su imagen final y vuelve a empezar (en lazo, hasta el último cuadro de la escena).
+// El lazo es un módulo sobre el cuadro (`lazo`): el efecto recibe un cuadro local que se reinicia, sin estado ni azar; cada baldosa tiene su propia pausa, así que no pulsan juntas.
 import React from "react";
-import { random } from "video-estudio/engine";
+import { Sequence, random } from "video-estudio/engine";
 import { Eyebrow, kf } from "video-estudio/kit";
 import {
   BarsGrow, CardFlip, ChatThread, DigitRoll, DonutRing, Globe, MarkerDraw, MaskedRise, NotificationStack, OrbitRings, ParticleSphere, ScrambleDecode, TileGrid,
@@ -24,27 +25,45 @@ const CONTROLES = ["Mismo resultado en cada render", "Calidad", "Privacidad"];
 const BEAT = (60 / 107) * 30; // cuadros por pulso
 const MUSICA = { x: 440, y: 886, w: 1420, h: 120 };
 
-type Baldosa = { name: string; render: (f: number, s: number, t: ReturnType<typeof useTheme>) => React.ReactNode };
+/** Cuadros de pausa (con la imagen final quieta) antes de que la baldosa i vuelva a empezar: 20, 26, 32 o 38 según la baldosa, para que cada una tenga su propio ritmo. */
+const PAUSA = (i: number) => 20 + ((i * 5) % 4) * 6;
+/** Cuadros de fundido de salida (al final de la pausa) y de entrada (al empezar la vuelta siguiente). */
+const FUNDIDO = { out: 8, in: 6 };
+/**
+ * Lazo del efecto de la baldosa i: `lf` es el cuadro con que se dibuja (entre `s` y `s + dur + pausa`; se reinicia en cada vuelta) y `o` la opacidad
+ * (la imagen final se funde antes de volver a empezar y la vuelta siguiente entra con un fundido corto; la primera vuelta no se funde: ya entra con la baldosa).
+ * Función pura de `f`.
+ */
+export const lazo = (f: number, s: number, dur: number, i: number) => {
+  const ciclo = dur + PAUSA(i);
+  const r = Math.max(0, f - s);
+  const vuelta = Math.floor(r / ciclo);
+  const c = r - vuelta * ciclo;
+  const o = kf(c, [ciclo - FUNDIDO.out, ciclo], [1, 0]) * (vuelta > 0 ? kf(c, [0, FUNDIDO.in], [0, 1]) : 1);
+  return { lf: s + c, o, vuelta };
+};
+
+type Baldosa = { name: string; dur: number; render: (f: number, s: number, t: ReturnType<typeof useTheme>) => React.ReactNode };
 const W = MURO.tw, H = MURO.fx;
 const centro: React.CSSProperties = { position: "absolute", left: 0, top: 0, width: W, height: H, display: "flex", alignItems: "center", justifyContent: "center" };
 
 const cara: React.CSSProperties = { width: 190, height: 110, display: "flex", alignItems: "center", justifyContent: "center" };
 const BALDOSAS: Baldosa[] = [
-  { name: "MaskedRise", render: (f, s, t) => <div style={centro}><MaskedRise frame={f} start={s} text="Título" fontSize={t.type.h2} /></div> },
-  { name: "Globe", render: (f, s) => <Globe frame={f} start={s} duration={60} width={W} height={H} bg="surface" /> },
-  { name: "ParticleSphere", render: (f, s) => <ParticleSphere frame={f} start={s} duration={60} width={W} height={H} bg="surface" /> },
-  { name: "CardFlip", render: (f, s, t) => (
+  { name: "MaskedRise", dur: 50, render: (f, s, t) => <div style={centro}><MaskedRise frame={f} start={s} duration={50} text="Título" fontSize={t.type.h2} /></div> },
+  { name: "Globe", dur: 60, render: (f, s) => <Globe frame={f} start={s} duration={60} width={W} height={H} bg="surface" /> },
+  { name: "ParticleSphere", dur: 60, render: (f, s) => <ParticleSphere frame={f} start={s} duration={60} width={W} height={H} bg="surface" /> },
+  { name: "CardFlip", dur: 60, render: (f, s, t) => (
     <CardFlip frame={f} start={s} duration={60} width={W} height={H} bg="surface" cardWidth={190} cardHeight={110}
       front={<div style={cara}><Eyebrow color={t.color.text}>Antes</Eyebrow></div>} back={<div style={cara}><Eyebrow color={t.color.text}>Después</Eyebrow></div>} />
   ) },
-  { name: "BarsGrow", render: (f, s) => <BarsGrow frame={f} start={s} duration={50} width={W} height={H} data={[40, 64, 52]} labels={["A", "B", "C"]} format={() => ""} /> },
-  { name: "OrbitRings", render: (f, s) => <OrbitRings frame={f} start={s} duration={60} width={W} height={H} bg="surface" /> },
-  { name: "DonutRing", render: (f, s) => <div style={centro}><DonutRing frame={f} start={s} duration={55} width={H} height={H} value={5} max={5} unit="" label="" /></div> },
-  { name: "NotificationStack", render: (f, s) => <NotificationStack frame={f} start={s} duration={50} width={W - 20} height={H} items={[{ title: "Hecho", body: "Control aprobado", time: "ya" }]} style={{ left: 10 }} /> },
-  { name: "ChatThread", render: (f, s) => <ChatThread frame={f} start={s} duration={60} width={W - 28} height={H} style={{ left: 14 }} messages={[{ from: "them", text: "¿Aprobás?" }, { from: "me", text: "Aprobado." }]} /> },
-  { name: "TileGrid", render: (f, s) => <div style={centro}><TileGrid frame={f} start={s} duration={50} width={W - 60} height={H - 24} cols={6} rows={3} lit={0.7} /></div> },
-  { name: "MarkerDraw", render: (f, s) => <div style={centro}><MarkerDraw frame={f} start={s} duration={40} width={W - 30} height={110} text="Clave" kind="circle" /></div> },
-  { name: "ScrambleDecode", render: (f, s, t) => <div style={centro}><ScrambleDecode frame={f} start={s} duration={50} text="Listo" fontSize={t.type.h2} /></div> },
+  { name: "BarsGrow", dur: 50, render: (f, s) => <BarsGrow frame={f} start={s} duration={50} width={W} height={H} data={[40, 64, 52]} labels={["A", "B", "C"]} format={() => ""} /> },
+  { name: "OrbitRings", dur: 60, render: (f, s) => <OrbitRings frame={f} start={s} duration={60} width={W} height={H} bg="surface" /> },
+  { name: "DonutRing", dur: 55, render: (f, s) => <div style={centro}><DonutRing frame={f} start={s} duration={55} width={H} height={H} value={5} max={5} unit="" label="" /></div> },
+  { name: "NotificationStack", dur: 50, render: (f, s) => <NotificationStack frame={f} start={s} duration={50} width={W - 20} height={H} items={[{ title: "Hecho", body: "Control aprobado", time: "ya" }]} style={{ left: 10 }} /> },
+  { name: "ChatThread", dur: 60, render: (f, s) => <ChatThread frame={f} start={s} duration={60} width={W - 28} height={H} style={{ left: 14 }} messages={[{ from: "them", text: "¿Aprobás?" }, { from: "me", text: "Aprobado." }]} /> },
+  { name: "TileGrid", dur: 50, render: (f, s) => <div style={centro}><TileGrid frame={f} start={s} duration={50} width={W - 60} height={H - 24} cols={6} rows={3} lit={0.7} /></div> },
+  { name: "MarkerDraw", dur: 40, render: (f, s) => <div style={centro}><MarkerDraw frame={f} start={s} duration={40} width={W - 30} height={110} text="Clave" kind="circle" /></div> },
+  { name: "ScrambleDecode", dur: 50, render: (f, s, t) => <div style={centro}><ScrambleDecode frame={f} start={s} duration={50} text="Listo" fontSize={t.type.h2} /></div> },
 ];
 
 const Baldosas: React.FC<{ f: number }> = ({ f }) => {
@@ -56,9 +75,10 @@ const Baldosas: React.FC<{ f: number }> = ({ f }) => {
         const at = APARECE(t, i);
         const p = kf(f, [at, at + 22], [0, 1]);
         if (p <= 0) return null;
+        const lz = lazo(f, START(t, i), b.dur, i);
         return (
           <div key={b.name} style={{ ...abs(MURO.x + col * (MURO.tw + MURO.gap), MURO.y + row * (MURO.th + MURO.gap)), width: MURO.tw, height: MURO.th, boxSizing: "border-box", overflow: "hidden", ...surfaceStyle(t, "card", { level: "sm", corner: "panel" }), ...entrance(t, p, i, { distance: 24 }), opacity: op(p) }}>
-            <div style={{ position: "relative", width: "100%", height: MURO.fx, overflow: "hidden" }}>{f >= START(t, i) - 1 && b.render(f, START(t, i), t)}</div>
+            <div key={op(lz.o) === undefined ? "pleno" : "fundido"} style={{ position: "relative", width: "100%", height: MURO.fx, overflow: "hidden", opacity: op(lz.o) }}>{f >= START(t, i) - 1 && <Sequence from={f - lz.lf}>{b.render(lz.lf, START(t, i), t)}</Sequence>}</div>
             <div style={{ height: MURO.th - MURO.fx, boxSizing: "border-box", display: "flex", alignItems: "center", padding: "0 18px", lineHeight: 1.25, whiteSpace: "nowrap" }}><Eyebrow color={t.color.text} size={t.type.eyebrow * 0.8}>{b.name}</Eyebrow></div>
           </div>
         );

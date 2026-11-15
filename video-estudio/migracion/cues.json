@@ -328,29 +328,23 @@
   "_de": "studio@1008"
  },
  {
-  "frame": 6258,
+  "frame": 6260,
   "sfx": "tilde",
   "ancla": "pico",
   "gain": 0.7,
   "_de": "storyCues interlude-tick t3"
  },
  {
-  "frame": 6270,
+  "frame": 6277,
   "sfx": "campanita",
   "gain": 0.6,
   "_de": "storyCues reveal-enter"
  },
  {
-  "frame": 6348,
+  "frame": 6384,
   "sfx": "tilde",
   "ancla": "pico",
   "gain": 0.7,
   "_de": "storyCues reveal-tick"
- },
- {
-  "frame": 6741,
-  "sfx": "golpe",
-  "gain": 0.5,
-  "_de": "storyCues closing-logo"
  }
 ]

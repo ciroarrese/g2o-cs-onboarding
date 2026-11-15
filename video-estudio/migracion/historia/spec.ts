@@ -21,7 +21,8 @@ export const spec: StorySpec = {
   ],
   // Cierre solo con el logo: el dueño pidió quitar la leyenda del final.
   signoff: { logo: "brand/logo-grow2on.png" },
-  timing: { closing: 450 },
+  timing: { closing: 457, interludeReveal: 210 }, // revelación escenificada (referencia 200, escalada a 210); el cierre suma 7 cuadros para que el total sea 6889 y la música con final real termine con el video
+  design: { reveal: "stage" }, // la fila 05 entra con resorte, barrido de luz, miniatura que vuela y anillo en la tilde
   // Todo lo estético (cartel, lista, muro, nubes, pasos, atravesado, cierre, degradado) sale del design system de la marca (`theme.style`, ver ../theme.ts):
-  // el spec ya no lleva `design`.
+  // `design` solo lleva la revelación de la fila 05 (`reveal`).
 };
