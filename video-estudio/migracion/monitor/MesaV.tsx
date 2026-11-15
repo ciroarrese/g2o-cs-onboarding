@@ -12,7 +12,8 @@ import { ICON, Icon, appear, inkOn, scaleOf, tint } from "./piezas";
 import { LOG, MESA_NEW, MESA_ROWS, REPLY, STORE, T, TICKET } from "./mundo";
 import type { Fila } from "./mundo";
 import { BTNV, CARD_WV, EDV, MES, MESA_SLOT_V, MEV, TVXV } from "./angosto";
-import { Badge, SlaPill, TypeIcon } from "./Mesa";
+import { Badge, TypeIcon } from "./Mesa";
+import type { Sla } from "./mundo";
 import { mesaTheme } from "./temas";
 
 /** Marco de la herramienta: barra superior (logo, nombre, íconos). */
@@ -36,6 +37,21 @@ const Chrome: React.FC<{ search?: boolean }> = ({ search }) => {
   );
 };
 
+/** Píldora de SLA con la letra de 18: en la lista angosta se ve más lejos que en la ancha. */
+const SlaPill: React.FC<{ s: Sla }> = ({ s }) => {
+  const t = useTheme();
+  const c = s.tone === "ok" ? t.color.success : s.tone === "warn" ? t.color.warning : t.color.danger;
+  const bg = tint(t, c, 0.11);
+  return (
+    <div style={{ minHeight: 30, boxSizing: "border-box", padding: "0 10px", borderRadius: cornerRadius(t, "chip"), background: bg, color: inkOn(c, bg), fontSize: t.type.ui.sm, ...textStyle(t, "label"), display: "flex", alignItems: "center", gap: 5, lineHeight: 1.25, whiteSpace: "nowrap" }}>
+      {s.v}
+      {s.done && (
+        <svg width={15} height={15} viewBox="0 0 16 16"><circle cx={8} cy={8} r={8} fill={t.color.success} /><path d="M4.5 8.2l2.3 2.2 4.6-4.6" stroke={t.color.onAccent} strokeWidth={1.8} fill="none" /></svg>
+      )}
+    </div>
+  );
+};
+
 const Hairline: React.FC = () => {
   const t = useTheme();
   return <div style={{ height: 1, background: t.color.surfaceAlt, flexShrink: 0 }} />;
@@ -53,7 +69,7 @@ const TicketCardV: React.FC<{ r: Fila; highlight?: number; isNew?: boolean }> = 
         <TypeIcon inc={r.inc} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ ...textStyle(t, "label", { strong: isNew }), textDecoration: "underline", textUnderlineOffset: 3 }}>{r.a}</div>
-          <div style={{ fontSize: t.type.ui.xs, color: t.color.textMuted, marginTop: 3 }}>Soporte sincro</div>
+          <div style={{ fontSize: t.type.ui.sm, color: t.color.textMuted, marginTop: 3 }}>Soporte sincro</div>
         </div>
         <div style={{ ...btn, minWidth: 86, justifyContent: "center", gap: 4, border: r.off ? "none" : `${borderWidth(t, "chip")}px solid ${isNew ? t.color.danger : t.color.text}`, background: r.off ? t.data.grisClaro : undefined, color: prColor }}>
           {r.pr}
@@ -66,7 +82,7 @@ const TicketCardV: React.FC<{ r: Fila; highlight?: number; isNew?: boolean }> = 
           <Icon d={ICON.company} color={t.color.textMuted} size={20} />
           <div>
             <div style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>{r.e}</div>
-            <div style={{ fontSize: t.type.ui.xs, color: t.color.textMuted, marginTop: 3, textDecoration: "underline" }}>Nivel 03</div>
+            <div style={{ fontSize: t.type.ui.sm, color: t.color.textMuted, marginTop: 3, textDecoration: "underline" }}>Nivel 03</div>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

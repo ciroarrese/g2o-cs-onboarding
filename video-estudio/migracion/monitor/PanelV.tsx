@@ -125,7 +125,7 @@ const Donut: React.FC<{ f: number; filterOn: number; shell: number }> = ({ f, fi
   return (
     <>
       <div style={{ position: "absolute", left: PAN.pad, top: D.y, width: PAN.w - 2 * PAN.pad, height: D.h, boxSizing: "border-box", ...surfaceStyle(t, "card"), padding: "22px 26px", opacity: op(shell) }}>
-        <div style={{ textAlign: "center" }}><Eyebrow size={t.type.ui.xs}>Estado por cliente</Eyebrow></div>
+        {f >= 112 && <div style={{ textAlign: "center" }}><Eyebrow size={t.type.ui.xs}>Estado por cliente</Eyebrow></div>}
       </div>
       <svg width={PAN.w} height={PAN.h} style={{ position: "absolute", left: 0, top: 0, overflow: "visible" }}>
         <g transform={`rotate(-90 ${D.cx} ${D.cy})`} opacity={op(reveal)}>
@@ -141,14 +141,14 @@ const Donut: React.FC<{ f: number; filterOn: number; shell: number }> = ({ f, fi
             );
           })}
         </g>
-        <g opacity={op(appear(f, 130, 150))} fontFamily={t.font.family} textAnchor="middle">
+        {f >= 130 && <g opacity={op(appear(f, 130, 150))} fontFamily={t.font.family} textAnchor="middle">
           <text x={D.cx} y={D.cy + 14} fontWeight={t.font.weights.stat} fontSize={t.type.stat * 0.38} fill={focused ? t.data.estadoInfra : t.color.text} style={{ color: focused ? t.data.estadoInfra : t.color.text }}>
             {focused ? STATUS[FOCUS_STATUS]!.n : TOTAL}
           </text>
           <text x={D.cx} y={D.cy + 46} fontSize={t.type.ui.md} fill={t.color.textMuted} style={{ color: t.color.textMuted }}>
             {focused ? "error en servidor" : "tiendas"}
           </text>
-        </g>
+        </g>}
       </svg>
     </>
   );
@@ -269,11 +269,12 @@ const PanelBodyV: React.FC<{ f: number; shell: number; filterOn: number }> = ({ 
   return (
     <>
       <div style={{ position: "absolute", left: 0, top: 0, width: PAN.w, height: PAN.h, boxSizing: "border-box", ...surfaceStyle(t, "window", { corner: "hero" }), opacity: op(shell) }} />
-      <Header f={f} bellOn={f >= T.alert} />
-      <Chips f={f} filterOn={filterOn} />
-      <Kpis f={f} filterOn={filterOn} />
+      {/* lo que todavía no entró no se dibuja (no hay texto invisible); cada pieza conserva su lugar entre los hijos, porque `qa` identifica un texto entre cuadros por su ruta */}
+      <div>{f >= 128 && <Header f={f} bellOn={f >= T.alert} />}</div>
+      <div>{f >= 140 && <Chips f={f} filterOn={filterOn} />}</div>
+      <div>{f >= 138 && <Kpis f={f} filterOn={filterOn} />}</div>
       <Donut f={f} filterOn={filterOn} shell={shell} />
-      <Table f={f} filterOn={filterOn} />
+      <div>{f >= 150 && <Table f={f} filterOn={filterOn} />}</div>
     </>
   );
 };

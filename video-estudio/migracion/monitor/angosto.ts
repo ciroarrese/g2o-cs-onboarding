@@ -70,19 +70,19 @@ const KV: K[] = [
   // la fila, el log y el botón
   [305, pcx, PV.y + 1060, 1.3, [pcx, PV.y + 1330, 1.3]], [470, pcx, PV.y + 1060, 1.3, [pcx, PV.y + 1330, 1.3]],
   // sigue al ticket hasta la mesa
-  [500, 1000, 1900, 0.8, [1000, 1900, 0.6]], [546, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 420, 1.2]], [560, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 420, 1.2]],
-  [576, mesaC, MEV.y + 330, 1.35, [mesaC, MEV.y + 330, 1.35]], [600, mesaC, MEV.y + 330, 1.35, [mesaC, MEV.y + 330, 1.35]],
+  [500, 1000, 1900, 0.55, [1000, 1900, 0.55]], [546, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 420, 1.2]], [560, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 420, 1.2]],
+  [576, mesaC, MEV.y + 330, 1.35, [mesaC, MEV.y + 290, 1.35]], [600, mesaC, MEV.y + 330, 1.35, [mesaC, MEV.y + 290, 1.35]],
   // vuelta de latigazo al panel
   [630, pcx, PV.y + 900, 0.96, [pcx, PV.y + 259, 1.1]], [644, pcx, PV.y + 900, 0.96, [pcx, PV.y + 259, 1.1]],
   [658, pcx, PV.y + 740, 1.3, [pcx, PV.y + 400, 1.3]], [700, pcx, PV.y + 740, 1.3, [pcx, PV.y + 400, 1.3]], [730, pcx, PV.y + 740, 1.3, [pcx, PV.y + 400, 1.3]],
   // sigue a la campanita hasta el chat
-  [762, 760, 520, 0.8, [760, 520, 0.6]], [792, chatC, 680, 1.2, [chatC, 560, 1.3]], [998, chatC, 680, 1.2, [chatC, 560, 1.3]],
+  [762, 900, 1000, 0.55, [900, 980, 0.55]], [792, chatC, 680, 1.2, [chatC, 420, 1.3]], [998, chatC, 680, 1.2, [chatC, 640, 1.3]],
   [1012, chatC, 880, 1.32, [chatC, 880, 1.3]], [1042, chatC, 880, 1.32, [chatC, 880, 1.3]],
   // vuelo a la mesa (abajo) y apertura del ticket
-  [1068, 1400, 1500, 0.7, [1400, 1500, 0.55]], [1092, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 420, 1.2]], [1106, mesaC, MEV.y + 330, 1.35, [mesaC, MEV.y + 330, 1.35]], [1118, mesaC, MEV.y + 330, 1.35, [mesaC, MEV.y + 330, 1.35]],
+  [1068, 1400, 1500, 0.7, [1400, 1500, 0.55]], [1092, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 420, 1.2]], [1106, mesaC, MEV.y + 330, 1.35, [mesaC, MEV.y + 290, 1.35]], [1118, mesaC, MEV.y + 330, 1.35, [mesaC, MEV.y + 290, 1.35]],
   [1140, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 360, 1.2]], [1150, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 360, 1.2]],
-  [1166, mesaC, MEV.y + 560, 1.4, [mesaC, MEV.y + 520, 1.4]], [1268, mesaC, MEV.y + 560, 1.4, [mesaC, MEV.y + 520, 1.4]],
-  [1292, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 360, 1.2]], [1320, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 360, 1.2]],
+  [1166, mesaC, MEV.y + 560, 1.4, [mesaC, MEV.y + 470, 1.4]], [1268, mesaC, MEV.y + 560, 1.4, [mesaC, MEV.y + 470, 1.4]],
+  [1292, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 560, 1.2]], [1320, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 560, 1.2]],
   // todo junto
   [1352, 900, 1270, 0.58, [900, 1270, 0.4]], [1396, 900, 1270, 0.58, [900, 1270, 0.4]], [1404, 900, 1270, 0.58, [900, 1270, 0.4]],
 ];

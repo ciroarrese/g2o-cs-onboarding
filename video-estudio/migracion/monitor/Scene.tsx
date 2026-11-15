@@ -116,8 +116,7 @@ function SceneBodyV() {
   const visible = (r: { x: number; y: number; w: number; h: number }) => r.x < view.x + view.w * (1 + m) && r.x + r.w > view.x - view.w * m && r.y < view.y + view.h * (1 + m) && r.y + r.h > view.y - view.h * m;
   // la ventana donde está el foco de la cámara es el sujeto; las vecinas que asoman por el borde se marcan (`peek`, como en horizontal)
   const within = (r: { x: number; y: number; w: number; h: number }) => cam.x >= r.x && cam.x <= r.x + r.w && cam.y >= r.y && cam.y <= r.y + r.h;
-  // en los vuelos (escala menor que 1) todas las ventanas son contexto y los bordes del cuadro las cortan a propósito
-  const peek = (r: { x: number; y: number; w: number; h: number }) => cam.scale < 1 || !within(r);
+  const peek = (r: { x: number; y: number; w: number; h: number }) => !within(r);
   const hide = Math.max(hideFromScale(cam.scale, 1, 0.08), kf(f, [744, 770, 1050, 1070], [0, 1, 1, 0]));
   return (
     <>
