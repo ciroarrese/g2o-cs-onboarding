@@ -18,6 +18,9 @@ const pulse = (f: number, at: number) => kf(f, [at, at + 6, at + 30], [0, 1, 0])
 // ---------- la tienda ----------
 const TiendaInterior: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
+  const { apilada } = useGeo();
+  const zoomed = useZoomed();
+  const corte = apilada && zoomed ? " offscreen" : ""; // apilada: el acercamiento recorta los costados de la tienda a propósito
   const priceOk = f >= T.chipPrice[1];
   const stockOk = f >= T.chipStock[1];
   const newIn = kf(f, [T.chipCat[1], T.chipCat[1] + 14], [0, 1], OUT);
@@ -32,7 +35,7 @@ const TiendaInterior: React.FC<{ f: number }> = ({ f }) => {
       <div style={{ height: 32, background: t.color.surfaceAlt, display: "flex", alignItems: "center", padding: "0 22px", fontSize: t.type.ui.xs, color: t.color.textMuted, gap: 18, lineHeight: 1.25 }}>
         <span data-qa-decor>Contáctenos</span>
         <span data-qa-decor style={{ marginLeft: "auto" }}>Iniciar sesión</span>
-        <span data-qa-ignore={solo} style={{ color: t.color.text, ...textStyle(t, "label"), display: "flex", alignItems: "center", gap: 6 }}>
+        <span data-qa-ignore={solo + corte} style={{ color: t.color.text, ...textStyle(t, "label"), display: "flex", alignItems: "center", gap: 6 }}>
           <Icon d="M3 4h2l2 12h11l2-8H6M9 20h.1M17 20h.1" size={16} c={t.color.text} />
           Carrito ({cartN})
           {cartN > 0 && <span style={{ width: 8, height: 8, borderRadius: 4, background: t.color.accent, transform: xform({ scale: 1 + pulse(f, T.cart) * 0.8 }) }} />}
@@ -78,7 +81,8 @@ const TiendaInterior: React.FC<{ f: number }> = ({ f }) => {
             const glow = i === 0 ? pulse(f, T.chipPrice[1]) : i === 3 ? pulse(f, T.chipStock[1]) : isNew ? pulse(f, T.chipCat[1]) : i === 1 ? pulse(f, T.cart) : 0;
             const press = i === 1 ? kf(f, [T.cart - 3, T.cart + 1, T.cart + 8], [0, 0.1, 0]) : 0;
             const boton = stock > 0 ? t.color.accent : t.data.botonApagado!;
-            const q = i >= 3 || (i === 0 && !priceOk) ? solo : undefined; // fila de abajo del catálogo (la cámara no baja hasta ahí) y precio de antes del cambio
+            const q0 = i >= 3 || (i === 0 && !priceOk) || (apilada && i % 3 === 2) ? solo : undefined;
+            const q = ((q0 ?? "") + corte).trim() || undefined; // apilada: la tercera columna queda fuera del acercamiento (que recorta los costados) // fila de abajo del catálogo (la cámara no baja hasta ahí) y precio de antes del cambio
             return (
               <div key={pr.id} style={{ ...entrance(t, vis, 0, { native: "scale", from: 0.9 }), background: t.color.surface, boxShadow: `${t.shadow.sm}, 0 0 0 ${+(glow * 5).toFixed(2)}px ${withAlpha(t.color.accent, 0.33)}`, position: "relative" }}>
                 <div style={{ height: 150, background: t.data[TILE[i]!], display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -124,6 +128,8 @@ const COLS = "90px 1fr 110px 110px 70px";
 
 const ErpInterior: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
+  const { apilada } = useGeo();
+  const recorta = apilada ? "min-size contrast" : undefined; // apilada: el acercamiento recorta el costado izquierdo de la grilla (código y rótulos del ERP, que no cuentan nada que la tienda no muestre)
   const flash = (at: number) => kf(f, [at, at + 4, at + 34], [0, 1, 0]);
   const rows = PRODUCTS.filter((_, i) => i !== 5 || f >= T.erpNew);
   const toast = kf(f, [T.chipOrder[1], T.chipOrder[1] + 12], [0, 1], OUT);
@@ -163,7 +169,7 @@ const ErpInterior: React.FC<{ f: number }> = ({ f }) => {
           </div>
           <div style={{ border: `1px solid ${t.color.border}`, background: t.color.surface, fontSize: t.type.ui.sm, lineHeight: 1.25 }}>
             <div style={{ display: "grid", gridTemplateColumns: COLS, background: t.color.surfaceAlt, ...textStyle(t, "label", { strong: true }), padding: "8px 10px", minHeight: 32, alignItems: "center", boxSizing: "border-box", borderBottom: `1px solid ${t.color.border}` }}>
-              <span>Código</span>
+              <span data-qa-ignore={recorta}>Código</span>
               <span>Descripción</span>
               <span>Rubro</span>
               <span>Precio L1</span>
@@ -179,7 +185,7 @@ const ErpInterior: React.FC<{ f: number }> = ({ f }) => {
               const stock = i === 3 && f >= T.erpStock ? pr.s[1] : pr.s[0];
               return (
                 <div key={pr.id} data-qa-ignore={zoomed ? "offscreen" : undefined /* la grilla es más ancha que lo que encuadra el zoom: las celdas del borde quedan cortadas a propósito */} style={{ display: "grid", gridTemplateColumns: COLS, padding: "9px 10px", minHeight: 35, alignItems: "center", boxSizing: "border-box", borderBottom: `1px solid ${t.color.surfaceAlt}`, background: nf > 0 ? withAlpha(t.data.resaltado!, nf * 0.6) : undefined }}>
-                  <span data-qa-ignore={i === 5 ? "min-size" : undefined /* fila nueva: aparece en la vista general */}>{pr.code}</span>
+                  <span data-qa-ignore={i === 5 ? "min-size" : recorta /* fila nueva: aparece en la vista general */}>{pr.code}</span>
                   <span>{pr.n}</span>
                   <span>{pr.rubro}</span>
                   <span data-qa-ignore={antes ? "min-size" : undefined} style={{ background: pf > 0 ? withAlpha(t.data.resaltado!, pf * 0.8) : undefined }}>{money(price)}</span>
@@ -188,7 +194,7 @@ const ErpInterior: React.FC<{ f: number }> = ({ f }) => {
               );
             })}
           </div>
-          <div data-qa-ignore={f >= T.erpNew ? "min-size" : undefined /* el conteo nuevo (6) aparece en la vista general */} style={{ fontSize: t.type.ui.xs, color: t.color.textMuted, marginTop: 8, lineHeight: 1.25 }}>{rows.length} registros</div>
+          <div data-qa-ignore={f >= T.erpNew ? "min-size" : recorta /* el conteo nuevo (6) aparece en la vista general */} style={{ fontSize: t.type.ui.xs, color: t.color.textMuted, marginTop: 8, lineHeight: 1.25 }}>{rows.length} registros</div>
           {/* aviso del pedido que llega de la tienda */}
           <div style={{ position: "absolute", right: 18, bottom: 18, width: 330, padding: "12px 16px", boxSizing: "border-box", background: t.color.surface, borderLeft: `4px solid ${t.color.success}`, borderRadius: ctl, boxShadow: t.shadow.md, fontSize: t.type.ui.md, lineHeight: 1.3, ...entrance(t, toast, 0, { native: "slide", side: "right", distance: 40 }) }}>
             <b style={textStyle(t, "label", { strong: true })}>Pedido web #3104</b> recibido

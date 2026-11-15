@@ -66,7 +66,7 @@ export const ZonaB: React.FC<{ f: number }> = ({ f }) => {
     <>
       <div style={{ position: "absolute", left: ZB.x - 600, top: ZB.y - 420, width: 1200, textAlign: "center" }}>
         <Eyebrow>{NAME}</Eyebrow>
-        <div style={{ fontSize: t.type.hero * 1.25, ...textStyle(t, "title", { strong: true }), letterSpacing: "-0.03em", lineHeight: 1.05 }}>
+        <div style={{ fontSize: t.type.hero * 1.25, ...textStyle(t, "title", { strong: true }), letterSpacing: "-0.03em", lineHeight: 1.05, marginTop: g.apilada ? 16 : undefined }}>
           <GradientText>{lastWeek >= 0 ? VERS[lastWeek] : "v2.0"}</GradientText>
         </div>
         <div style={{ display: "flex", justifyContent: "center", gap: 18, marginTop: 4 }}>

@@ -25,7 +25,7 @@ export type Geo = {
   tarjeta: (i: number, cw: number) => { x: number; y: number };
   SE: Rect;
   /** Detalle del movimiento de la cuenta: a la derecha (horizontal) o como hoja que sube desde abajo (apilada). `top` es su borde de arriba dentro de la ventana. */
-  detalle: { lateral: boolean; top: number; w: number };
+  detalle: { lateral: boolean; top: number; w: number; descTop: number };
   /** Centro de la fila `i` del historial. */
   filaMov: (i: number) => number;
   PDF: Rect;
@@ -46,7 +46,7 @@ const HORIZONTAL: Geo = {
   CFG,
   tarjeta: (i, cw) => ({ x: ZD.x - 820 + (i % 2) * (cw + 40), y: ZD.y - 330 + Math.floor(i / 2) * 230 }),
   SE,
-  detalle: { lateral: true, top: 266, w: 440 },
+  detalle: { lateral: true, top: 266, w: 440, descTop: 330 },
   filaMov: (i) => SE.y + 266 + 18 + 44 + i * 47 + 22,
   PDF, QR, PHONE,
   vueloPdf: [-300, 220],
@@ -72,7 +72,7 @@ const apilada = (formato: "vertical" | "cuadrado"): Geo => {
     CFG: { x: zD.x - 410, y: zD.y - 80, w: 820, h: 800, rowY: 150, rowH: 96 },
     tarjeta: (i, cw) => ({ x: zD.x - cw - 20 + (i % 2) * (cw + 40), y: zD.y - 800 + Math.floor(i / 2) * 230 }),
     SE: se,
-    detalle: { lateral: false, top: 580, w: se.w },
+    detalle: { lateral: false, top: 580, w: se.w, descTop: 352 },
     filaMov: (i) => se.y + 266 + 18 + 44 + i * 47 + 22,
     PDF: pdf,
     QR: { x: pdf.x + pdf.w - 176, y: pdf.y + pdf.h - 196, size: 136 },

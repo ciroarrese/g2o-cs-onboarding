@@ -79,10 +79,10 @@ const clavesApiladas = (t: ReturnType<typeof useTheme>, g: Geo, W: number, H: nu
   const kk = (f: number, e: { x: number; y: number; s: number }): CameraKey => k(f, e.x, e.y, e.s);
   // zona A: en vertical toda la pila (ERP, módulo y tienda); en cuadrado la franja entre las filas del ERP y los productos de la tienda
   const overA = v ? encuadre({ x: EW.x, y: EW.y, w: EW.w, h: SW.y + SW.h - EW.y }, W, H, { top: R, max: 1 }) : { x: g.HUB.x, y: 905, s: 0.72 };
-  const zA = v ? 1.7 : 1.6;
-  const precio = { x: EW.x + 560, y: EW.y + 250, s: zA };
-  const tienda = { x: SW.x + 300, y: SW.y + 300, s: zA };
-  const pedido = { x: EW.x + 560, y: EW.y + EW.h - 60, s: zA };
+  // la letra del ERP (12 a 15 px) y de la tienda (13 a 18 px) se lee a partir de 1,5: el acercamiento recorta los costados y deja entera la parte que cambia
+  const precio = { x: EW.x + 500, y: EW.y + 250, s: 1.6 };
+  const tienda = { x: SW.x + 380, y: SW.y + 300, s: 1.5 };
+  const pedido = { x: EW.x + 560, y: EW.y + EW.h - 90, s: 1.6 };
   // zona B: la grilla de semanas entera; el acercamiento va a las últimas (filas de abajo)
   const overB = encuadre({ x: ZB.x - b.ancho / 2, y: b.top, w: b.ancho, h: b.bottom - b.top }, W, H, { top: R, max: 0.98 });
   const ultimas = [3, 4].map((w) => b.pos[w]!);
@@ -100,7 +100,7 @@ const clavesApiladas = (t: ReturnType<typeof useTheme>, g: Geo, W: number, H: nu
   const tarj = encuadre({ x: ZD.x - cw - 20, y: g.tarjeta(0, cw).y, w: 2 * cw + 40, h: 650 }, W, H, { top: R, max: 1.15 });
   const ventana = encuadre({ x: CFG.x, y: CFG.y, w: CFG.w, h: CFG.h }, W, H, { top: R, max: 1.15 });
   const overD = v ? encuadre({ x: CFG.x, y: ZD.y - 800, w: CFG.w, h: CFG.y + CFG.h - (ZD.y - 800) }, W, H, { top: R, max: 1 }) : null;
-  const zD = v ? 1.15 : 1.1;
+  const zD = v ? 1.35 : 1.3;
   const interr = { x: CFG.x + CFG.w / 2, y: CFG.y + 334, s: zD };
   const guardar = { x: CFG.x + CFG.w / 2, y: CFG.y + 600, s: zD };
   // zona E: la cuenta corriente, y debajo la factura con el teléfono
@@ -212,8 +212,8 @@ export function SceneBody() {
           keys={[
             [968, SE.x + 500, SE.y + 760],
             [T.detail - 8, SE.x + 26 + 84 + 120, g.filaMov(1)],
-            [T.pdfClick - 10, SE.x + SE.w - g.detalle.w / 2, SE.y + g.detalle.top + DESCARGA.top + DESCARGA.h / 2],
-            [1062, SE.x + SE.w - g.detalle.w / 2, SE.y + g.detalle.top + DESCARGA.top + DESCARGA.h / 2],
+            [T.pdfClick - 10, SE.x + SE.w - g.detalle.w / 2, SE.y + g.detalle.top + g.detalle.descTop + DESCARGA.h / 2],
+            [1062, SE.x + SE.w - g.detalle.w / 2, SE.y + g.detalle.top + g.detalle.descTop + DESCARGA.h / 2],
           ]}
         />
       </World>

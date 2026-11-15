@@ -15,6 +15,7 @@ import { BarraNavegador, Icon, Ventana, inkOn, money, useZoomed } from "./ui";
 
 const OUT = Easing.out;
 const COLS = "84px 1fr 100px 100px 100px";
+const COLS_APILADA = "96px 1fr 112px 112px 112px";
 
 /** Botón "Descargar factura (PDF)" del detalle: posición fija dentro del panel (el cursor hace clic en su centro). */
 export const DESCARGA = { top: 330, h: 46 };
@@ -22,7 +23,9 @@ export const DESCARGA = { top: 330, h: 46 };
 // ---------- la cuenta corriente de la tienda ----------
 const CuentaInterior: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
-  const { SE, detalle } = useGeo();
+  const { SE, detalle, apilada } = useGeo();
+  const fs = apilada ? t.type.ui.md : t.type.ui.sm; // en vertical y cuadrado la tabla y el detalle suben un escalón de letra
+  const cols = apilada ? COLS_APILADA : COLS;
   const detail = kf(f, [T.detail + 2, T.detail + 22], [0, 1], OUT);
   const acento = inkOn(t, t.color.accent);
   const ctl = cornerRadius(t, "control");
@@ -46,8 +49,8 @@ const CuentaInterior: React.FC<{ f: number }> = ({ f }) => {
           </div>
         ))}
       </div>
-      <div style={{ margin: "18px 26px 0", width: detalle.lateral && detail > 0 ? 640 : SE.w - 52, fontSize: t.type.ui.sm }}>
-        <div data-qa-ignore={cut ?? "min-size" /* encabezado de la tabla: se lee en el acercamiento de 1010 a 1042 */} style={{ display: "grid", gridTemplateColumns: COLS, padding: "10px 0", minHeight: 40, boxSizing: "border-box", alignItems: "center", color: t.color.textMuted, borderBottom: `2px solid ${t.color.border}`, lineHeight: 1.25 }}>
+      <div style={{ margin: "18px 26px 0", width: detalle.lateral && detail > 0 ? 640 : SE.w - 52, fontSize: fs }}>
+        <div data-qa-ignore={apilada ? "min-size" + (cut ? " offscreen" : "") : cut ?? "min-size" /* encabezado de la tabla: se lee en el acercamiento de 1010 a 1042 (en vertical y cuadrado, a letra más grande, el acercamiento es leve y no siempre alcanza) */} style={{ display: "grid", gridTemplateColumns: cols, padding: "10px 0", minHeight: 40, boxSizing: "border-box", alignItems: "center", color: t.color.textMuted, borderBottom: `2px solid ${t.color.border}`, lineHeight: 1.25 }}>
           <span>Fecha</span>
           <span>Comprobante</span>
           <span style={{ textAlign: "right" }}>Debe</span>
@@ -59,7 +62,7 @@ const CuentaInterior: React.FC<{ f: number }> = ({ f }) => {
           const a = kf(f, [T.rows + i * 5, T.rows + i * 5 + 12], [0, 1], OUT);
           const sel = i === 1 && detail > 0;
           return (
-            <div key={c} data-qa-ignore={cut} style={{ display: "grid", gridTemplateColumns: COLS, padding: "12px 0", minHeight: 47, boxSizing: "border-box", borderBottom: `1px solid ${t.color.border}`, opacity: op(a), background: sel ? t.color.surfaceAlt : undefined, alignItems: "center", lineHeight: 1.25 }}>
+            <div key={c} data-qa-ignore={cut} style={{ display: "grid", gridTemplateColumns: cols, padding: "12px 0", minHeight: 47, boxSizing: "border-box", borderBottom: `1px solid ${t.color.border}`, opacity: op(a), background: sel ? t.color.surfaceAlt : undefined, alignItems: "center", lineHeight: 1.25 }}>
               <span>{d}</span>
               <span style={{ color: acento, textDecoration: "underline", whiteSpace: "nowrap" }}>{c}</span>
               <span style={{ textAlign: "right" }}>{deb ? money(deb) : ""}</span>
@@ -71,17 +74,17 @@ const CuentaInterior: React.FC<{ f: number }> = ({ f }) => {
       </div>
       {/* detalle del movimiento */}
       <div data-qa-ignore={cut} style={{ position: "absolute", right: 0, top: detalle.top, bottom: 0, width: detalle.w, background: t.color.surface, ...(detalle.lateral ? { borderLeft: `1px solid ${t.color.border}` } : { borderTop: `1px solid ${t.color.border}` }), boxShadow: t.shadow.md, padding: detalle.lateral ? "20px 24px" : "20px 26px", boxSizing: "border-box", ...(detalle.lateral ? entrance(t, detail, 0, { native: "slide", side: "right", distance: 460 }) : { opacity: op(detail), transform: detail < 1 ? `translateY(${Math.round((1 - detail) * 160)}px)` : undefined }) }}>
-        <div style={{ fontSize: t.type.ui.sm, color: t.color.textMuted, lineHeight: 1.25 }}>Detalle del movimiento</div>
+        <div style={{ fontSize: fs, color: t.color.textMuted, lineHeight: 1.25 }}>Detalle del movimiento</div>
         <div style={{ fontSize: t.type.eyebrow, ...textStyle(t, "title"), margin: "4px 0 14px", lineHeight: 1.25 }}>Factura A 0004-00012911</div>
         {LINEAS_FACTURA.map(([n, q, p]) => (
-          <div key={n} style={{ display: "flex", justifyContent: "space-between", fontSize: t.type.ui.sm, padding: "9px 0", borderBottom: `1px solid ${t.color.border}`, lineHeight: 1.25 }}>
+          <div key={n} style={{ display: "flex", justifyContent: "space-between", fontSize: fs, padding: "9px 0", borderBottom: `1px solid ${t.color.border}`, lineHeight: 1.25 }}>
             <span>
               {q} × {n}
             </span>
             <span>{money(q * p)}</span>
           </div>
         ))}
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: t.type.ui.sm, padding: "9px 0", color: t.color.textMuted, lineHeight: 1.25 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: fs, padding: "9px 0", color: t.color.textMuted, lineHeight: 1.25 }}>
           <span>IVA 21 %</span>
           <span>$ 0</span>
         </div>
@@ -89,8 +92,8 @@ const CuentaInterior: React.FC<{ f: number }> = ({ f }) => {
           <span>Total</span>
           <span>{money(96200)}</span>
         </div>
-        <div style={{ fontSize: t.type.ui.sm, color: t.color.textMuted, marginTop: 6, lineHeight: 1.25 }}>Vence 26/11/26 · CAE 76451238904512</div>
-        <div style={{ position: "absolute", left: 24, right: 24, top: DESCARGA.top, minHeight: DESCARGA.h, boxSizing: "border-box", background: t.color.accent, color: readableOn(t, t.color.accent), fontSize: t.type.ui.md, ...textStyle(t, "label", { strong: true }), display: "flex", alignItems: "center", justifyContent: "center", gap: 10, lineHeight: 1.25, borderRadius: ctl, transform: xform({ scale: 1 - kf(f, [T.pdfClick - 3, T.pdfClick + 1, T.pdfClick + 8], [0, 0.08, 0]) }) }}>
+        <div style={{ fontSize: fs, color: t.color.textMuted, marginTop: 6, lineHeight: 1.25 }}>Vence 26/11/26 · CAE 76451238904512</div>
+        <div style={{ position: "absolute", left: 24, right: 24, top: detalle.descTop, minHeight: DESCARGA.h, boxSizing: "border-box", background: t.color.accent, color: readableOn(t, t.color.accent), fontSize: t.type.ui.md, ...textStyle(t, "label", { strong: true }), display: "flex", alignItems: "center", justifyContent: "center", gap: 10, lineHeight: 1.25, borderRadius: ctl, transform: xform({ scale: 1 - kf(f, [T.pdfClick - 3, T.pdfClick + 1, T.pdfClick + 8], [0, 0.08, 0]) }) }}>
           <Icon d="M12 4v11M7 10l5 5 5-5M5 20h14" c={readableOn(t, t.color.accent)} size={20} />
           DESCARGAR FACTURA (PDF)
         </div>
