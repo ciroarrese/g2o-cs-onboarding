@@ -192,7 +192,7 @@ export const ZonaC: React.FC<{ f: number }> = ({ f }) => {
           {/* el muro del hosting */}
           <div style={{ position: "absolute", left: trackX + trackW * limite - 6, top: wall.top, width: 12, height: wall.h, borderRadius: cornerRadius(t, "control"), background: t.color.text, boxShadow: failed ? `0 0 0 ${+kf(f, [T.fail, T.fail + 6, T.fail + 30], [0, 10, 0]).toFixed(2)}px ${withAlpha(t.color.danger, 0.27)}` : undefined }} />
           <div style={{ position: "absolute", left: trackX + trackW * limite - 170, top: infoTop, width: 340, textAlign: "center", fontSize: wallLabelFs, ...textStyle(t, "label", { strong: true }), lineHeight: 1.25 }}>Límite del hosting · 2:00</div>
-          {failed && <div data-qa-ignore={v ? cut : undefined} style={{ position: "absolute", ...(v ? { left: 50 } : { right: 50 }), top: avisoTop, fontSize: t.type.eyebrow, ...textStyle(t, "label", { strong: true }), lineHeight: 1.25, color: t.color.danger, opacity: op(kf(f, [T.fail, T.fail + 8], [0, 1])) }}>Se corta y se revierte todo</div>}
+          {failed && <div data-qa-ignore={v ? ((cut ?? "") + (g.formato === "cuadrado" ? " overlap covered" : "")).trim() || undefined : undefined /* en cuadrado la cámara baja a la caja del servidor y este aviso (ya leído) queda bajo la píldora del titular */} style={{ position: "absolute", ...(v ? { left: 50 } : { right: 50 }), top: avisoTop, fontSize: t.type.eyebrow, ...textStyle(t, "label", { strong: true }), lineHeight: 1.25, color: t.color.danger, opacity: op(kf(f, [T.fail, T.fail + 8], [0, 1])) }}>Se corta y se revierte todo</div>}
         </Caja>
       </div>
 

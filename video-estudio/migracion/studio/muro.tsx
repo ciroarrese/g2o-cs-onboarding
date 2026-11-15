@@ -61,7 +61,12 @@ return [
   { name: "BarsGrow", dur: 50, render: (f, s) => <BarsGrow frame={f} start={s} duration={50} width={W} height={H} data={[40, 64, 52]} labels={["A", "B", "C"]} format={() => ""} /> },
   { name: "OrbitRings", dur: 60, render: (f, s) => <OrbitRings frame={f} start={s} duration={60} width={W} height={H} bg="surface" /> },
   { name: "DonutRing", dur: 55, render: (f, s) => <div style={centro}><DonutRing frame={f} start={s} duration={55} width={Math.min(H, W)} height={H} value={5} max={5} unit="" label="" /></div> },
-  { name: "NotificationStack", dur: 50, render: (f, s) => <NotificationStack frame={f} start={s} duration={50} width={W - 20} height={H} items={[{ title: "Hecho", body: "Control aprobado", time: "ya" }]} style={{ left: 10 }} /> },
+  { name: "NotificationStack", dur: 50, render: (f, s) => {
+    // en una caja angosta (cuadrado) el aviso se dibuja a 0,78 para que entren el título, la hora y el cuerpo sin cortarse
+    const k = W < 300 ? 0.78 : 1;
+    const aviso = <NotificationStack frame={f} start={s} duration={50} width={Math.round((W - 20) / k)} height={Math.round(H / k)} items={[{ title: "Hecho", body: "Control aprobado", time: "ya" }]} style={{ left: k === 1 ? 10 : 0 }} />;
+    return k === 1 ? aviso : <div style={{ position: "absolute", left: 10, top: 0, width: Math.round((W - 20) / k), height: Math.round(H / k), transformOrigin: "0 0", transform: `scale(${k})` }}>{aviso}</div>;
+  } },
   { name: "ChatThread", dur: 60, render: (f, s) => {
     // en una caja baja (cuadrado) la conversación se dibuja a 0,78 para que entren los dos mensajes
     const k = H < 140 ? 0.78 : 1;

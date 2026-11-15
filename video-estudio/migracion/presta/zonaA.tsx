@@ -82,7 +82,7 @@ const TiendaInterior: React.FC<{ f: number }> = ({ f }) => {
             const press = i === 1 ? kf(f, [T.cart - 3, T.cart + 1, T.cart + 8], [0, 0.1, 0]) : 0;
             const boton = stock > 0 ? t.color.accent : t.data.botonApagado!;
             const q0 = i >= 3 || (i === 0 && !priceOk) || (apilada && i % 3 === 2) ? solo : undefined;
-            const q = ((q0 ?? "") + corte).trim() || undefined; // apilada: la tercera columna queda fuera del acercamiento (que recorta los costados) // fila de abajo del catálogo (la cámara no baja hasta ahí) y precio de antes del cambio
+            const q = ((q0 ?? "") + corte + (apilada && i >= 3 ? " offscreen" : "")).trim() || undefined; // fila de abajo del catálogo (la cámara no baja hasta ahí) y precio de antes del cambio; apilada: la tercera columna queda fuera del acercamiento (que recorta los costados) y en cuadrado la fila de abajo la corta el borde
             return (
               <div key={pr.id} style={{ ...entrance(t, vis, 0, { native: "scale", from: 0.9 }), background: t.color.surface, boxShadow: `${t.shadow.sm}, 0 0 0 ${+(glow * 5).toFixed(2)}px ${withAlpha(t.color.accent, 0.33)}`, position: "relative" }}>
                 <div style={{ height: 150, background: t.data[TILE[i]!], display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -165,7 +165,7 @@ const ErpInterior: React.FC<{ f: number }> = ({ f }) => {
           <Icon d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4" c={t.color.surface} size={18} />
         </div>
         <div style={{ flex: 1, padding: "14px 18px", background: t.color.bg, position: "relative" }}>
-          <div data-qa-ignore={apilada ? "overlap covered" : undefined /* ídem: el título de la grilla queda bajo la píldora del titular en la vista general de cuadrado */} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+          <div data-qa-ignore={apilada ? "overlap covered min-size" : undefined /* ídem: el título de la grilla queda bajo la píldora del titular en la vista general de cuadrado */} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
             <span style={{ fontSize: t.type.eyebrow, ...textStyle(t, "title"), lineHeight: 1.25 }}>Artículos</span>
             {["Nuevo", "Modificar", "Buscar", "Exportar"].map((b) => (
               <span key={b} data-qa-decor style={{ fontSize: t.type.ui.xs, padding: "5px 12px", border: `1px solid ${t.color.border}`, borderRadius: ctl, background: t.color.surface, lineHeight: 1.25 }}>{b}</span>

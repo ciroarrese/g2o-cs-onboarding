@@ -92,9 +92,12 @@ const clavesApiladas = (t: ReturnType<typeof useTheme>, g: Geo, W: number, H: nu
     : encuadre({ x: Math.min(...ultimas.map((p) => p.x)), y: topUlt, w: 2 * b.colW + b.gap, h: b.bottom - topUlt }, W, H, { top: 70, max: 1.45 });
   // zona C: las dos cajas; el acercamiento va a cada caja
   const cajasC = encuadre({ x: cajaC.x, y: cajaC.top, w: cajaC.w, h: cajaC.bot + cajaC.h - cajaC.top }, W, H, { top: R });
+  // en cuadrado las dos cajas juntas no dejan leer la letra: la cámara sigue la acción, primero la caja de arriba (antes) y después la de abajo (ahora)
+  const cajaArriba = v ? cajasC : encuadre({ x: cajaC.x, y: cajaC.top, w: cajaC.w, h: cajaC.h }, W, H, { top: R });
+  const cajaAbajo = v ? cajasC : encuadre({ x: cajaC.x, y: cajaC.bot, w: cajaC.w, h: cajaC.h }, W, H, { top: R });
   const zC = v ? 1.2 : 1.25;
-  const muro = { x: cajaC.x + cajaC.w / 2, y: cajaC.top + 262, s: zC };
-  const srv = { x: cajaC.x + cajaC.w / 2, y: cajaC.bot + 262, s: zC };
+  const muro = { x: cajaC.x + cajaC.w / 2, y: cajaC.top + (v ? 262 : 300), s: v ? zC : 1.1 };
+  const srv = { x: cajaC.x + cajaC.w / 2, y: cajaC.bot + (v ? 262 : 300), s: v ? zC : 1.1 };
   // zona D: tarjetas arriba y pantalla de configuración abajo (en cuadrado la cámara baja de una a otra mientras se funden)
   const cw = 390;
   const tarj = encuadre({ x: ZD.x - cw - 20, y: g.tarjeta(0, cw).y, w: 2 * cw + 40, h: 650 }, W, H, { top: R, max: 1.15 });
@@ -116,11 +119,11 @@ const clavesApiladas = (t: ReturnType<typeof useTheme>, g: Geo, W: number, H: nu
     kk(198, pedido), kk(228, pedido), // el pedido de la web llega al ERP
     k(242, (EW.x + EW.w / 2 + ZB.x) / 2, 900, lejos), kk(258, overB), kk(384, overB),
     kk(396, zonaUlt), kk(434, zonaUlt), // una semana entera de arreglos y mejoras
-    kk(446, overB), k(460, ZB.x, (b.bottom + cajaC.top) / 2, lejos), kk(474, cajasC), kk(540, cajasC),
+    kk(446, overB), k(460, ZB.x, (b.bottom + cajaC.top) / 2, lejos), kk(474, cajaArriba), kk(540, cajaArriba),
     kk(550, muro), kk(572, muro), // el muro corta la sincro
-    kk(584, cajasC), kk(624, cajasC),
+    ...(v ? [kk(584, cajasC), kk(624, cajasC)] : [kk(584, cajaArriba), kk(606, cajaAbajo), kk(624, cajaAbajo)]),
     kk(634, srv), kk(664, srv), // la corrida del servidor pasa los 2:00
-    kk(676, cajasC), kk(716, cajasC),
+    ...(v ? [kk(676, cajasC), kk(716, cajasC)] : [kk(676, cajaAbajo), kk(716, cajaAbajo)]),
     k(730, (ZC.x + ZD.x) / 2, ZC.y, lejos),
     ...(v ? [kk(744, overD!), kk(858, overD!)] : [kk(744, tarj), kk(782, tarj), kk(858, ventana)]),
     kk(866, interr), kk(904, interr), // se encienden los interruptores

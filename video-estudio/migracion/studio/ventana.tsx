@@ -42,7 +42,7 @@ export const LineaDeTiempo: React.FC<{ f: number }> = ({ f }) => {
   const hide = kf(f, [430, 452], [0, 1]);
   if (hide >= 1) return null;
   const rise = kf(f, TL.rise, [0, 1]);
-  const out = { opacity: op(rise * (1 - hide)), transform: hide > 0 ? `translateY(${Math.round(hide * 60)}px)` : undefined };
+  const out = { opacity: op(rise * (1 - hide)), transform: hide > 0 ? `translateY(${Math.round(hide * TL.slide)}px)` : undefined };
   const last = BLOQUES.length - 1;
   return (
     <div style={{ ...abs(0, 0), width: 1, height: 1, ...out }}>
