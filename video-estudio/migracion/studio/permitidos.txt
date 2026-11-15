@@ -1,0 +1,2 @@
+# Dominio de ejemplo de la tienda ficticia que aparece, minúsculo, en la miniatura de Sincro Presta de la línea de tiempo (el mismo de ../presta/permitidos.txt).
+ejemplo.com.ar
