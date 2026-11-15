@@ -268,7 +268,8 @@ const PaginaArca: React.FC<{ f: number; ok: number }> = ({ f, ok }) => {
       <div style={{ height: 50 }} />
       <div data-qa-decor style={{ margin: "0 16px 10px", height: 32, borderRadius: ctl * 2, background: t.color.surfaceAlt, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: t.type.ui.xs, color: t.color.textMuted, lineHeight: 1.25 }}>
         <Icon d="M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z" size={13} />
-        afip.gob.ar/fe/qr/?p=eyJ2ZXIiOjEs…
+        {/* el "…" es parte de la maqueta (una dirección larga que el comprobante muestra abreviada), no un recorte nuestro: `clip` lo callo solo para este texto */}
+        <span data-qa-ignore="clip">afip.gob.ar/fe/qr/?p=eyJ2ZXIiOjEs…</span>
       </div>
       <div style={{ height: 52, background: t.data.azulOrganismo, color: readableOn(t, t.data.azulOrganismo!), display: "flex", alignItems: "center", padding: "0 20px", fontSize: t.type.eyebrow, ...textStyle(t, "label", { strong: true }), letterSpacing: "0.04em" }}>ARCA</div>
       <div style={{ padding: "18px 20px" }}>

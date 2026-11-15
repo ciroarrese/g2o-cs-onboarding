@@ -39,7 +39,8 @@ const AlertToast: React.FC<{ f: number }> = ({ f }) => {
         <div style={{ whiteSpace: "nowrap" }}>
           <div style={{ fontSize: t.type.ui.md, ...textStyle(t, "title"), color: t.color.text, lineHeight: 1.25 }}>Nuevo incidente · prioridad alta</div>
           <div style={{ fontSize: t.type.ui.sm, color: t.color.textMuted, marginTop: 2, lineHeight: 1.25 }}>{STORE} · Error en servidor</div>
-          <div style={{ fontSize: t.type.ui.xs, color: t.color.accent, marginTop: 6, lineHeight: 1.25 }}>Avisando al equipo en Teams…</div>
+          {/* los puntos suspensivos son puntuación del mensaje ("en curso…"), no un recorte: `clip` se calla solo para esta línea */}
+          <div data-qa-ignore="clip" style={{ fontSize: t.type.ui.xs, color: t.color.accent, marginTop: 6, lineHeight: 1.25 }}>Avisando al equipo en Teams…</div>
         </div>
       </div>
       <svg width={40} height={40} viewBox="0 0 24 24" style={{ position: "absolute", left: Math.round(w / 2 - 20), top: Math.round(h / 2 - 20), opacity: op(Math.max(0, fold * 2 - 1)) }}>
