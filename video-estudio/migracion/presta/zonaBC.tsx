@@ -20,10 +20,10 @@ const OUT = Easing.out;
 export const medidasB = (t: ReturnType<typeof useTheme>, g: Geo) => {
   const { ZB } = g;
   const sube = g.formato === "vertical";
-  const fTag = sube ? t.type.ui.sm : t.type.ui.xs;
-  const fTit = sube ? t.type.ui.md : t.type.ui.sm;
+  const fTag = sube ? t.type.ui.md : t.type.ui.xs;
+  const fTit = sube ? t.type.eyebrow : t.type.ui.sm;
   const fSem = sube ? t.type.eyebrow : t.type.ui.md;
-  const chipH = sube ? 64 : 56;
+  const chipH = sube ? 72 : 56;
   const chipGap = 8;
   const tag = (s: string) => Math.ceil(textWidth(t, s, { size: fTag, role: "label" })) + 28; // etiqueta: texto + relleno
   let colW = 340;

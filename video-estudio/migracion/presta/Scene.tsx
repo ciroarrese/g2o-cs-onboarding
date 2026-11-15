@@ -78,7 +78,7 @@ const clavesApiladas = (t: ReturnType<typeof useTheme>, g: Geo, W: number, H: nu
   const k = (f: number, x: number, y: number, scale: number): CameraKey => ({ f, x: Math.round(x), y: Math.round(y), scale: +scale.toFixed(3) });
   const kk = (f: number, e: { x: number; y: number; s: number }): CameraKey => k(f, e.x, e.y, e.s);
   // zona A: en vertical toda la pila (ERP, módulo y tienda); en cuadrado la franja entre las filas del ERP y los productos de la tienda
-  const overA = v ? encuadre({ x: EW.x, y: EW.y, w: EW.w, h: SW.y + SW.h - EW.y }, W, H, { top: R }) : { x: g.HUB.x, y: g.HUB.y + 95, s: 0.8 };
+  const overA = v ? encuadre({ x: EW.x, y: EW.y, w: EW.w, h: SW.y + SW.h - EW.y }, W, H, { top: R, max: 1 }) : { x: g.HUB.x, y: 905, s: 0.72 };
   const zA = v ? 1.7 : 1.6;
   const precio = { x: EW.x + 560, y: EW.y + 250, s: zA };
   const tienda = { x: SW.x + 300, y: SW.y + 300, s: zA };
@@ -88,7 +88,7 @@ const clavesApiladas = (t: ReturnType<typeof useTheme>, g: Geo, W: number, H: nu
   const ultimas = [3, 4].map((w) => b.pos[w]!);
   const topUlt = Math.min(...ultimas.map((p) => p.base)) - 5 * (b.chipH + b.chipGap);
   const zonaUlt = v
-    ? encuadre({ x: ZB.x - b.ancho / 2, y: b.pos[2]!.base - 4 * (b.chipH + b.chipGap), w: b.ancho, h: b.bottom - (b.pos[2]!.base - 4 * (b.chipH + b.chipGap)) }, W, H, { top: R, max: 0.98 })
+    ? overB // en vertical la grilla ya llena el ancho: no hay acercamiento que valga
     : encuadre({ x: Math.min(...ultimas.map((p) => p.x)), y: topUlt, w: 2 * b.colW + b.gap, h: b.bottom - topUlt }, W, H, { top: 70, max: 1.45 });
   // zona C: las dos cajas; el acercamiento va a cada caja
   const cajasC = encuadre({ x: cajaC.x, y: cajaC.top, w: cajaC.w, h: cajaC.bot + cajaC.h - cajaC.top }, W, H, { top: R });
@@ -99,10 +99,10 @@ const clavesApiladas = (t: ReturnType<typeof useTheme>, g: Geo, W: number, H: nu
   const cw = 390;
   const tarj = encuadre({ x: ZD.x - cw - 20, y: g.tarjeta(0, cw).y, w: 2 * cw + 40, h: 650 }, W, H, { top: R, max: 1.15 });
   const ventana = encuadre({ x: CFG.x, y: CFG.y, w: CFG.w, h: CFG.h }, W, H, { top: R, max: 1.15 });
-  const overD = v ? encuadre({ x: CFG.x, y: ZD.y - 800, w: CFG.w, h: CFG.y + CFG.h - (ZD.y - 800) }, W, H, { top: R }) : null;
-  const zD = v ? 1.25 : 1.2;
-  const interr = { x: CFG.x + CFG.w * 0.58, y: CFG.y + 334, s: zD };
-  const guardar = { x: CFG.x + CFG.w * 0.55, y: CFG.y + 600, s: zD };
+  const overD = v ? encuadre({ x: CFG.x, y: ZD.y - 800, w: CFG.w, h: CFG.y + CFG.h - (ZD.y - 800) }, W, H, { top: R, max: 1 }) : null;
+  const zD = v ? 1.15 : 1.1;
+  const interr = { x: CFG.x + CFG.w / 2, y: CFG.y + 334, s: zD };
+  const guardar = { x: CFG.x + CFG.w / 2, y: CFG.y + 600, s: zD };
   // zona E: la cuenta corriente, y debajo la factura con el teléfono
   const cuenta = encuadre({ x: SE.x, y: SE.y, w: SE.w, h: SE.h }, W, H, { top: R });
   const detalle = v ? { x: SE.x + SE.w / 2, y: SE.y + 560, s: 1.1 } : { x: SE.x + SE.w / 2, y: SE.y + 600, s: 1.08 };

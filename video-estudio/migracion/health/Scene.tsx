@@ -157,8 +157,8 @@ const KEYS_CUAD: CameraKey[] = mk([
   [0, 500, -800, 1.0], [140, 500, -800, 1.0],
   [196, 500, 520, 1.1], [232, 500, 431, 0.8], [330, 500, 431, 0.8],
   [346, 500, 520, 1.1], [556, 500, 520, 1.1],
-  [584, 500, 1770, 1.0], [632, 500, 1770, 1.0], [652, 500, 1868, 1.1], [720, 500, 1868, 1.1],
-  [760, 500, 1770, 1.0], [782, 1040, 1300, 0.5], [804, TRC.x, TRV.y + 403, 0.8],
+  [584, 500, 1790, 1.0], [632, 500, 1790, 1.0], [652, 500, 1868, 1.1], [720, 500, 1868, 1.1],
+  [760, 500, 1790, 1.0], [782, 1040, 1300, 0.5], [804, TRC.x, TRV.y + 403, 0.8],
   [912, TRC.x, TRV.y + 403, 0.8], [930, TRC.x, TRV.y + 700, 1.1], [990, TRC.x, TRV.y + 700, 1.1],
   [1020, 1020, 941, 0.34], [1044, 1020, 941, 0.34],
 ]);
@@ -424,7 +424,7 @@ const QueueTable: React.FC<{ f: number }> = ({ f }) => {
   const rowH = 52;
   return (
     <Panel x={L.q.x} y={L.q.y} w={L.q.w} h={L.q.h} f={f} at={T.build + 30} title="En caída — contacto prioritario">
-      <div style={{ position: "absolute", left: 16, right: 16, top: 50, display: "grid", gridTemplateColumns: cols, fontSize: t.type.ui.xs, color: t.color.textMuted, paddingBottom: 8, borderBottom: `1px solid ${t.color.border}` }}>
+      <div style={{ position: "absolute", left: 16, right: 16, top: 50, display: "grid", gridTemplateColumns: cols, fontSize: L.v ? t.type.ui.sm : t.type.ui.xs, color: t.color.textMuted, paddingBottom: 8, borderBottom: `1px solid ${t.color.border}` }}>
         {["Cliente", "Canal", "Severidad", "Tendencia", "Pedidos P0", "Base mensual pedidos"].map((h) => (
           <span key={h}>{h}</span>
         ))}
@@ -474,7 +474,7 @@ const Dashboard: React.FC<{ f: number }> = ({ f }) => {
       </div>
       <div style={{ position: "absolute", left: 20, top: 82, display: "flex", gap: 12, opacity: op(kf(f, [b - 20, b], [0, 1])) }}>
         {FILTROS.map(([l, v]) => (
-          <span key={l} style={{ display: "flex", border: `1px solid ${t.color.border}`, borderRadius: cornerRadius(t, "control"), fontSize: t.type.ui.xs, overflow: "hidden", whiteSpace: "nowrap" }}>
+          <span key={l} style={{ display: "flex", border: `1px solid ${t.color.border}`, borderRadius: cornerRadius(t, "control"), fontSize: L.v ? t.type.ui.md : t.type.ui.xs, overflow: "hidden", whiteSpace: "nowrap" }}>
             <span style={{ padding: "8px 12px", background: t.color.surfaceAlt, color: t.color.text }}>{l}</span>
             <span style={{ padding: "8px 14px", color: t.data.strong }}>{v} ⌄</span>
           </span>

@@ -100,8 +100,10 @@ const CuentaInterior: React.FC<{ f: number }> = ({ f }) => {
 };
 
 export const Cuenta: React.FC<{ f: number }> = ({ f }) => {
-  const { SE } = useGeo();
-  const winIn = kf(f, [T.rows - 20, T.rows], [0, 1], OUT);
+  const { SE, apilada } = useGeo();
+  // apilada: la cuenta se va (fundido) cuando la factura sube, así no queda texto bajo el titular mientras la cámara baja a la factura y al teléfono
+  const sale = apilada ? kf(f, [T.pdfClick + 6, T.pdfFly[0] + 12], [1, 0]) : 1;
+  const winIn = kf(f, [T.rows - 20, T.rows], [0, 1], OUT) * sale;
   return (
     <div style={{ opacity: op(winIn) }}>
       <Ventana tool={tiendaTheme} x={SE.x} y={SE.y} w={SE.w} h={SE.h}>

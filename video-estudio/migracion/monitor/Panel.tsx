@@ -317,14 +317,14 @@ const Table: React.FC<{ f: number; filterOn: number }> = ({ f, filterOn }) => {
 };
 
 /** Todo el panel, en su ámbito de tema. `bellOn`: ya llegó el aviso (la campana suena). */
-export const MonitorPanel: React.FC<{ filterOn: number; peek: boolean }> = ({ filterOn, peek }) => {
+export const MonitorPanel: React.FC<{ filterOn: number; peek?: string }> = ({ filterOn, peek }) => {
   const f = useFrame();
   const shell = kf(f, [112, 150], [0, 1], OUT);
   return (
     <ThemeScope theme={monitorTheme}>
       {/* reproducción de la herramienta real (panel de monitoreo) con tamaños fijos: no se agranda con el estrés de tipografía */}
       {/* si la cámara está en otra ventana, el panel asoma por el borde del cuadro a propósito: es el vecino, no el sujeto (`peek`) */}
-      <div data-qa-fixed-scale data-qa-ignore={peek ? "offscreen" : undefined} style={{ position: "absolute", left: 0, top: 0, width: CW, height: CH, color: monitorTheme.color.text, fontFamily: monitorTheme.font.family }}>
+      <div data-qa-fixed-scale data-qa-ignore={peek} style={{ position: "absolute", left: 0, top: 0, width: CW, height: CH, color: monitorTheme.color.text, fontFamily: monitorTheme.font.family }}>
         <PanelBody f={f} shell={shell} filterOn={filterOn} />
       </div>
     </ThemeScope>

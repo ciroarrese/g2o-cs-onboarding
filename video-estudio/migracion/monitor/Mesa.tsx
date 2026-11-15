@@ -308,13 +308,13 @@ const TicketView: React.FC<{ f: number }> = ({ f }) => {
 };
 
 /** La mesa de ayuda completa (lista, ticket en vuelo y ticket abierto), en su ámbito de tema. */
-export const MesaDeAyuda: React.FC<{ peek: boolean }> = ({ peek }) => {
+export const MesaDeAyuda: React.FC<{ peek?: string }> = ({ peek }) => {
   const f = useFrame();
   return (
     <ThemeScope theme={mesaTheme}>
       {/* reproducción de la herramienta real (mesa de ayuda) con tamaños fijos: no se agranda con el estrés de tipografía */}
       {/* si la cámara está en otra ventana, la mesa asoma por el borde del cuadro a propósito: es la vecina, no el sujeto (`peek`) */}
-      <div data-qa-fixed-scale data-qa-ignore={peek ? "offscreen" : undefined} style={{ position: "absolute", left: 0, top: 0, color: mesaTheme.color.text, fontFamily: mesaTheme.font.family }}>
+      <div data-qa-fixed-scale data-qa-ignore={peek} style={{ position: "absolute", left: 0, top: 0, color: mesaTheme.color.text, fontFamily: mesaTheme.font.family }}>
         {/* con el ticket abierto cubriendo la ventana, la lista de abajo no se dibuja (no hay texto oculto bajo otro) */}
         {f < T.opened[1] && <Desk f={f} />}
         <FlyingTicket f={f} />

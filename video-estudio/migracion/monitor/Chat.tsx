@@ -135,13 +135,13 @@ const Window: React.FC<{ f: number }> = ({ f }) => {
 };
 
 /** La ventana del chat, en su ámbito de tema (`chatTheme`). */
-export const ChatWindow: React.FC<{ peek: boolean }> = ({ peek }) => {
+export const ChatWindow: React.FC<{ peek?: string }> = ({ peek }) => {
   const f = useFrame();
   return (
     <ThemeScope theme={chatTheme}>
       {/* reproducción de la ventana del chat con tamaños fijos (el original la dibuja a 1:1): no se agranda con el estrés de tipografía */}
       {/* si la cámara está en otra ventana, el chat asoma por el borde del cuadro a propósito: es el vecino, no el sujeto (`peek`) */}
-      <div data-qa-fixed-scale data-qa-ignore={peek ? "offscreen" : undefined} style={{ position: "absolute", left: 0, top: 0, color: chatTheme.color.text, fontFamily: chatTheme.font.family }}>
+      <div data-qa-fixed-scale data-qa-ignore={peek} style={{ position: "absolute", left: 0, top: 0, color: chatTheme.color.text, fontFamily: chatTheme.font.family }}>
         <Window f={f} />
       </div>
     </ThemeScope>

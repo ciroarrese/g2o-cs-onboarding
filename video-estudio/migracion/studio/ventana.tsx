@@ -41,7 +41,7 @@ export const LineaDeTiempo: React.FC<{ f: number }> = ({ f }) => {
   let x = TL.x;
   const hide = kf(f, [430, 452], [0, 1]);
   if (hide >= 1) return null;
-  const rise = kf(f, [64, 90], [0, 1]);
+  const rise = kf(f, TL.rise, [0, 1]);
   const out = { opacity: op(rise * (1 - hide)), transform: hide > 0 ? `translateY(${Math.round(hide * 60)}px)` : undefined };
   const last = BLOQUES.length - 1;
   return (

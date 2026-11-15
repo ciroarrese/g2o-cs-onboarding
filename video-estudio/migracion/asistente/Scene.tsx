@@ -74,7 +74,8 @@ export function SceneBody() {
     noBlurFrom: C.through[0],
   });
   // la inclinación de base del original (por cuadro) se suma a la que el design system da por velocidad
-  const cam = { ...cam0, rx: cam0.rx + kf(f, TILT_T, TILT_RX), ry: cam0.ry + kf(f, TILT_T, TILT_RY) };
+  const tilt = pick({ horizontal: 1, vertical: 0.4, cuadrado: 0.4 }); // en los formatos angostos la inclinación de base es menor: no deja las líneas del mismo renglón pisándose
+  const cam = { ...cam0, rx: cam0.rx + tilt * kf(f, TILT_T, TILT_RX), ry: cam0.ry + tilt * kf(f, TILT_T, TILT_RY) };
   const zoomed = cam.scale > 1.05; // la cámara encuadra el panel o el editor y deja cortado el resto de la mesa
   const zoomIn = Math.max(0, Math.min(1, (cam.scale - 1.1) / 0.3));
   const recede = kf(f, [C.lift[0], C.lift[1]], [0, 1], Easing.inOut);

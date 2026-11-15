@@ -60,7 +60,7 @@ const apilada = (formato: "vertical" | "cuadrado"): Geo => {
   const zD = { x: 1000, y: 3300 };
   const se: Rect = { x: 60, y: 5000, w: 960, h: 1020 };
   const pdf: Rect = { x: 40, y: se.y + 1060, w: 560, h: 840 };
-  const cajaH = 540;
+  const cajaH = 520;
   return {
     formato,
     apilada: true,

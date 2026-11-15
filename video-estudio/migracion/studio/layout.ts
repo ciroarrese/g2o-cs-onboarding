@@ -18,7 +18,7 @@ export type Lay = {
   /** Caja de la vista previa en los cuadros `BK`: centro, ancho, alto y borde de arriba. */
   box: { cx: number[]; w: number[]; h: number[]; top: number[] };
   banda: { x: number; y: number; w: number; size: "sm" | "md" | "lg"; wrap: boolean; minH: number };
-  tl: { x: number; y: number; blockY: number; blockH: number; ws: number[]; gap: number; cabUp: number; cabExt: number; label: { x: number; y: number } | null };
+  tl: { rise: [number, number]; x: number; y: number; blockY: number; blockH: number; ws: number[]; gap: number; cabUp: number; cabExt: number; label: { x: number; y: number } | null };
   card: { w: number; h: number; capW: number; chip: number; pos: (i: number) => { x: number; y: number } };
   etapas: { x: number; y: number; w: number; row: number };
   conv: { x: number; y: number; w: number; pitch: number; slots: number };
@@ -38,7 +38,7 @@ const HORIZONTAL: Lay = {
   pv: { cx: PREVIEW.cx, top: PREVIEW.top, w: PREVIEW.w, h: PREVIEW.h },
   box: { cx: [960, 960, 960, 960, 960, 960], w: [1008, 1120, 1120, 394, 394, 700], h: [567, 630, 630, 700, 700, 700], top: [330, 330, 330, 330, 330, 330] },
   banda: { x: 0, y: 186, w: 1920, size: "md", wrap: false, minH: 72 },
-  tl: { x: 105, y: 914, blockY: 950, blockH: 80, ws: [150, 280, 400, 480, 360], gap: 10, cabUp: 16, cabExt: 24, label: { x: 105, y: 908 } },
+  tl: { rise: [64, 90], x: 105, y: 914, blockY: 950, blockH: 80, ws: [150, 280, 400, 480, 360], gap: 10, cabUp: 16, cabExt: 24, label: { x: 105, y: 908 } },
   card: { w: 340, h: 176, capW: 90, chip: 34, pos: (i) => ({ x: 84, y: PREVIEW.top + i * 196 }) },
   etapas: { x: 1496, y: PREVIEW.top, w: 340, row: 52 },
   conv: { x: 1496, y: PREVIEW.top + 52 * 4 + 18, w: 340, pitch: 72, slots: 4 },
@@ -58,7 +58,7 @@ const VERTICAL: Lay = {
   pv: { cx: 540, top: 476, w: 432, h: 768 },
   box: { cx: [540, 540, 540, 540, 540, 540], w: [432, 940, 940, 480, 480, 860], h: [768, 529, 529, 853, 853, 860], top: [476, 638, 638, 476, 476, 473] },
   banda: { x: 70, y: 250, w: 940, size: "md", wrap: true, minH: 140 },
-  tl: { x: 64, y: 1708, blockY: 1746, blockH: 76, ws: [130, 200, 200, 200, 200], gap: 8, cabUp: 12, cabExt: 16, label: { x: 64, y: 1704 } },
+  tl: { rise: [64, 90], x: 64, y: 1708, blockY: 1746, blockH: 76, ws: [130, 200, 200, 200, 200], gap: 8, cabUp: 12, cabExt: 16, label: { x: 64, y: 1704 } },
   card: { w: 300, h: 176, capW: 77, chip: 28, pos: (i) => ({ x: 70 + i * 320, y: 1272 }) },
   etapas: { x: 70, y: 1468, w: 440, row: 52 },
   conv: { x: 560, y: 1468, w: 440, pitch: 64, slots: 3 },
@@ -78,7 +78,7 @@ const CUADRADO: Lay = {
   pv: { cx: 270, top: 346, w: 360, h: 360 },
   box: { cx: [270, 540, 540, 540, 540, 540], w: [360, 580, 580, 340, 340, 580], h: [360, 326, 326, 604, 604, 580], top: [346, 510, 510, 371, 371, 383] },
   banda: { x: 70, y: 206, w: 940, size: "sm", wrap: true, minH: 60 },
-  tl: { x: 62, y: 912, blockY: 946, blockH: 72, ws: [110, 196, 196, 196, 196], gap: 8, cabUp: 10, cabExt: 14, label: { x: 62, y: 908 } },
+  tl: { rise: [88, 106], x: 62, y: 912, blockY: 946, blockH: 72, ws: [110, 196, 196, 196, 196], gap: 8, cabUp: 10, cabExt: 14, label: { x: 62, y: 908 } },
   card: { w: 300, h: 176, capW: 77, chip: 28, pos: (i) => ({ x: 70 + i * 320, y: 724 }) },
   etapas: { x: 520, y: 346, w: 500, row: 46 },
   conv: { x: 520, y: 548, w: 500, pitch: 62, slots: 2 },

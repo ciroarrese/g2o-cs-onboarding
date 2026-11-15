@@ -114,7 +114,7 @@ const PanelBody: React.FC<{ open: number }> = ({ open }) => {
                 const col = d[g.c]!;
                 return (
                   <div key={g.fam} style={{ minHeight: 38, boxSizing: "border-box", border: `1px solid ${t.color.border}`, borderLeft: `4px solid ${col}`, borderRadius: cornerRadius(t, "control"), padding: "3px 8px", fontSize: t.type.ui.xs, lineHeight: 1.25, display: "grid", gridTemplateColumns: "1fr 120px", columnGap: 8, alignItems: "start", opacity: a < 1 ? +a.toFixed(4) : undefined, transform: a < 1 ? `translateX(${Math.round((1 - a) * 30)}px)` : undefined }}>
-                    <div style={{ ...textStyle(t, "title"), color: col, whiteSpace: "nowrap" }}>{g.fam} (x{n})</div>
+                    <div data-qa-ignore={a < 1 ? "contrast" : undefined} /* el título del grupo entra con un fundido de 14 cuadros: con la cámara quieta, a medio fundido el color propio del grupo no llega al mínimo; ya entrado se juzga entero */ style={{ ...textStyle(t, "title"), color: col, whiteSpace: "nowrap" }}>{g.fam} (x{n})</div>
                     <div style={{ height: 6, marginTop: 5, borderRadius: cornerRadius(t, "bar"), background: d.pista }}>
                       <div style={{ height: 6, borderRadius: cornerRadius(t, "bar"), width: `${(n / GROUPS[0].n) * 100}%`, background: col }} />
                     </div>
