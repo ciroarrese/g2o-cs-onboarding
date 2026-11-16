@@ -521,7 +521,7 @@ const Dashboard: React.FC<{ f: number }> = ({ f }) => {
           </div>
           {FILAS_CLIENTE.map(([c, n, s], i) => (
             <div key={c} style={{ display: "grid", gridTemplateColumns: COLS_EST(L.v), alignItems: "center", height: 46, borderBottom: `1px solid ${t.color.border}`, color: t.color.text }}>
-              <span data-qa-ignore={!L.v && i >= 5 && f >= 556 && f <= 790 ? "overlap" : undefined /* la cámara de la cola de atención deja las dos últimas filas de esta tabla bajo la píldora del titular (fijo en pantalla): es contenido de paso, no se lee ahí */} style={{ opacity: op(underAnswer(f, i, L.v)) }}>{c}</span>
+              <span data-qa-ignore={!L.v && i >= 5 && f >= 556 && f <= 790 ? "overlap covered contrast" : undefined /* la cámara de la cola de atención deja las dos últimas filas de esta tabla bajo la píldora del titular (fijo en pantalla): es contenido de paso, no se lee ahí */} style={{ opacity: op(underAnswer(f, i, L.v)) }}>{c}</span>
               <span>{n}</span>
               <span style={{ height: 46, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 10, whiteSpace: L.v ? undefined : "nowrap", background: t.data[COLOR_KEY[s]!], color: onFill(t, t.data[COLOR_KEY[s]!]) }}>{STATES[s]!.l}</span>
             </div>
