@@ -91,9 +91,10 @@ export const ZonaB: React.FC<{ f: number }> = ({ f }) => {
               // las pilas de las semanas 1 a 3 se ven en vista general y la cámara no las acerca (solo las últimas): su letra no llega al mínimo, la forma de la pila es el mensaje
               const q = g.apilada ? undefined : w < 3 ? "min-size" : undefined; // apilada: la letra ya llega al piso y la cámara encuadra cada fila entera: no se marca nada
               return (
-                <div key={title} style={{ position: "absolute", left: x, top: Math.round(y - (1 - p) * 420), width: colW, height: chipH, boxSizing: "border-box", ...surfaceStyle(t, "card", { corner: "panel" }), border: `1.5px solid ${withAlpha(c, 0.33)}`, boxShadow: `inset 5px 0 0 ${c}, ${t.shadow.sm}`, display: "flex", alignItems: "center", gap: 10, padding: "0 12px 0 16px", opacity: op(Math.min(1, p * 2)), fontSize: fTit, lineHeight: g.apilada ? 1.15 : 1.25, whiteSpace: g.apilada ? undefined : "nowrap", overflow: "hidden" }}>
+                <div key={title} style={{ position: "absolute", left: x, top: Math.round(y - (1 - p) * 420), width: colW, height: chipH, boxSizing: "border-box", ...surfaceStyle(t, "card", { corner: "panel" }), border: `1.5px solid ${withAlpha(c, 0.33)}`, boxShadow: `inset 5px 0 0 ${c}, ${t.shadow.sm}`, display: "flex", alignItems: "center", gap: 10, padding: "0 12px 0 16px", opacity: op(Math.min(1, p * 2)), fontSize: fTit, lineHeight: g.apilada ? 1.15 : 1.25, overflow: "hidden" }}>
                   <Tag c={c} size={fTag} qa={q}>{kind}</Tag>
-                  <span data-qa-ignore={q} style={g.apilada ? { flex: 1, minWidth: 0 } : undefined}>{title}</span>
+                  {/* el título ocupa lo que sobra de la tarjeta y, si una tipografía más ancha no entra, baja a un segundo renglón (la tarjeta es alta para dos) en vez de salirse */}
+                  <span data-qa-ignore={q} style={{ flex: 1, minWidth: 0 }}>{title}</span>
                 </div>
               );
             })}

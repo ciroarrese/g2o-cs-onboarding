@@ -83,6 +83,8 @@ const TiendaInterior: React.FC<{ f: number }> = ({ f }) => {
             const press = i === 1 ? kf(f, [T.cart - 3, T.cart + 1, T.cart + 8], [0, 0.1, 0]) : 0;
             const boton = stock > 0 ? t.color.accent : t.data.botonApagado!;
             const q0 = i >= 3 || (i === 0 && !priceOk) || (apilada && i % 3 === 2) ? solo : undefined;
+            // la pastilla "Pedidos" nace sobre el nombre de la cafetera (de ahí sale el pedido) y se aleja: los primeros cuadros lo tapa a propósito
+            const sale = i === 1 && f >= T.chipOrder[0] && f <= T.chipOrder[0] + 12 ? " covered" : "";
             const q = ((q0 ?? "") + corte + (apilada && i >= 3 ? " offscreen" : "")).trim() || undefined; // fila de abajo del catálogo (la cámara no baja hasta ahí) y precio de antes del cambio; apilada: la tercera columna queda fuera del acercamiento (que recorta los costados) y en cuadrado la fila de abajo la corta el borde
             return (
               <div key={pr.id} style={{ ...entrance(t, vis, 0, { native: "scale", from: 0.9 }), background: t.color.surface, boxShadow: `${t.shadow.sm}, 0 0 0 ${+(glow * 5).toFixed(2)}px ${withAlpha(t.color.accent, 0.33)}`, position: "relative" }}>
@@ -91,7 +93,7 @@ const TiendaInterior: React.FC<{ f: number }> = ({ f }) => {
                 </div>
                 {isNew && <span data-qa-ignore={solo} style={{ position: "absolute", left: 0, top: 10, background: t.color.accent, color: readableOn(t, t.color.accent), fontSize: t.type.ui.xs, ...textStyle(t, "label", { strong: true }), padding: "3px 8px", lineHeight: 1.25 }}>NUEVO</span>}
                 <div style={{ padding: "10px 10px 12px", textAlign: "center" }}>
-                  <div data-qa-ignore={q} style={{ fontSize: t.type.ui.sm, minHeight: 36, lineHeight: 1.25 }}>{pr.n}</div>
+                  <div data-qa-ignore={(((q ?? "") + sale).trim()) || undefined} style={{ fontSize: t.type.ui.sm, minHeight: 36, lineHeight: 1.25 }}>{pr.n}</div>
                   <div data-qa-ignore={q} style={{ fontSize: t.type.ui.md, ...textStyle(t, "label", { strong: true }), lineHeight: 1.25, color: i === 0 && priceOk ? acento : t.color.text }}>{money(price)}</div>
                   <div data-qa-ignore={q} style={{ fontSize: t.type.ui.xs, color: stock > 0 ? t.data.stockOk : t.data.stockNo, margin: "4px 0 8px", lineHeight: 1.25 }}>{stock > 0 ? "En stock" : "Sin stock"}</div>
                   <div data-qa-ignore={q} style={{ minHeight: 30, background: boton, color: readableOn(t, boton), fontSize: t.type.ui.xs, ...textStyle(t, "label", { strong: true }), display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1.25, transform: xform({ scale: 1 - press }) }}>

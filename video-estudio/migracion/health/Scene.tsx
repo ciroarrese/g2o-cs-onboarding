@@ -479,6 +479,8 @@ const QueueTable: React.FC<{ f: number }> = ({ f }) => {
 };
 
 const FILAS_CLIENTE: [string, number, number][] = [["Tienda 12", 3, 1], ["Tienda 27", 2, 2], ["Tienda 05", 1, 3], ["Tienda 31", 2, 4], ["Tienda 40", 4, 1], ["Tienda 19", 1, 0], ["Tienda 33", 2, 2]];
+/** Columnas de la tabla "Estado consolidado": en horizontal la última mide 150 como siempre y crece si su texto (en un renglón) pide más. */
+const COLS_EST = (v: boolean) => (v ? "1fr 110px 280px" : "minmax(0, 1fr) 90px minmax(150px, auto)");
 const FILTROS = [["Base de datos", "Prod"], ["Cliente", "Todos"], ["Meses de base", "2"], ["Fecha de referencia", "Hoy"]];
 /** Vertical y cuadrado: con la letra más grande la fila de filtros no entra en 960; los rótulos se acortan. */
 const FILTRO_CORTO: Record<string, string> = { "Base de datos": "Base", "Meses de base": "Meses", "Fecha de referencia": "Fecha" };
@@ -511,16 +513,17 @@ const Dashboard: React.FC<{ f: number }> = ({ f }) => {
       <DonutPanel f={f} />
       <Panel x={L.est.x} y={L.est.y} w={L.est.w} h={L.est.h} f={f} at={b} qa="min-size" title="Estado consolidado por cliente">
         <div style={{ position: "absolute", left: 16, right: 16, top: 52, fontSize: t.type.ui.xs }}>
-          <div style={{ display: "grid", gridTemplateColumns: L.v ? "1fr 110px 280px" : "1fr 90px 150px", ...(L.v ? { minHeight: 28, lineHeight: 1.2 } : { height: 18 }), color: t.color.textMuted, paddingBottom: 8, borderBottom: `1px solid ${t.color.border}` }}>
+          <div style={{ display: "grid", gridTemplateColumns: COLS_EST(L.v), ...(L.v ? { minHeight: 28, lineHeight: 1.2 } : { height: 18 }), color: t.color.textMuted, paddingBottom: 8, borderBottom: `1px solid ${t.color.border}` }}>
             <span style={{ opacity: op(underAnswer(f, -1, L.v)) }}>Cliente</span>
             <span>Canales</span>
-            <span>Estado consolidado</span>
+            {/* la columna de estado crece con su texto (en un renglón): con una letra más ancha el rótulo no baja a un segundo renglón sobre la fila de abajo */}
+            <span style={{ whiteSpace: "nowrap" }}>Estado consolidado</span>
           </div>
           {FILAS_CLIENTE.map(([c, n, s], i) => (
-            <div key={c} style={{ display: "grid", gridTemplateColumns: L.v ? "1fr 110px 280px" : "1fr 90px 150px", alignItems: "center", height: 46, borderBottom: `1px solid ${t.color.border}`, color: t.color.text }}>
-              <span style={{ opacity: op(underAnswer(f, i, L.v)) }}>{c}</span>
+            <div key={c} style={{ display: "grid", gridTemplateColumns: COLS_EST(L.v), alignItems: "center", height: 46, borderBottom: `1px solid ${t.color.border}`, color: t.color.text }}>
+              <span data-qa-ignore={!L.v && i >= 5 && f >= 556 && f <= 790 ? "overlap" : undefined /* la cámara de la cola de atención deja las dos últimas filas de esta tabla bajo la píldora del titular (fijo en pantalla): es contenido de paso, no se lee ahí */} style={{ opacity: op(underAnswer(f, i, L.v)) }}>{c}</span>
               <span>{n}</span>
-              <span style={{ height: 46, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 10, background: t.data[COLOR_KEY[s]!], color: onFill(t, t.data[COLOR_KEY[s]!]) }}>{STATES[s]!.l}</span>
+              <span style={{ height: 46, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 10, whiteSpace: L.v ? undefined : "nowrap", background: t.data[COLOR_KEY[s]!], color: onFill(t, t.data[COLOR_KEY[s]!]) }}>{STATES[s]!.l}</span>
             </div>
           ))}
         </div>
