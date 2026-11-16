@@ -123,7 +123,7 @@ const LAY_V: Lay = {
   dp: { x: 20, y: 180, w: 960, h: 460 }, legLeft: 520,
   est: { x: 20, y: 660, w: 960, h: 460 }, fresc: { x: 20, y: 1140, w: 470, h: 300 }, cambio: { x: 510, y: 1140, w: 470, h: 300 },
   yCola: 1460, yFichas: 1498, fichaW: 228, fichaX: (i) => 20 + 244 * i,
-  q: { x: 20, y: 1658, w: 960, h: 420, cols: "130px 150px 120px 150px 130px 1fr" },
+  q: { x: 20, y: 1658, w: 960, h: 420, cols: "170px 150px 200px 140px 1fr" },
   yCartera: 2098, yCart: 2138, cartW: 472, cartX: (i) => 20 + 488 * i,
   srcX0: 90, srcY0: 110,
   box: (i) => ({ x: 40 + (i % 3) * 300, y: 560 + Math.floor(i / 3) * 400 }),
@@ -271,7 +271,7 @@ const Panel: React.FC<{ x: number; y: number; w: number; h: number; title?: stri
   const a = kf(f, [at, at + 18], [0, 1], OUT);
   return (
     <div data-qa-ignore={qa} style={{ position: "absolute", left: x, top: y, width: w, height: h, ...surfaceStyle(t, "panel"), overflow: "hidden", ...entrance(t, a, 0, { depth: 160 }), ...style }}>
-      {title && <div style={{ padding: "12px 16px 0", fontSize: titleSize ?? (v ? t.type.ui.xs : t.type.ui.sm), whiteSpace: v ? "nowrap" : undefined, ...textStyle(t, "title"), color: t.color.text, opacity: op(titleOpacity) }}>{title}</div>}
+      {title && <div style={{ padding: "12px 16px 0", fontSize: titleSize ?? (v ? t.type.ui.xs : t.type.ui.sm), lineHeight: v ? 1.2 : undefined, ...textStyle(t, "title"), color: t.color.text, opacity: op(titleOpacity) }}>{title}</div>}
       {children}
     </div>
   );
@@ -279,9 +279,10 @@ const Panel: React.FC<{ x: number; y: number; w: number; h: number; title?: stri
 
 const Stat: React.FC<{ x: number; y: number; w: number; label: string; n: number; bg: string; f: number; at: number; numColor?: string; glow?: number; qa?: string }> = ({ x, y, w, label, n, bg, f, at, numColor, glow = 0, qa }) => {
   const t = useTheme();
+  const { v } = useLay(); // angosto: el título puede ocupar dos renglones, el número baja
   return (
     <Panel x={x} y={y} w={w} h={140} f={f} at={at} qa={qa} title={label} style={{ boxShadow: glow ? `0 0 0 ${glow * 5}px ${withAlpha(t.data.foco!, 0.67)}` : undefined }}>
-      <div style={{ position: "absolute", left: 0, right: 0, top: 46, bottom: 0, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: STAT, fontWeight: t.font.weights.stat, color: numColor ?? t.data.strong }}>
+      <div style={{ position: "absolute", left: 0, right: 0, top: v ? 62 : 46, bottom: 0, background: bg, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: v ? 1 : undefined, fontSize: STAT, fontWeight: t.font.weights.stat, color: numColor ?? t.data.strong }}>
         <CountUp to={n} start={at + 6} duration={28} />
       </div>
     </Panel>
@@ -435,7 +436,7 @@ const QueueTable: React.FC<{ f: number }> = ({ f }) => {
   return (
     <Panel x={L.q.x} y={L.q.y} w={L.q.w} h={L.q.h} f={f} at={T.build + 30} title="En caída — contacto prioritario">
       <div style={{ position: "absolute", left: 16, right: 16, top: 50, display: "grid", gridTemplateColumns: cols, fontSize: t.type.ui.xs, whiteSpace: L.v ? "nowrap" : undefined, color: t.color.textMuted, paddingBottom: 8, borderBottom: `1px solid ${t.color.border}` }}>
-        {["Cliente", "Canal", "Severidad", "Tendencia", "Pedidos P0", L.v ? "Base mensual" : "Base mensual pedidos"].map((h) => (
+        {(L.v ? ["Cliente", "Severidad", "Tendencia", "Pedidos P0", "Base mensual"] : ["Cliente", "Canal", "Severidad", "Tendencia", "Pedidos P0", "Base mensual pedidos"]).map((h) => (
           <span key={h}>{h}</span>
         ))}
       </div>
@@ -446,7 +447,7 @@ const QueueTable: React.FC<{ f: number }> = ({ f }) => {
         return (
           <div key={r.c} style={{ position: "absolute", left: 16, right: 16, top: y, height: rowH, display: "grid", gridTemplateColumns: cols, alignItems: "center", fontSize: L.v ? t.type.ui.xs : t.type.ui.sm, whiteSpace: L.v ? "nowrap" : undefined, color: t.color.text, borderBottom: `1px solid ${t.color.border}`, background: lift > 0.05 ? t.color.surfaceAlt : undefined, boxShadow: lift > 0.05 ? t.shadow.md : undefined, zIndex: lift > 0.05 ? 2 : 1 }}>
             <span>{r.c}</span>
-            <span>{r.canal}</span>
+            {!L.v && <span>{r.canal}</span>}
             <span style={{ height: rowH, display: "flex", alignItems: "center", paddingLeft: 12, background: t.data[SEV[r.sev]!.c], color: onFill(t, t.data[SEV[r.sev]!.c]), ...textStyle(t, "label", { strong: true }) }}>{SEV[r.sev]!.l}</span>
             <span style={{ paddingLeft: 14, color: r.t === "Caída severa" ? t.color.danger : t.data.naranja }}>{r.t}</span>
             <span>{r.p0}</span>
@@ -611,7 +612,7 @@ export function SceneBody() {
             <Transitions f={f} />
           </div>
         </ThemeScope>
-        <DoodleCircle start={T.sort[1] + 4} end={760} cx={L.q.x + 16 + (L.v ? 150 : 100)} cy={L.q.y + 90 + 26} rx={L.v ? 168 : 120} ry={L.v ? 36 : 32} id="dc-first" />
+        <DoodleCircle start={T.sort[1] + 4} end={760} cx={L.q.x + 16 + (L.v ? 160 : 100)} cy={L.q.y + 90 + 26} rx={L.v ? 176 : 120} ry={L.v ? 36 : 32} id="dc-first" />
         <DoodleArrow start={T.trans[0] + 10} end={1000} x1={TR.x + L.arrow[0]} y1={TR.y + L.arrow[1]} x2={TR.x + L.arrow[2]} y2={TR.y + L.arrow[3]} bend={-0.4} id="da-trans" />
       </World>
       {/* la viñeta del original es del color del texto (tinta) y de intensidad 0,28: ambos son del design system (`decor.vignetteColor`, `decor.vignette`) */}
