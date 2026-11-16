@@ -295,6 +295,9 @@ export const RielesTercera: React.FC<{ f: number }> = ({ f }) => {
   const nombre = sis.label;
   const nameSize = rl.name === "xs" ? t.type.display.sm * 0.78 : t.type.display[rl.name];
   const col: React.CSSProperties = { marginTop: 10, display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-start" };
+  // vertical: mientras la vista previa es 16:9 los rieles suben y vuelven a su lugar cuando la caja se hace vertical (cuadros 690 a 702)
+  const up = rl.up ? kf(f, [690, 702], [1, 0]) : 0;
+  const dSis = Math.round((rl.up?.sis ?? 0) * up), dEj = Math.round((rl.up?.ej ?? 0) * up);
   const nombreEl = (
     <div key={sis.id} style={{ marginTop: 4, minHeight: rl.name === "lg" ? 80 : rl.name === "md" ? 72 : 52, fontSize: nameSize, lineHeight: 1.25, whiteSpace: "nowrap", color: t.color.text, ...textStyle(t, "title"), ...entrance(t, kf(f, [sis.at, sis.at + 14], [0, 1]), 0, { distance: 16 }) }}>{nombre}</div>
   );
@@ -305,7 +308,7 @@ export const RielesTercera: React.FC<{ f: number }> = ({ f }) => {
   );
   return (
     <>
-      <div style={{ ...abs(rl.sis.x, rl.sis.y), width: rl.sis.w, opacity: op(a) }}>
+      <div style={{ ...abs(rl.sis.x, rl.sis.y + dSis), width: rl.sis.w, opacity: op(a) }}>
         <div style={{ lineHeight: 1.25 }}><Eyebrow>Sistema</Eyebrow></div>
         {nombreEl}
         {rl.juntos && (
@@ -316,12 +319,12 @@ export const RielesTercera: React.FC<{ f: number }> = ({ f }) => {
         )}
       </div>
       {!rl.juntos && (
-        <div style={{ ...abs(rl.fmt.x, rl.fmt.y), width: rl.fmt.w, opacity: op(a) }}>
+        <div style={{ ...abs(rl.fmt.x, rl.fmt.y + dSis), width: rl.fmt.w, opacity: op(a) }}>
           <div style={{ lineHeight: 1.25 }}><Eyebrow>Formato</Eyebrow></div>
           {formatos}
         </div>
       )}
-      <div style={{ ...abs(rl.ej.x, rl.ej.y), width: rl.ej.w, opacity: op(a) }}>
+      <div style={{ ...abs(rl.ej.x, rl.ej.y + dEj), width: rl.ej.w, opacity: op(a) }}>
         <div style={{ lineHeight: 1.25 }}><Eyebrow>Ejemplos</Eyebrow></div>
         <div style={rl.ejWrap ? { marginTop: 10, display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 12, alignItems: "flex-start" } : col}>
           {CINCO.map((c) => <Pastilla key={c} text={c} on={(c === "neon" && sis.id === "neon") || c === sis.id} />)}

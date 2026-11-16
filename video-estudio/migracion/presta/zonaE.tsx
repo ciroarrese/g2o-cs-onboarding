@@ -284,7 +284,7 @@ const PaginaArca: React.FC<{ f: number; ok: number }> = ({ f, ok }) => {
             return (
               <div key={l} style={{ padding: "8px 0", borderBottom: `1px solid ${t.color.surfaceAlt}`, opacity: op(a) }}>
                 <div style={{ fontSize: t.type.ui.xs, color: t.color.textMuted, lineHeight: 1.25 }}>{l}</div>
-                <div style={{ fontSize: t.type.ui.sm, ...textStyle(t, "label"), lineHeight: 1.25 }}>{v}</div>
+                <div style={{ fontSize: t.type.ui.sm, ...textStyle(t, "label"), lineHeight: 1.25, overflowWrap: "anywhere" /* el CAE no tiene cortes: con otra tipografía pasa a dos renglones en vez de salirse de la pantalla del teléfono */ }}>{v}</div>
               </div>
             );
           })}

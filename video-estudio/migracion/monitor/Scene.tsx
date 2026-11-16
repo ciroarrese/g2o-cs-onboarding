@@ -117,7 +117,8 @@ function SceneBodyV() {
   // la ventana donde está el foco de la cámara es el sujeto; las vecinas que asoman por el borde se marcan (`peek`, como en horizontal)
   const within = (r: { x: number; y: number; w: number; h: number }) => cam.x >= r.x && cam.x <= r.x + r.w && cam.y >= r.y && cam.y <= r.y + r.h;
   const peek = (r: { x: number; y: number; w: number; h: number }) => !within(r);
-  const hide = Math.max(hideFromScale(cam.scale, 1, 0.08), kf(f, [744, 770, 1050, 1070], [0, 1, 1, 0]));
+  // cuadrado: en la vista final con las tres ventanas juntas (escala 0,4) la ventana del chat sube hasta la franja del titular: este se aparta
+  const hide = Math.max(hideFromScale(cam.scale, 1, 0.08), kf(f, [744, 770, 1050, 1070], [0, 1, 1, 0]), format === "cuadrado" ? kf(f, [1336, 1352], [0, 1]) : 0);
   return (
     <>
       <World camera={cam} width={width} height={height} perspective={2400}>

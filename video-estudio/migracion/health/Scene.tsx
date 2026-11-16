@@ -20,8 +20,8 @@ import { tableroTheme, theme as brand } from "../theme";
 
 export const DURACION = 1080;
 
-/** Tablero de vertical y cuadrado: la letra de la interfaz recreada sube de 15/17/22 a 20/22/26 para que, con la cámara a 1,1, se lea a 22 px o más en pantalla. Horizontal usa `tableroTheme` tal cual. */
-const tableroAngosto: Theme = { ...tableroTheme, type: { ...tableroTheme.type, ui: { ...tableroTheme.type.ui, xs: 20, sm: 22, md: 26 } } };
+/** Tablero de vertical y cuadrado: la letra de la interfaz recreada sube de 15/17/22 a 22/24/28 para que, con la cámara a 1,1, lo secundario se lea a 24 px y lo principal a 30 o más en pantalla. Horizontal usa `tableroTheme` tal cual. */
+const tableroAngosto: Theme = { ...tableroTheme, type: { ...tableroTheme.type, ui: { ...tableroTheme.type.ui, xs: 22, sm: 24, md: 28 } } };
 const useTablero = (): Theme => (useFormat().format === "horizontal" ? tableroTheme : tableroAngosto);
 
 const OUT = Easing.out;
@@ -85,6 +85,7 @@ type Lay = {
   shell: { w: number; h: number };
   dp: { x: number; y: number; w: number; h: number }; // panel de la dona
   legLeft: number; // izquierda de la leyenda dentro del panel de la dona
+  legTop: number; legRow: number; legW: number; legFont: number | null; // arriba, alto de fila, ancho y letra de la leyenda (null: la del tema)
   est: { x: number; y: number; w: number; h: number }; // estado consolidado por cliente
   fresc: { x: number; y: number; w: number; h: number };
   cambio: { x: number; y: number; w: number; h: number };
@@ -104,7 +105,7 @@ const LAY_H: Lay = {
   DONUT: { cx: 230, cy: 420, r: 150, w: 34 },
   TR: { x: 2100, y: 200, w: 1420, h: 880 },
   W: 1880, shell: { w: 1960, h: 1640 },
-  dp: { x: 20, y: 180, w: 640, h: 460 }, legLeft: 410,
+  dp: { x: 20, y: 180, w: 640, h: 460 }, legLeft: 410, legTop: 70, legRow: 36, legW: 216, legFont: null,
   est: { x: 680, y: 180, w: 760, h: 460 }, fresc: { x: 1460, y: 180, w: 440, h: 140 }, cambio: { x: 1460, y: 340, w: 440, h: 300 },
   yCola: 672, yFichas: 710, fichaW: 455, fichaX: (i) => 20 + 475 * i,
   q: { x: 20, y: 860, w: 1880, h: 420, cols: "200px 200px 160px 220px 140px 1fr" },
@@ -117,18 +118,18 @@ const LAY_H: Lay = {
 const LAY_V: Lay = {
   v: true,
   COLS: { cx: 500, base: -560, colW: 120, gap: 24, dot: 20, step: 24, per: 5 },
-  DONUT: { cx: 220, cy: 420, r: 150, w: 34 },
-  TR: { x: 1100, y: 680, w: 960, h: 1330 },
+  DONUT: { cx: 250, cy: 420, r: 160, w: 40 },
+  TR: { x: 1100, y: 680, w: 960, h: 1280 },
   W: 960, shell: { w: 1040, h: 2440 },
-  dp: { x: 20, y: 180, w: 960, h: 460 }, legLeft: 520,
+  dp: { x: 20, y: 180, w: 960, h: 460 }, legLeft: 500, legTop: 72, legRow: 48, legW: 440, legFont: 28,
   est: { x: 20, y: 660, w: 960, h: 460 }, fresc: { x: 20, y: 1140, w: 470, h: 300 }, cambio: { x: 510, y: 1140, w: 470, h: 300 },
   yCola: 1460, yFichas: 1498, fichaW: 228, fichaX: (i) => 20 + 244 * i,
-  q: { x: 20, y: 1658, w: 960, h: 420, cols: "170px 150px 200px 140px 1fr" },
+  q: { x: 20, y: 1658, w: 960, h: 420, cols: "160px 150px 200px 160px 1fr" },
   yCartera: 2098, yCart: 2138, cartW: 472, cartX: (i) => 20 + 488 * i,
-  srcX0: 90, srcY0: 110,
-  box: (i) => ({ x: 40 + (i % 3) * 300, y: 560 + Math.floor(i / 3) * 400 }),
-  hoy: { x: 440, y: 540 }, src: { x: 240, y: 66 }, arrow: [480, 484, 480, 534],
-  tr: { srcCols: 15, srcPitch: 52, srcHalf: 26, srcDot: 34, dstDot: 24, dstPitch: 28, dstHalf: 14, lblDx: 20, lblW: 280, font: 26 },
+  srcX0: 30, srcY0: 112,
+  box: (i) => ({ x: 60 + (i % 2) * 460, y: 360 + Math.floor(i / 2) * 300 }),
+  hoy: { x: 440, y: 300 }, src: { x: 30, y: 66 }, arrow: [480, 244, 480, 292],
+  tr: { srcCols: 30, srcPitch: 30, srcHalf: 15, srcDot: 22, dstDot: 28, dstPitch: 34, dstHalf: 17, lblDx: 20, lblW: 340, font: 26 },
 };
 const layFor = (format: string): Lay => (format === "horizontal" ? LAY_H : LAY_V);
 const useLay = (): Lay => layFor(useFormat().format);
@@ -150,7 +151,8 @@ const KEYS_H: CameraKey[] = mk([
 ]);
 // Vertical y cuadrado: el tablero es una columna (x de 0 a 1000); la cámara recorre sus zonas de arriba abajo con la misma tabla de cuadros que el horizontal.
 // Con escala mayor que 1,08 el titular se aparta (`hideFromScale`): las vistas acercadas lo ocultan y las generales dejan libre su franja (el tablero empieza bajo ella).
-// En el cuadro 1032 la cámara está quieta (claves 1020 a 1044) en la vista general: el tablero entero y la ventana de transiciones, bajo el titular.
+// En el cuadro 1032 la cámara está quieta (claves 1020 a 1044): la ventana de transiciones entera bajo el titular; en vertical a escala 1 (llena el ancho y se lee),
+// en cuadrado a 0,7 (es lo más grande que entra de alto) con un borde del tablero asomando a la izquierda.
 const TRV = LAY_V.TR, TRC = { x: TRV.x + TRV.w / 2, y: TRV.y + TRV.h / 2 };
 const KEYS_VERT: CameraKey[] = mk([
   [0, 500, -800, 1.0], [140, 500, -800, 1.0],
@@ -159,7 +161,7 @@ const KEYS_VERT: CameraKey[] = mk([
   [584, 500, 1580, 1.1], [632, 500, 1580, 1.1], [652, 500, 1720, 1.1], [720, 500, 1720, 1.1], // cola de atención
   [760, 500, 1580, 1.1], [782, 1040, 1400, 0.55], [804, TRC.x, TRC.y, 1.1],
   [912, TRC.x, TRC.y, 1.1], [930, TRC.x, TRV.y + 800, 1.15], [990, TRC.x, TRV.y + 800, 1.15],
-  [1020, 1020, 1020, 0.5], [1044, 1020, 1020, 0.5],
+  [1020, TRC.x, TRC.y, 1.0], [1044, TRC.x, TRC.y, 1.0],
 ]);
 const KEYS_CUAD: CameraKey[] = mk([
   [0, 500, -800, 1.0], [140, 500, -800, 1.0],
@@ -167,8 +169,8 @@ const KEYS_CUAD: CameraKey[] = mk([
   [346, 500, 520, 1.1], [556, 500, 520, 1.1],
   [584, 500, 1780, 1.1], [632, 500, 1780, 1.1], [652, 500, 1868, 1.1], [720, 500, 1868, 1.1],
   [760, 500, 1780, 1.1], [782, 1040, 1300, 0.5], [804, TRC.x, TRV.y + 350, 1.0],
-  [912, TRC.x, TRV.y + 350, 1.0], [930, TRC.x, TRV.y + 810, 1.0], [990, TRC.x, TRV.y + 810, 1.0],
-  [1020, 1020, 941, 0.34], [1044, 1020, 941, 0.34],
+  [912, TRC.x, TRV.y + 350, 1.0], [930, TRC.x, TRV.y + 850, 1.1], [990, TRC.x, TRV.y + 850, 1.1],
+  [1020, TRC.x, TRC.y - 100, 0.7], [1044, TRC.x, TRC.y - 100, 0.7],
 ]);
 const keysFor = (format: string): CameraKey[] => (format === "horizontal" ? KEYS_H : format === "vertical" ? KEYS_VERT : KEYS_CUAD);
 
@@ -265,13 +267,13 @@ const ColumnLabels: React.FC<{ f: number }> = ({ f }) => {
 };
 
 // ---------- el tablero ----------
-const Panel: React.FC<{ x: number; y: number; w: number; h: number; title?: string; titleOpacity?: number; titleSize?: number; f: number; at: number; qa?: string; children?: React.ReactNode; style?: React.CSSProperties }> = ({ x, y, w, h, title, titleOpacity = 1, titleSize, f, at, qa, children, style }) => {
+const Panel: React.FC<{ x: number; y: number; w: number; h: number; grow?: boolean; titleMinH?: number; title?: string; titleOpacity?: number; titleSize?: number; f: number; at: number; qa?: string; children?: React.ReactNode; style?: React.CSSProperties }> = ({ x, y, w, h, grow, titleMinH, title, titleOpacity = 1, titleSize, f, at, qa, children, style }) => {
   const t = useTheme();
   const { v } = useLay();
   const a = kf(f, [at, at + 18], [0, 1], OUT);
   return (
-    <div data-qa-ignore={qa} style={{ position: "absolute", left: x, top: y, width: w, height: h, ...surfaceStyle(t, "panel"), overflow: "hidden", ...entrance(t, a, 0, { depth: 160 }), ...style }}>
-      {title && <div style={{ padding: "12px 16px 0", fontSize: titleSize ?? (v ? t.type.ui.xs : t.type.ui.sm), lineHeight: v ? 1.2 : undefined, ...textStyle(t, "title"), color: t.color.text, opacity: op(titleOpacity) }}>{title}</div>}
+    <div data-qa-ignore={qa} style={{ position: "absolute", left: x, top: y, width: w, ...(grow ? { minHeight: h, display: "flex", flexDirection: "column" as const } : { height: h }), ...surfaceStyle(t, "panel"), overflow: "hidden", ...entrance(t, a, 0, { depth: 160 }), ...style }}>
+      {title && <div style={{ padding: "12px 16px 0", minHeight: titleMinH, boxSizing: titleMinH ? "border-box" : undefined, fontSize: titleSize ?? (v ? t.type.ui.xs : t.type.ui.sm), lineHeight: v ? 1.2 : undefined, ...textStyle(t, "title"), color: t.color.text, opacity: op(titleOpacity) }}>{title}</div>}
       {children}
     </div>
   );
@@ -280,9 +282,20 @@ const Panel: React.FC<{ x: number; y: number; w: number; h: number; title?: stri
 const Stat: React.FC<{ x: number; y: number; w: number; label: string; n: number; bg: string; f: number; at: number; numColor?: string; glow?: number; qa?: string }> = ({ x, y, w, label, n, bg, f, at, numColor, glow = 0, qa }) => {
   const t = useTheme();
   const { v } = useLay(); // angosto: el título puede ocupar dos renglones, el número baja
+  const sombra = { boxShadow: glow ? `0 0 0 ${glow * 5}px ${withAlpha(t.data.foco!, 0.67)}` : undefined };
+  if (v) {
+    // el panel crece con la tipografía: el título deja un mínimo de dos renglones y el número ocupa el resto con holgura de línea
+    return (
+      <Panel x={x} y={y} w={w} h={156} grow titleMinH={62} f={f} at={at} qa={qa} title={label} style={sombra}>
+        <div style={{ flex: 1, minHeight: 88, background: bg, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1.25, fontSize: STAT, fontWeight: t.font.weights.stat, color: numColor ?? t.data.strong }}>
+          <CountUp to={n} start={at + 6} duration={28} />
+        </div>
+      </Panel>
+    );
+  }
   return (
-    <Panel x={x} y={y} w={w} h={140} f={f} at={at} qa={qa} title={label} style={{ boxShadow: glow ? `0 0 0 ${glow * 5}px ${withAlpha(t.data.foco!, 0.67)}` : undefined }}>
-      <div style={{ position: "absolute", left: 0, right: 0, top: v ? 62 : 46, bottom: 0, background: bg, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: v ? 1 : undefined, fontSize: STAT, fontWeight: t.font.weights.stat, color: numColor ?? t.data.strong }}>
+    <Panel x={x} y={y} w={w} h={140} f={f} at={at} qa={qa} title={label} style={sombra}>
+      <div style={{ position: "absolute", left: 0, right: 0, top: 46, bottom: 0, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: STAT, fontWeight: t.font.weights.stat, color: numColor ?? t.data.strong }}>
         <CountUp to={n} start={at + 6} duration={28} />
       </div>
     </Panel>
@@ -356,15 +369,15 @@ const DonutPanel: React.FC<{ f: number }> = ({ f }) => {
         <text x={DONUT.cx - 20} y={DONUT.cy - 180 + 14} textAnchor="middle" fontSize={t.type.display.sm} fontWeight={t.font.weights.stat} fill={t.data.strong} style={{ color: t.data.strong }} fontFamily={t.font.family}>
           {Math.round(kf(f, [T.morph[1], T.morph[1] + 24], [0, TOTAL]))}
         </text>
-        <text x={DONUT.cx - 20} y={DONUT.cy - 180 + 42} textAnchor="middle" fontSize={t.type.ui.sm} fill={t.color.textMuted} style={{ color: t.color.textMuted }} fontFamily={t.font.family}>canales</text>
+        <text x={DONUT.cx - 20} y={DONUT.cy - 180 + (L.v ? 48 : 42)} textAnchor="middle" fontSize={L.v ? t.type.ui.md : t.type.ui.sm} fill={t.color.textMuted} style={{ color: t.color.textMuted }} fontFamily={t.font.family}>canales</text>
       </svg>
-      <div style={{ position: "absolute", left: L.legLeft, top: 70, width: L.v ? 400 : 216, fontSize: L.v ? t.type.ui.sm : t.type.ui.xs }}>
+      <div style={{ position: "absolute", left: L.legLeft, top: L.legTop, width: L.legW, fontSize: L.legFont ?? t.type.ui.xs }}>
         {STATES.map((s, si) => {
           const hot = focus.includes(si);
           return (
-            <div key={s.key} style={{ display: "flex", alignItems: "center", gap: 8, height: 36, padding: "0 8px", borderRadius: cornerRadius(t, "control"), color: t.color.text, background: hot ? withAlpha(t.data[COLOR_KEY[si]!], 0.2) : undefined, opacity: focus.length && !hot ? dim : undefined }}>
+            <div key={s.key} style={{ display: "flex", alignItems: "center", gap: 8, minHeight: L.legRow, boxSizing: "border-box", padding: "0 8px", lineHeight: L.v ? 1.2 : undefined, borderRadius: cornerRadius(t, "control"), color: t.color.text, background: hot ? withAlpha(t.data[COLOR_KEY[si]!], 0.2) : undefined, opacity: focus.length && !hot ? dim : undefined }}>
               <span style={{ width: 14, height: 4, borderRadius: cornerRadius(t, "bar"), background: t.data[COLOR_KEY[si]!] }} />
-              <span style={{ flex: 1 }}>{s.l}</span>
+              <span style={{ flex: 1, whiteSpace: L.v ? "nowrap" : undefined }}>{s.l}</span>
               <span style={{ color: t.data.strong, ...textStyle(t, "label", { strong: true }) }}>{s.n}</span>
             </div>
           );
@@ -389,15 +402,15 @@ const Questions: React.FC<{ f: number }> = ({ f }) => {
   // la pregunta y la respuesta son píldoras de la marca (superficie y radio de chip del design system) que entran por `entrance`
   return (
     <>
-      <div style={{ position: "absolute", left: 60, top: 196, padding: "10px 20px", ...surfaceStyle(t, "card", { corner: "chip", level: "lg" }), color: t.color.text, fontSize: t.type.ui.md, ...textStyle(t, "label", { strong: true }), ...entrance(t, a, 0, { native: "rise", distance: -16 }), whiteSpace: "nowrap", lineHeight: 1.2 }}>
+      <div style={{ position: "absolute", left: 60, top: L.v ? 190 : 196, padding: "10px 20px", ...surfaceStyle(t, "card", { corner: "chip", level: "lg" }), color: t.color.text, fontSize: L.v ? 26 : t.type.ui.md, ...textStyle(t, "label", { strong: true }), ...entrance(t, a, 0, { native: "rise", distance: -16 }), whiteSpace: "nowrap", lineHeight: 1.2 }}>
         {Q.q}
       </div>
       {/* horizontal: la respuesta queda a la derecha del panel de la dona; vertical: a la izquierda de la leyenda, pegada a ella (contenedor de ancho fijo que la alinea a la derecha) */}
       {(() => {
-        const pill: React.CSSProperties = { padding: "10px 22px", ...surfaceStyle(t, "chip", { on: false, level: "sm" }), border: "none", background: t.gradient.brand, color: t.color.onAccent, fontSize: t.type.ui.md, ...textStyle(t, "label", { strong: true }), ...entrance(t, ans * a, 0, { native: "scale", from: 0.8 }), whiteSpace: "nowrap", lineHeight: 1.2 };
+        const pill: React.CSSProperties = { padding: "10px 22px", ...surfaceStyle(t, "chip", { on: false, level: "sm" }), border: "none", background: t.gradient.brand, color: t.color.onAccent, fontSize: L.v ? 26 : t.type.ui.md, ...textStyle(t, "label", { strong: true }), ...entrance(t, ans * a, 0, { native: "scale", from: 0.8 }), whiteSpace: "nowrap", lineHeight: 1.2 };
         return L.v ? (
-          // vertical: la respuesta va en la misma fila que la pregunta, pegada al borde derecho del panel de la dona (la leyenda es ancha y la dona ocupa la izquierda)
-          <div style={{ position: "absolute", left: L.dp.x, top: 196, width: L.dp.w - 24, display: "flex", justifyContent: "flex-end" }}>
+          // vertical: la respuesta va abajo de la leyenda, pegada al borde derecho del panel de la dona (la pregunta ocupa la fila de arriba: con letra más ancha no se pisan)
+          <div style={{ position: "absolute", left: L.dp.x, top: L.dp.y + L.dp.h - 62, width: L.dp.w - 24, display: "flex", justifyContent: "flex-end" }}>
             <div style={pill}>{Q.a}</div>
           </div>
         ) : (
@@ -405,7 +418,7 @@ const Questions: React.FC<{ f: number }> = ({ f }) => {
         );
       })()}
       {Q.sts.map((si) => (
-        <DoodleCircle key={si} start={start + 8} end={end - 6} cx={L.dp.x + L.legLeft + (L.v ? 200 : 108)} cy={180 + 70 + si * 36 + 18} rx={L.v ? 214 : 128} ry={28} id={`dq${qi}-${si}`} />
+        <DoodleCircle key={si} start={start + 8} end={end - 6} cx={L.dp.x + L.legLeft + (L.v ? 200 : 108)} cy={L.dp.y + L.legTop + si * L.legRow + L.legRow / 2} rx={L.v ? 226 : 128} ry={L.v ? 34 : 28} id={`dq${qi}-${si}`} />
       ))}
     </>
   );
@@ -497,13 +510,13 @@ const Dashboard: React.FC<{ f: number }> = ({ f }) => {
       <DonutPanel f={f} />
       <Panel x={L.est.x} y={L.est.y} w={L.est.w} h={L.est.h} f={f} at={b} qa="min-size" title="Estado consolidado por cliente">
         <div style={{ position: "absolute", left: 16, right: 16, top: 52, fontSize: t.type.ui.xs }}>
-          <div style={{ display: "grid", gridTemplateColumns: L.v ? "1fr 110px 250px" : "1fr 90px 150px", height: L.v ? 28 : 18, color: t.color.textMuted, paddingBottom: 8, borderBottom: `1px solid ${t.color.border}` }}>
+          <div style={{ display: "grid", gridTemplateColumns: L.v ? "1fr 110px 280px" : "1fr 90px 150px", ...(L.v ? { minHeight: 28, lineHeight: 1.2 } : { height: 18 }), color: t.color.textMuted, paddingBottom: 8, borderBottom: `1px solid ${t.color.border}` }}>
             <span style={{ opacity: op(underAnswer(f, -1, L.v)) }}>Cliente</span>
             <span>Canales</span>
             <span>Estado consolidado</span>
           </div>
           {FILAS_CLIENTE.map(([c, n, s], i) => (
-            <div key={c} style={{ display: "grid", gridTemplateColumns: L.v ? "1fr 110px 250px" : "1fr 90px 150px", alignItems: "center", height: 46, borderBottom: `1px solid ${t.color.border}`, color: t.color.text }}>
+            <div key={c} style={{ display: "grid", gridTemplateColumns: L.v ? "1fr 110px 280px" : "1fr 90px 150px", alignItems: "center", height: 46, borderBottom: `1px solid ${t.color.border}`, color: t.color.text }}>
               <span style={{ opacity: op(underAnswer(f, i, L.v)) }}>{c}</span>
               <span>{n}</span>
               <span style={{ height: 46, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 10, background: t.data[COLOR_KEY[s]!], color: onFill(t, t.data[COLOR_KEY[s]!]) }}>{STATES[s]!.l}</span>
@@ -547,6 +560,7 @@ const DEST = [
 const Transitions: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
   const L = useLay();
+  const cuadrado = useFormat().format === "cuadrado";
   const { TR } = L;
   const a = kf(f, [T.trans[0] - 30, T.trans[0] - 6], [0, 1], OUT);
   if (a <= 0) return null;
@@ -560,7 +574,7 @@ const Transitions: React.FC<{ f: number }> = ({ f }) => {
       <div style={{ position: "absolute", left: TR.x, top: TR.y, width: TR.w, height: TR.h, ...surfaceStyle(t, "window"), opacity: op(a), boxShadow: t.shadow.lg }}>
         <div style={{ padding: "22px 30px 0", fontSize: t.type.ui.md, color: t.color.text, ...textStyle(t, "title") }}>Transiciones de estado: hace 30 días → hoy</div>
         <div style={{ position: "absolute", left: L.src.x, top: L.src.y, fontSize: L.tr.font, color: t.color.textMuted }}>Hace 30 días · En activación</div>
-        <div data-qa-ignore={L.v ? "min-size contrast" : undefined /* vertical y cuadrado: en la vista general final (escala 0,4) el rótulo de la ventana es detalle, se lee al acercar */} style={{ position: "absolute", left: L.hoy.x, top: L.hoy.y, fontSize: L.tr.font, color: t.color.textMuted }}>Hoy</div>
+        <div data-qa-ignore={cuadrado ? "min-size contrast" : undefined /* cuadrado: en la vista general final (escala 0,34) el rótulo de la ventana es detalle, se lee al acercar */} style={{ position: "absolute", left: L.hoy.x, top: L.hoy.y, fontSize: L.tr.font, color: t.color.textMuted }}>Hoy</div>
       </div>
       {DEST.map((d, i) => {
         const b = box(i);
@@ -595,15 +609,21 @@ export function SceneBody() {
   const cam = useCamera(f);
   const tab = useTablero();
   const zoomIn = Math.max(0, Math.min(1, (cam.scale - 1.05) / 0.4));
+  // cuadrado: la última vista deja solo la ventana de transiciones y el tablero se va antes (si no, su borde asoma bajo el titular)
+  const tableroOn = useFormat().format === "cuadrado" ? 1 - kf(f, [992, 1014], [0, 1]) : 1;
   return (
     <>
       <World camera={cam} width={width} height={height} perspective={2400}>
-        <ThemeScope theme={tab}>
-          {/* el tablero es un mundo más grande que el cuadro y la cámara lo recorre: sus bordes quedan cortados a propósito */}
-          <div data-qa-ignore="offscreen">
-            <Dashboard f={f} />
-          </div>
-        </ThemeScope>
+        <div>
+          {tableroOn > 0 && (
+            <ThemeScope theme={tab}>
+              {/* el tablero es un mundo más grande que el cuadro y la cámara lo recorre: sus bordes quedan cortados a propósito */}
+              <div data-qa-ignore="offscreen" style={{ opacity: op(tableroOn) }}>
+                <Dashboard f={f} />
+              </div>
+            </ThemeScope>
+          )}
+        </div>
         <Questions f={f} />
         <ColumnLabels f={f} />
         <Dots f={f} />

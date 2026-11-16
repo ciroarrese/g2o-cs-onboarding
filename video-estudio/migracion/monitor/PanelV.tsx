@@ -189,7 +189,7 @@ const Detail: React.FC<{ f: number }> = ({ f }) => {
           })}
         </div>
         <div style={{ flex: 1 }} />
-        <TicketButton f={f} />
+        <TicketButton f={f} puntos="..." />
       </div>
     </div>
   );

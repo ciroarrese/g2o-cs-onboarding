@@ -47,7 +47,7 @@ export const MiniPresta: React.FC = () => {
   const t = useTheme();
   const win = { ...surfaceStyle(t, "window", { level: "sm" }), overflow: "hidden", position: "absolute" as const, height: 168 };
   return (
-    <div style={{ position: "absolute", left: 0, top: 0, width: 560, height: 340, color: t.color.text }}>
+    <div data-qa-fixed-scale /* miniatura de la escena (tienda y ERP recreados): tamaños fijos, no se agrandan con el estrés de tipografía */ style={{ position: "absolute", left: 0, top: 0, width: 560, height: 340, color: t.color.text }}>
       <div style={{ position: "absolute", left: 20, top: 20, width: 520, height: 44, ...surfaceStyle(t, "card", { corner: "chip", level: "md" }), display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxSizing: "border-box" }}>
         <span style={{ fontSize: t.type.ui.sm, ...textStyle(t, "title"), lineHeight: 1.25 }}>{NAME}</span>
       </div>

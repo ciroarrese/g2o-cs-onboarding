@@ -84,7 +84,7 @@ const KV: K[] = [
   [1166, mesaC, MEV.y + 560, 1.4, [mesaC, MEV.y + 470, 1.4]], [1268, mesaC, MEV.y + 560, 1.4, [mesaC, MEV.y + 470, 1.4]],
   [1292, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 560, 1.2]], [1320, mesaC, MEV.y + 520, 1.25, [mesaC, MEV.y + 560, 1.2]],
   // todo junto
-  [1352, 900, 1350, 0.58, [900, 1350, 0.4]], [1396, 900, 1350, 0.58, [900, 1350, 0.4]], [1404, 900, 1350, 0.58, [900, 1350, 0.4]],
+  [1352, 900, 1350, 0.58, [760, 1350, 0.4]], [1396, 900, 1350, 0.58, [760, 1350, 0.4]], [1404, 900, 1350, 0.58, [760, 1350, 0.4]],
 ];
 export const keysAngostas = (format: string): CameraKey[] =>
   KV.map(([f, x, y, scale, cuad]) => (format === "cuadrado" && cuad ? { f, x: cuad[0], y: cuad[1], scale: cuad[2] } : { f, x, y, scale }));

@@ -14,11 +14,12 @@ const OUT = Easing.out;
 const IN_OUT = Easing.inOut;
 
 /** Botón del panel. `press` (0..1) lo achica al hacer clic y `glow` le pone un aro del mismo color. */
-const PBtn: React.FC<{ label: string; fill: string; ink?: string; full?: boolean; press?: number; glow?: number }> = ({ label, fill, ink, full, press = 0, glow = 0 }) => {
+const PBtn: React.FC<{ label: string; fill: string; ink?: string; full?: boolean; press?: number; glow?: number; qa?: string }> = ({ label, fill, ink, full, press = 0, glow = 0, qa }) => {
   const t = useTheme();
   const sc = +(1 - press * 0.06).toFixed(4);
   return (
     <div
+      data-qa-ignore={qa}
       style={{
         gridColumn: full ? "1 / -1" : undefined, minHeight: BTN_H, boxSizing: "border-box", borderRadius: cornerRadius(t, "chip"), background: fill, color: ink ?? t.color.onAccent,
         fontSize: t.type.ui.md, lineHeight: 1.25, whiteSpace: "nowrap", ...textStyle(t, "label"), display: "flex", alignItems: "center", justifyContent: "center",
@@ -90,11 +91,11 @@ const PanelBody: React.FC<{ open: number }> = ({ open }) => {
       {open > 0 && <div style={{ height: bodyH * open, overflow: "hidden", opacity: angosta ? op(kf(open, [0.8, 1], [0, 1])) : undefined /* angosto: el cuerpo se enciende al terminar de abrirse, así no hay botones cortados a medias mientras crece */ }}>
         <div style={{ padding: 16 }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: BTN_GAP }}>
-            <PBtn label={loading ? "..." : "Solo corregir"} fill={t.color.surfaceAlt} />
-            <PBtn label={loading ? "..." : "Seguir contexto"} fill={d.azul} />
-            <PBtn label={loading ? "..." : "Con formato"} fill={d.violeta} full press={press(f, C.formato)} glow={kf(f, [C.formato, C.formato + 6, C.formatoDone + 10], [0, 1, 0])} />
-            <PBtn label={loading ? "..." : "Escalado desarrollo"} fill={d.ambar} ink={d.tinta} />
-            <PBtn label={listening ? "Detener dictado" : "Dictar"} fill={listening ? d.rojo : d.verde} ink={listening ? t.color.onAccent : d.tinta} press={press(f, C.dictar) + press(f, C.dictStop)} glow={listening ? (Math.sin(f / 5) + 1) / 2 : 0} />
+            <PBtn qa={cover} label={loading ? "..." : "Solo corregir"} fill={t.color.surfaceAlt} />
+            <PBtn qa={cover} label={loading ? "..." : "Seguir contexto"} fill={d.azul} />
+            <PBtn qa={cover} label={loading ? "..." : "Con formato"} fill={d.violeta} full press={press(f, C.formato)} glow={kf(f, [C.formato, C.formato + 6, C.formatoDone + 10], [0, 1, 0])} />
+            <PBtn qa={cover} label={loading ? "..." : "Escalado desarrollo"} fill={d.ambar} ink={d.tinta} />
+            <PBtn qa={cover} label={listening ? "Detener dictado" : "Dictar"} fill={listening ? d.rojo : d.verde} ink={listening ? t.color.onAccent : d.tinta} press={press(f, C.dictar) + press(f, C.dictStop)} glow={listening ? (Math.sin(f / 5) + 1) / 2 : 0} />
           </div>
           <div style={{ height: 30, display: "flex", alignItems: "center", fontSize: t.type.ui.sm, lineHeight: 1.25, color: t.color.textMuted }}>{status}</div>
 

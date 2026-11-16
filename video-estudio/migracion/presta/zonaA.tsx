@@ -10,6 +10,7 @@ import { useGeo } from "./geo";
 import type { Geo } from "./geo";
 import { erpTheme, tiendaTheme } from "./temas";
 import { BarraNavegador, Chip, Icon, Ventana, inkOn, money, useZoomed } from "./ui";
+import { ErpA, TiendaA } from "./zonaAV";
 
 const OUT = Easing.out;
 /** Destello que sube y baja alrededor del cuadro `at`. */
@@ -107,7 +108,8 @@ const TiendaInterior: React.FC<{ f: number }> = ({ f }) => {
 };
 
 export const Tienda: React.FC<{ f: number }> = ({ f }) => {
-  const { SW } = useGeo();
+  const { SW, apilada } = useGeo();
+  if (apilada) return <TiendaA f={f} />;
   return (
     <Ventana tool={tiendaTheme} x={SW.x} y={SW.y} w={SW.w} h={SW.h}>
       <TiendaInterior f={f} />
@@ -211,7 +213,8 @@ const ErpInterior: React.FC<{ f: number }> = ({ f }) => {
 };
 
 export const Erp: React.FC<{ f: number }> = ({ f }) => {
-  const { EW } = useGeo();
+  const { EW, apilada } = useGeo();
+  if (apilada) return <ErpA f={f} />;
   return (
     <Ventana tool={erpTheme} x={EW.x} y={EW.y} w={EW.w} h={EW.h}>
       <ErpInterior f={f} />
@@ -220,6 +223,15 @@ export const Erp: React.FC<{ f: number }> = ({ f }) => {
 };
 
 // ---------- el módulo en el medio y las pastillas que viajan ----------
+/** Recorridos de las pastillas en la disposición apilada: parten y llegan a las celdas de las piezas de `zonaAV.tsx` (grilla del ERP y tarjetas de la tienda). */
+const LANES_A = (t: ReturnType<typeof useTheme>, { EW, SW }: Pick<Geo, "EW" | "SW">) => [
+  // las pastillas llegan a la imagen de la tarjeta (no al precio ni al nombre: ahí taparían la letra que cambia)
+  { label: "Precios", c: t.color.accent, r: T.chipPrice, from: [EW.x + 640, EW.y + 357], to: [SW.x + 222, SW.y + 226] },
+  { label: "Stock", c: t.color.accent2, r: T.chipStock, from: [EW.x + 790, EW.y + 513], to: [SW.x + 222, SW.y + 504] },
+  { label: "Catálogo", c: t.color.chart[2]!, r: T.chipCat, from: [EW.x + 300, EW.y + 565], to: [SW.x + 640, SW.y + 504] },
+  { label: "Pedidos", c: t.color.success, r: T.chipOrder, from: [SW.x + 640, SW.y + 226], to: [EW.x + 640, EW.y + EW.h - 60] },
+];
+
 const LANES = (t: ReturnType<typeof useTheme>, { EW, SW }: Pick<Geo, "EW" | "SW">) => [
   { label: "Precios", c: t.color.accent, r: T.chipPrice, from: [EW.x + 600, EW.y + 210], to: [SW.x + 260, SW.y + 300] },
   { label: "Stock", c: t.color.accent2, r: T.chipStock, from: [EW.x + 760, EW.y + 300], to: [SW.x + 700, SW.y + 560] },
@@ -229,7 +241,7 @@ const LANES = (t: ReturnType<typeof useTheme>, { EW, SW }: Pick<Geo, "EW" | "SW"
 
 export const Modulo: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
-  const { HUB, EW, SW } = useGeo();
+  const { HUB, EW, SW, apilada } = useGeo();
   return (
     <>
       <div style={{ position: "absolute", left: HUB.x - 190, top: HUB.y - 34, width: 380, height: 68, ...surfaceStyle(t, "card", { corner: "chip", level: "lg" }), boxShadow: `0 18px 40px -14px ${withAlpha(t.color.accent, 0.5)}`, display: "flex", alignItems: "center", justifyContent: "center", gap: 12, boxSizing: "border-box" }}>
@@ -244,7 +256,7 @@ export const Modulo: React.FC<{ f: number }> = ({ f }) => {
         </svg>
         <span style={{ fontSize: t.type.eyebrow, ...textStyle(t, "title"), whiteSpace: "nowrap", lineHeight: 1.25 }}>{NAME}</span>
       </div>
-      {LANES(t, { EW, SW }).map((l) => {
+      {(apilada ? LANES_A : LANES)(t, { EW, SW }).map((l) => {
         if (f < l.r[0] || f > l.r[1] + 2) return null;
         const q = kf(f, [l.r[0], l.r[1]], [0, 1], Easing.bezier(0.45, 0, 0.25, 1));
         const [sx, sy] = l.from as [number, number];
@@ -253,7 +265,7 @@ export const Modulo: React.FC<{ f: number }> = ({ f }) => {
         const x = (1 - q) * (1 - q) * sx + 2 * (1 - q) * q * HUB.x + q * q * ex;
         const y = (1 - q) * (1 - q) * sy + 2 * (1 - q) * q * (HUB.y + 40) + q * q * ey;
         return (
-          <div key={l.label} style={{ position: "absolute", left: 0, top: 0, transform: `translate(${Math.round(x)}px, ${Math.round(y)}px) translate(-50%, -50%)`, opacity: op(kf(f, [l.r[1] - 8, l.r[1]], [1, 0])), zIndex: 30 }}>
+          <div key={l.label} style={{ position: "absolute", left: 0, top: 0, transform: `translate(${Math.round(x)}px, ${Math.round(y)}px) translate(-50%, -50%)`, opacity: op(kf(f, [l.r[1] - 8, l.r[1]], [1, 0]) * (apilada ? kf(f, [l.r[0], l.r[0] + 8], [0, 1]) : 1)) /* apilada: la pastilla nace con un fundido: no tapa de golpe lo que hay en el punto de partida */, zIndex: 30 }}>
             <Chip c={l.c}>{l.label}</Chip>
           </div>
         );

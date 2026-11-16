@@ -25,7 +25,7 @@ export type Lay = {
   etapas: { x: number; y: number; w: number; row: number };
   conv: { x: number; y: number; w: number; pitch: number; slots: number };
   /** Rieles de la tercera parte: `juntos` pone Sistema y Formato en la misma columna (si no, cada uno tiene su lugar). */
-  rl: { juntos: boolean; sis: Pt; fmt: Pt; ej: Pt; ejWrap: boolean; name: "xs" | "sm" | "md" | "lg"; pill: { min: number; size: "eyebrow" | "caption" } };
+  rl: { juntos: boolean; sis: Pt; fmt: Pt; ej: Pt; ejWrap: boolean; name: "xs" | "sm" | "md" | "lg"; pill: { min: number; size: "eyebrow" | "caption" }; up?: { sis: number; ej: number } };
   mu: {
     wx: number; cols: number; tw: number; th: number; gap: number; x: number; y: number; fx: number;
     stat: { mode: "col" | "row"; x: number; y: number; w: number; dw: number; dfmax: number; labelSize: "caption" | "body"; labelW: number; labelMinH: number };
@@ -60,13 +60,14 @@ const VERTICAL: Lay = {
   winFade: [64, 100],
   // 540x960 es 1080x1920 a escala 0,5 (la cámara arranca a 2 y la reproducción queda 1 a 1 con el cuadro de Health Score); queda a la izquierda y las etapas a su derecha
   pv: { cx: 330, top: 476, w: 540, h: 960 },
-  box: { cx: [330, 540, 540, 540, 540, 540], w: [540, 940, 940, 480, 480, 860], h: [960, 529, 529, 853, 853, 860], top: [476, 638, 638, 476, 476, 473] },
+  box: { cx: [330, 540, 540, 540, 540, 540], w: [540, 980, 980, 480, 480, 860], h: [960, 551, 551, 853, 853, 860], top: [476, 640, 640, 476, 476, 473] },
   banda: { x: 70, y: 250, w: 940, size: "md", wrap: true, minH: 140 },
   tl: { rise: [96, 118], x: 64, y: 1708, blockY: 1746, blockH: 76, ws: [150, 196, 196, 196, 196], gap: 8, cabUp: 12, cabExt: 16, slide: 60, mini: 0.15, cabX: 10, label: { x: 64, y: 1704 } },
   card: { w: 300, h: 176, capW: 77, chip: 28, pos: (i) => ({ x: 70 + i * 320, y: 1470 }) },
   etapas: { x: 650, y: 476, w: 370, row: 72 },
   conv: { x: 650, y: 830, w: 370, pitch: 100, slots: 4 },
-  rl: { juntos: false, sis: { x: 70, y: 1370, w: 440 }, fmt: { x: 560, y: 1370, w: 440 }, ej: { x: 70, y: 1610, w: 940 }, ejWrap: true, name: "lg", pill: { min: 190, size: "caption" } },
+  // `up`: mientras la vista previa es 16:9 (cuadros 466 a 690) los rieles suben (la caja es baja y entre las dos quedaba un hueco); vuelven a su lugar cuando la caja se vuelve vertical
+  rl: { juntos: false, sis: { x: 70, y: 1370, w: 440 }, fmt: { x: 560, y: 1370, w: 440 }, ej: { x: 70, y: 1610, w: 940 }, ejWrap: true, name: "lg", pill: { min: 190, size: "caption" }, up: { sis: -110, ej: -50 } },
   mu: {
     wx: 1460, cols: 3, tw: 312, th: 196, gap: 18, x: 54, y: 484, fx: 150,
     stat: { mode: "row", x: 70, y: 252, w: 940, dw: 330, dfmax: 180, labelSize: "body", labelW: 600, labelMinH: 60 },

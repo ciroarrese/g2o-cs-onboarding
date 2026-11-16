@@ -178,7 +178,8 @@ export const Spinner: React.FC<{ f: number }> = ({ f }) => {
   );
 };
 
-export const TicketButton: React.FC<{ f: number }> = ({ f }) => {
+/** `puntos`: cómo termina "Creando": en vertical y cuadrado son tres puntos (`qa` toma un "…" al final como texto recortado). */
+export const TicketButton: React.FC<{ f: number; puntos?: string }> = ({ f, puntos = "…" }) => {
   const t = useTheme();
   const btnIn = appear(f, 395, 412);
   const press = kf(f, [T.ticketClick - 3, T.ticketClick + 1, T.ticketClick + 8], [0, 1, 0]);
@@ -195,7 +196,7 @@ export const TicketButton: React.FC<{ f: number }> = ({ f }) => {
       ) : creating ? (
         <>
           <Spinner f={f} />
-          Creando…
+          Creando{puntos}
         </>
       ) : (
         "Crear ticket"

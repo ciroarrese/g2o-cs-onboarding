@@ -57,12 +57,23 @@ const FlyingTicket: React.FC = () => {
   // parte del ancho que necesita su contenido medido (el original partía de 240 px y lo dejaba cortado) y crece hasta el del comentario
   const need = Math.ceil(textWidth(t, `#${NEW_TICKET}`, { size: t.type.ui.sm, role: "title" }) + textWidth(t, "Ticket interno · Desarrollo", { size: t.type.ui.sm, role: "title" })) + 40 + 22 + 28 + 8;
   const w = Math.round(need + (MAIN.w - need) * p);
+  const contenido = (
+    <>
+      <Icon d={ICON.tag} c={t.color.accent} />#{NEW_TICKET}
+      <span style={{ color: t.color.text }}>Ticket interno · Desarrollo</span>
+    </>
+  );
+  const tarjeta: React.CSSProperties = { height: 70, boxSizing: "border-box", ...surfaceStyle(t, "card", { on: true, corner: "panel", level: "lg", glow: 0.6 }), display: "flex", alignItems: "center", gap: 14, padding: "0 20px", fontSize: t.type.ui.sm, lineHeight: 1.25, ...textStyle(t, "title"), color: t.color.accent, whiteSpace: "nowrap" };
   return (
     <FlyingCard range={C.fly} from={from} to={to} arc={angosta ? -220 : -300} width={MAIN.w} height={70} hideAfter>
-      <div style={{ position: "absolute", left: Math.round((MAIN.w - w) / 2), top: 0, width: w, height: 70, boxSizing: "border-box", ...surfaceStyle(t, "card", { on: true, corner: "panel", level: "lg", glow: 0.6 }), display: "flex", alignItems: "center", gap: 14, padding: "0 20px", fontSize: t.type.ui.sm, lineHeight: 1.25, ...textStyle(t, "title"), color: t.color.accent, whiteSpace: "nowrap", overflow: "hidden" }}>
-        <Icon d={ICON.tag} c={t.color.accent} />#{NEW_TICKET}
-        <span style={{ color: t.color.text }}>Ticket interno · Desarrollo</span>
-      </div>
+      {angosta ? (
+        // angosta: la tarjeta crece si el texto (con otra tipografía) es más ancho que el medido; queda centrada en el ancho del comentario
+        <div style={{ position: "absolute", left: 0, top: 0, width: MAIN.w, height: 70, display: "flex", justifyContent: "center" }}>
+          <div style={{ ...tarjeta, width: w, minWidth: "max-content" }}>{contenido}</div>
+        </div>
+      ) : (
+        <div style={{ position: "absolute", left: Math.round((MAIN.w - w) / 2), top: 0, width: w, ...tarjeta, overflow: "hidden" }}>{contenido}</div>
+      )}
     </FlyingCard>
   );
 };

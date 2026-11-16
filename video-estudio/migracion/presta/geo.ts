@@ -67,21 +67,21 @@ const apilada = (formato: "vertical" | "cuadrado"): Geo => {
     formato,
     apilada: true,
     ZB: zB, ZC: zC, ZD: zD,
-    EW: { x: 110, y: 200, w: 860, h: 580 },
-    SW: { x: 110, y: 930, w: 860, h: 800 },
-    HUB: { x: 540, y: 865 },
+    EW: { x: 110, y: 200, w: 860, h: 720 },
+    SW: { x: 110, y: 1010, w: 860, h: 800 },
+    HUB: { x: 540, y: 965 },
     cajaC: { x: zC.x - 480, w: 960, h: cajaH, top: zC.y - cajaGap / 2 - cajaH, bot: zC.y + cajaGap / 2, trackX: 50, trackW: 860, limite: 0.42, v: true, tall },
     CFG: { x: zD.x - 410, y: zD.y - 80, w: 820, h: tall ? 1090 : 800, rowY: 150, rowH: tall ? 150 : 96 },
-    tarjeta: (i, cw) => ({ x: zD.x - cw - 20 + (i % 2) * (cw + 40), y: zD.y - 800 + Math.floor(i / 2) * 230 }),
+    tarjeta: (i, cw) => ({ x: zD.x - cw - 20 + (i % 2) * (cw + 40), y: zD.y - 940 + Math.floor(i / 2) * 280 }), // tarjetas de 250 de alto (letra más grande, con lugar para renglones de más)
     SE: se,
     detalle: { lateral: false, top: 580, w: se.w, descTop: 352 },
     filaMov: (i) => se.y + 266 + 18 + 44 + i * 47 + 22,
     PDF: pdf,
     QR: { x: pdf.x + pdf.w - 176, y: pdf.y + pdf.h - 196, size: 136 },
-    PHONE: { x: 660, y: pdf.y + 30, w: 380, h: 780 },
+    PHONE: { x: 660, y: pdf.y + 30, w: 380, h: 860 }, // más alto que el de horizontal: con letra más ancha la página de ARCA no se sale por abajo
     vueloPdf: [0, 300],
     vueloTel: [140, 160],
-    colsB: formato === "vertical" ? 2 : 3,
+    colsB: 2,
   };
 };
 

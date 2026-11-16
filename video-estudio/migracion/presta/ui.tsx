@@ -20,6 +20,18 @@ export const Icon: React.FC<{ d: string; c?: string; size?: number; w?: number }
   );
 };
 
+/**
+ * La herramienta recreada con la letra más grande (`k` veces) para vertical y cuadrado: ahí la cámara no puede acercarse tanto como en
+ * horizontal (la ventana ocupa casi todo el ancho del cuadro) y la letra real de la herramienta (12 a 18 px) no llega al piso de lectura.
+ * Escala solo los escalones de letra de la interfaz (`type.ui`, `eyebrow`, `caption`, `body`); colores y formas siguen siendo los suyos.
+ */
+export const agrandar = (tool: Theme, k: number): Theme => {
+  const r = (n: number) => Math.round(n * k);
+  const ty = tool.type;
+  const u = ty.ui ?? { xs: 13, sm: 15, md: 18 };
+  return { ...tool, type: { ...ty, ui: { ...u, xs: r(u.xs), sm: r(u.sm), md: r(u.md) }, eyebrow: r(ty.eyebrow), caption: r(ty.caption), body: r(ty.body) } };
+};
+
 /** Color de texto para `c` sobre su propia tinta (12 %) en la superficie: el tono más cercano de su matiz que llega a 4,5:1. */
 export const inkOn = (t: Theme, c: string) => suggestShade(c, t.color.surface, 5.2) ?? t.color.text;
 

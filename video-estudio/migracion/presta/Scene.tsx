@@ -19,7 +19,7 @@ import type { CameraKey } from "video-estudio/kit";
 import { TopicHeadline, useTopic } from "video-estudio/stories";
 import { ThemeProvider, cameraOptions, dark, editorial, neon, neutral, papel, useTheme } from "video-estudio/themes";
 import { theme as marca } from "../theme";
-import { DURACION, T, VIS, enVentana } from "./datos";
+import { DURACION, T, VIS, WEEKS, enVentana } from "./datos";
 import { encuadre, useGeo } from "./geo";
 import type { Geo } from "./geo";
 import { ZoomCtx } from "./ui";
@@ -73,39 +73,47 @@ const clavesApiladas = (t: ReturnType<typeof useTheme>, g: Geo, W: number, H: nu
   const { EW, SW, ZB, ZC, ZD, CFG, SE, PDF, QR, PHONE, cajaC } = g;
   const v = g.formato === "vertical";
   const R = v ? 250 : 215; // franja del titular
-  const lejos = v ? 0.45 : 0.4; // escala de los vuelos entre zonas
   const b = medidasB(t, g);
   const k = (f: number, x: number, y: number, scale: number): CameraKey => ({ f, x: Math.round(x), y: Math.round(y), scale: +scale.toFixed(3) });
   const kk = (f: number, e: { x: number; y: number; s: number }): CameraKey => k(f, e.x, e.y, e.s);
   // zona A: en vertical toda la pila (ERP, módulo y tienda); en cuadrado la franja entre las filas del ERP y los productos de la tienda
-  const overA = v ? encuadre({ x: EW.x, y: EW.y, w: EW.w, h: SW.y + SW.h - EW.y }, W, H, { top: R, max: 1 }) : { x: g.HUB.x, y: 905, s: 0.72 };
-  // la letra del ERP (12 a 15 px) y de la tienda (13 a 18 px) se lee a partir de 1,5: el acercamiento recorta los costados y deja entera la parte que cambia
-  // las pastillas viajan por el centro entre el ERP y la tienda: en vertical la cámara se queda ahí, a 1,3 (la letra de 12 a 15 px pasa a 16 a 20)
-  const hub = { x: Math.round(EW.x + EW.w / 2), y: g.HUB.y, s: 1.3 };
-  const precio = { x: EW.x + 500, y: EW.y + 250, s: 1.6 };
-  const tienda = { x: SW.x + 380, y: SW.y + 300, s: 1.5 };
-  const pedido = { x: EW.x + 560, y: EW.y + EW.h - 90, s: 1.6 };
+  const overA = v ? encuadre({ x: EW.x, y: EW.y, w: EW.w, h: SW.y + SW.h - EW.y }, W, H, { top: R, max: 1 }) : { x: g.HUB.x, y: EW.y + 330, s: 1.0 };
+  // en esta disposición las dos herramientas llevan la letra escalada (`agrandar`, zonaAV.tsx): con la cámara a 1 a 1,3 la grilla y las tarjetas se leen
+  // las pastillas viajan por el centro entre el ERP y la tienda: en vertical la cámara se queda ahí, a 1,15
+  const hub = { x: Math.round(EW.x + EW.w / 2), y: g.HUB.y, s: 1.15 };
+  const precio = { x: EW.x + 430, y: EW.y + (v ? 420 : 400), s: 1.3 };
+  const tienda = { x: SW.x + 430, y: SW.y + (v ? 380 : 450), s: 1.2 };
+  const pedido = { x: EW.x + 430, y: EW.y + EW.h - (v ? 250 : 200), s: 1.3 };
   // zona B: la grilla de semanas entera; el acercamiento va a las últimas (filas de abajo)
-  const overB = encuadre({ x: ZB.x - b.ancho / 2, y: b.top, w: b.ancho, h: b.bottom - b.top }, W, H, { top: R, max: 0.98 });
-  const ultimas = [3, 4].map((w) => b.pos[w]!);
-  const topUlt = Math.min(...ultimas.map((p) => p.base)) - 5 * (b.chipH + b.chipGap);
-  const zonaUlt = v
-    ? overB // en vertical la grilla ya llena el ancho: no hay acercamiento que valga
-    : encuadre({ x: Math.min(...ultimas.map((p) => p.x)), y: topUlt, w: 2 * b.colW + b.gap, h: b.bottom - topUlt }, W, H, { top: 70, max: 1.45 });
+  const overB = encuadre({ x: ZB.x - b.ancho / 2, y: b.top, w: b.ancho, h: b.bottom - b.top }, W, H, { top: R, max: 1 });
+  // vertical: la grilla entera cabe en el cuadro y llena el ancho. Cuadrado: no cabe con la letra legible; la cámara baja fila por fila (semanas 1 y 2,
+  // 3 y 4, 5) a escala 1, con la fila entera bajo la franja del titular
+  const pitchB = b.chipH + b.chipGap;
+  const filaB = (r: number) => {
+    const ws = [2 * r, 2 * r + 1].filter((w) => w < WEEKS.length);
+    return { top: Math.min(...ws.map((w) => b.pos[w]!.base - WEEKS[w]!.length * pitchB)), bot: Math.max(...ws.map((w) => b.pos[w]!.base)) + b.labelH };
+  };
+  const bajarA = (yTop: number) => ({ x: ZB.x, y: Math.round(yTop + (H / 2 - 40)), s: 1 }); // escala 1: la parte alta de `yTop` queda a 40 px del borde de arriba (en esta zona el titular se aparta)
+  const fila0 = v ? overB : bajarA(b.top - 20);
+  const fila1 = v ? overB : bajarA(filaB(1).top - 20);
+  const fila2 = v ? overB : bajarA(filaB(2).top - 120);
+  const zonaUlt = fila2;
   // zona C: las dos cajas; el acercamiento va a cada caja
   // vertical: las dos cajas (700 de alto cada una) llenan el cuadro a 1,1 (el titular ya se apartó); cuadrado: la que encuadra la franja del titular
   const cajasC = v ? { x: Math.round(cajaC.x + cajaC.w / 2), y: ZC.y, s: 1.1 } : encuadre({ x: cajaC.x, y: cajaC.top, w: cajaC.w, h: cajaC.bot + cajaC.h - cajaC.top }, W, H, { top: R });
   // en cuadrado las dos cajas juntas no dejan leer la letra: la cámara sigue la acción, primero la caja de arriba (antes) y después la de abajo (ahora)
-  const cajaArriba = v ? cajasC : encuadre({ x: cajaC.x, y: cajaC.top, w: cajaC.w, h: cajaC.h }, W, H, { top: R });
-  const cajaAbajo = v ? cajasC : encuadre({ x: cajaC.x, y: cajaC.bot, w: cajaC.w, h: cajaC.h }, W, H, { top: R });
+  // cuadrado: la caja queda con su borde de arriba justo bajo la franja del titular (el hueco de 240 entre las dos cajas cae en la franja: no asoma texto de la otra caja)
+  const bajoFranja = (y0: number) => { const e = encuadre({ x: cajaC.x, y: y0, w: cajaC.w, h: cajaC.h }, W, H, { top: R }); return { x: e.x, y: Math.round(y0 + (H / 2 - (R + 10)) / e.s), s: e.s }; };
+  const cajaArriba = v ? cajasC : bajoFranja(cajaC.top);
+  const cajaAbajo = v ? cajasC : bajoFranja(cajaC.bot);
   const zC = v ? 1.2 : 1.25;
   const muro = v ? cajasC : { x: cajaC.x + cajaC.w / 2, y: cajaC.top + 300, s: 1.1 };
   const srv = v ? cajasC : { x: cajaC.x + cajaC.w / 2, y: cajaC.bot + 300, s: 1.1 };
   // zona D: tarjetas arriba y pantalla de configuración abajo (en cuadrado la cámara baja de una a otra mientras se funden)
   const cw = 390;
-  const tarj = encuadre({ x: ZD.x - cw - 20, y: g.tarjeta(0, cw).y, w: 2 * cw + 40, h: 650 }, W, H, { top: R, max: 1.15 });
+  // las tarjetas (tres filas de 235) y después la ventana de configuración, cada una a su escala: con la letra más grande ya no entran juntas a un tamaño legible
+  const tarj = encuadre({ x: ZD.x - cw - 20, y: g.tarjeta(0, cw).y, w: 2 * cw + 40, h: 810 }, W, H, { top: R, max: 1.15 });
   const ventana = encuadre({ x: CFG.x, y: CFG.y, w: CFG.w, h: CFG.h }, W, H, { top: R, max: 1.15 });
-  const overD = v ? encuadre({ x: CFG.x, y: ZD.y - 800, w: CFG.w, h: CFG.y + CFG.h - (ZD.y - 800) }, W, H, { top: R, max: 1 }) : null;
   const zD = v ? 1.35 : 1.3;
   // los interruptores de las filas 2 y 4 (centro entre ambos) y el botón Guardar, con el alto de fila del formato
   const interr = { x: CFG.x + CFG.w / 2, y: CFG.y + CFG.rowY - 50 + 2 * CFG.rowH + (CFG.rowH - 12) / 2, s: zD };
@@ -116,25 +124,25 @@ const clavesApiladas = (t: ReturnType<typeof useTheme>, g: Geo, W: number, H: nu
   const fila = encuadre({ x: PDF.x, y: PDF.y, w: PHONE.x + PHONE.w - PDF.x, h: PDF.h }, W, H, { top: R });
   // vertical: la factura y el teléfono juntos ocupan 1000 de ancho y 840 de alto (a 0,94 sobra la mitad del alto); en el escaneo se encuadra de la esquina del QR al teléfono a 1,5
   const escaneo = { x: Math.round((QR.x + PHONE.x + PHONE.w) / 2), y: PDF.y + 420, s: 1.5 };
-  const telefono = { x: PHONE.x + PHONE.w / 2, y: PHONE.y + 390, s: v ? 1.75 : 1.2 };
+  const telefono = { x: PHONE.x + PHONE.w / 2, y: PHONE.y + PHONE.h / 2, s: v ? 1.75 : 1.2 };
   const ks: CameraKey[] = [
     kk(0, overA), kk(28, overA),
     kk(40, precio), kk(62, precio), // el precio cambia en el ERP
     kk(76, tienda), kk(104, tienda), // y llega a la tienda
     kk(118, v ? hub : overA), kk(184, v ? hub : overA),
     kk(198, pedido), kk(228, pedido), // el pedido de la web llega al ERP
-    k(242, (EW.x + EW.w / 2 + ZB.x) / 2, 900, lejos), kk(258, overB), kk(384, overB),
-    kk(396, zonaUlt), kk(434, zonaUlt), // una semana entera de arreglos y mejoras
-    kk(446, overB), k(460, ZB.x, (b.bottom + cajaC.top) / 2, lejos), kk(474, cajaArriba), kk(540, cajaArriba),
+    kk(258, fila0), kk(v ? 384 : 318, v ? overB : fila0),
+    ...(v ? [] : [kk(330, fila1), kk(382, fila1)]),
+    kk(396, zonaUlt), kk(446, zonaUlt), // una semana entera de arreglos y mejoras
+    kk(474, cajaArriba), kk(540, cajaArriba),
     kk(550, muro), kk(572, muro), // el muro corta la sincro
     ...(v ? [kk(584, cajasC), kk(624, cajasC)] : [kk(584, cajaArriba), kk(606, cajaAbajo), kk(624, cajaAbajo)]),
     kk(634, srv), kk(664, srv), // la corrida del servidor pasa los 2:00
     ...(v ? [kk(676, cajasC), kk(716, cajasC)] : [kk(676, cajaAbajo), kk(716, cajaAbajo)]),
-    k(730, (ZC.x + ZD.x) / 2, ZC.y, lejos),
-    ...(v ? [kk(744, overD!), kk(858, overD!)] : [kk(744, tarj), kk(782, tarj), kk(858, ventana)]),
+    kk(744, tarj), kk(782, tarj), kk(858, ventana),
     kk(866, interr), kk(904, interr), // se encienden los interruptores
     kk(912, guardar), kk(926, guardar),
-    k(940, (ZD.x + SE.x + SE.w / 2) / 2, (ZD.y + CFG.h + SE.y) / 2, lejos), kk(954, cuenta), kk(1000, cuenta),
+    kk(954, cuenta), kk(1000, cuenta),
     kk(1010, detalle), kk(1042, detalle), // detalle del movimiento
     kk(1060, fila), kk(1086, fila),
     kk(1098, v ? escaneo : fila), kk(1116, v ? escaneo : fila),
@@ -227,7 +235,7 @@ export function SceneBody() {
         />
       </World>
       <Vignette amount={zoomIn * (1 - kf(f, [T.through[0], T.through[0] + 10], [0, 1]))} />
-      <TopicHeadline title={topic.name} number={topic.index + 1} subtitle={topic.line} start={-30} hide={hideFromScale(cam.scale, 1.02, 0.02)} />
+      <TopicHeadline title={topic.name} number={topic.index + 1} subtitle={topic.line} start={-30} hide={Math.max(hideFromScale(cam.scale, 1.02, 0.02), g.formato === "cuadrado" ? kf(f, [246, 258, 450, 470], [0, 1, 1, 0]) : 0) /* cuadrado: en la zona B la cámara baja fila por fila a escala 1 y el titular se aparta (no tapa las pilas) */} />
       <Wash range={[T.through[1] - 14, T.through[1]]} />
     </>
   );

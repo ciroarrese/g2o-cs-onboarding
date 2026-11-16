@@ -49,18 +49,18 @@ const Configuracion: React.FC<{ f: number }> = ({ f }) => {
         return (
           <div key={name} data-qa-ignore={f >= 858 && f <= 940 ? "offscreen" : undefined /* las filas de abajo entran justo cuando la cámara arranca el acercamiento a los interruptores y quedan en el borde del encuadre */} style={{ position: "absolute", left: 26, top: CFG.rowY + i * CFG.rowH - 50, width: r.w, minHeight: r.h, boxSizing: "border-box", display: "flex", alignItems: "center", gap: 16, borderBottom: `1px solid ${t.color.border}`, opacity: op(rowIn) }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: tall ? Math.round(t.type.eyebrow * 1.2) : t.type.eyebrow, ...textStyle(t, "title"), lineHeight: 1.25 }}>{name}</div>
-              <div style={{ fontSize: tall ? t.type.ui.md : t.type.ui.sm, color: t.color.textMuted, marginTop: 4, lineHeight: 1.25 }}>{desc}</div>
+              <div style={{ fontSize: g.apilada ? Math.round(t.type.eyebrow * 1.3) : tall ? Math.round(t.type.eyebrow * 1.2) : t.type.eyebrow, ...textStyle(t, "title"), lineHeight: 1.25 }}>{name}</div>
+              <div style={{ fontSize: g.apilada ? Math.round(t.type.ui.md * 1.3) : tall ? t.type.ui.md : t.type.ui.sm, color: t.color.textMuted, marginTop: 4, lineHeight: 1.25 }}>{desc}</div>
             </div>
             {/* el interruptor "SÍ / NO" de PrestaShop; el que se cambia da un pequeño salto */}
-            <div data-qa-ignore="min-size" /* interruptor recreado de la interfaz: con la cámara abierta su letra baja de 18 px, se lee al acercar */ style={{ display: "flex", borderRadius: ctl, overflow: "hidden", border: `1px solid ${t.color.border}`, fontSize: t.type.ui.md, ...textStyle(t, "label", { strong: true }), lineHeight: 1.25, transform: xform({ scale: 1 + (i === 1 || i === 3 ? Math.sin(flip * Math.PI) * 0.12 : 0) }) }}>
-              <span style={{ padding: "7px 16px", background: on ? t.color.success : t.color.surface, color: on ? readableOn(t, t.color.success) : t.color.textMuted }}>SÍ</span>
-              <span style={{ padding: "7px 16px", background: !on ? noFill : t.color.surface, color: !on ? readableOn(t, noFill!) : t.color.textMuted }}>NO</span>
+            <div data-qa-ignore={g.apilada ? undefined : "min-size"} /* interruptor recreado de la interfaz: con la cámara abierta su letra baja de 18 px, se lee al acercar (apilada: la letra sube y se lee siempre) */ style={{ display: "flex", borderRadius: ctl, overflow: "hidden", border: `1px solid ${t.color.border}`, fontSize: g.apilada ? Math.round(t.type.ui.md * 1.3) : t.type.ui.md, ...textStyle(t, "label", { strong: true }), lineHeight: 1.25, transform: xform({ scale: 1 + (i === 1 || i === 3 ? Math.sin(flip * Math.PI) * 0.12 : 0) }) }}>
+              <span style={{ padding: g.apilada ? "9px 20px" : "7px 16px", background: on ? t.color.success : t.color.surface, color: on ? readableOn(t, t.color.success) : t.color.textMuted }}>SÍ</span>
+              <span style={{ padding: g.apilada ? "9px 20px" : "7px 16px", background: !on ? noFill : t.color.surface, color: !on ? readableOn(t, noFill!) : t.color.textMuted }}>NO</span>
             </div>
           </div>
         );
       })}
-      <div data-qa-ignore="min-size" /* botón visible en la vista general antes y después del acercamiento a los interruptores */ style={{ position: "absolute", right: 26, bottom: 24, padding: "11px 26px", borderRadius: ctl, background: guardar, color: readableOn(t, guardar), fontSize: t.type.ui.md, ...textStyle(t, "label", { strong: true }), lineHeight: 1.25, transform: xform({ scale: 1 - kf(f, [T.save - 3, T.save + 1, T.save + 8], [0, 0.08, 0]) }) }}>
+      <div data-qa-ignore={g.apilada ? undefined : "min-size"} /* botón visible en la vista general antes y después del acercamiento a los interruptores (apilada: la letra sube y se lee siempre) */ style={{ position: "absolute", right: 26, bottom: 24, padding: g.apilada ? "13px 30px" : "11px 26px", borderRadius: ctl, background: guardar, color: readableOn(t, guardar), fontSize: g.apilada ? Math.round(t.type.ui.md * 1.3) : t.type.ui.md, ...textStyle(t, "label", { strong: true }), lineHeight: 1.25, transform: xform({ scale: 1 - kf(f, [T.save - 3, T.save + 1, T.save + 8], [0, 0.08, 0]) }) }}>
         {saved ? "Configuración guardada" : "Guardar"}
       </div>
     </>
@@ -71,7 +71,10 @@ export const TarjetasFuncion: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
   const g = useGeo();
   const cut = useZoomed(0.9) ? "offscreen" : undefined; // las últimas tarjetas se funden mientras la cámara empieza el acercamiento a los interruptores
-  const cw = Math.min(390, Math.max(360, ...FEATURES.map(([n]) => Math.ceil(textWidth(t, n, { size: t.type.ui.md, role: "title" })) + 48))), ch = 190;
+  const cw = Math.min(390, Math.max(360, ...FEATURES.map(([n]) => Math.ceil(textWidth(t, n, { size: t.type.ui.md, role: "title" })) + 48))), ch = g.apilada ? 250 : 190;
+  // apilada: letra más grande (el título pasa a dos renglones si no entra: la tarjeta es más alta y no depende de la medida de una fuente)
+  const fsTit = g.apilada ? Math.round(t.type.eyebrow * 1.3) : t.type.ui.md;
+  const fs = g.apilada ? Math.round(t.type.ui.md * 1.05) : t.type.ui.md; // con la cámara a 1,1 son 22 px en pantalla
   return (
     <>
       {FEATURES.map(([name, desc], i) => {
@@ -86,10 +89,10 @@ export const TarjetasFuncion: React.FC<{ f: number }> = ({ f }) => {
         const w = cw + (r.w - cw) * m;
         const h = ch + (r.h - ch) * m;
         return (
-          <div key={name} data-qa-ignore={cut} style={{ position: "absolute", left: Math.round(x), top: Math.round(y), width: Math.round(w), height: Math.round(h), boxSizing: "border-box", ...surfaceStyle(t, "card", { on: m <= 0.6, level: "lg" }), padding: "16px 20px", opacity: op(appear * (1 - Math.max(0, m - 0.7) / 0.3)), zIndex: 20 }}>
-            <div style={{ fontSize: t.type.ui.md, ...textStyle(t, "title"), lineHeight: 1.25, whiteSpace: "nowrap" }}>{name}</div>
-            <div style={{ fontSize: t.type.ui.md, color: t.color.textMuted, marginTop: 6, lineHeight: 1.25, opacity: op(Math.max(0, 1 - m * 3.5)) }}>{desc}</div>
-            <div style={{ fontSize: t.type.ui.md, color: inkOn(t, t.color.accent), marginTop: 8, lineHeight: 1.25, opacity: op(Math.max(0, 1 - m * 3.5)) }}>Hecha para Tienda {String(3 + i * 7).padStart(2, "0")}</div>
+          <div key={name} data-qa-ignore={cut} style={{ position: "absolute", left: Math.round(x), top: Math.round(y), width: Math.round(w), height: Math.round(h), boxSizing: "border-box", ...surfaceStyle(t, "card", { on: m <= 0.6, level: "lg" }), padding: g.apilada ? "14px 14px" : "16px 20px", opacity: op(appear * (1 - Math.max(0, m - 0.7) / 0.3)), zIndex: 20 }}>
+            <div style={{ fontSize: fsTit, ...textStyle(t, "title"), lineHeight: 1.25, whiteSpace: g.apilada ? undefined : "nowrap" }}>{name}</div>
+            <div style={{ fontSize: fs, color: t.color.textMuted, marginTop: 6, lineHeight: 1.25, opacity: op(Math.max(0, 1 - m * 3.5)) }}>{desc}</div>
+            <div style={{ fontSize: fs, color: inkOn(t, t.color.accent), marginTop: 8, lineHeight: 1.25, opacity: op(Math.max(0, 1 - m * 3.5)) }}>Hecha para Tienda {String(3 + i * 7).padStart(2, "0")}</div>
           </div>
         );
       })}

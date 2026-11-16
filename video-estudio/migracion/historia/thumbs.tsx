@@ -47,6 +47,6 @@ function Inner() {
 
 export const MiniHealth: React.FC = () => (
   <ThemeScope theme={tableroTheme} paint style={{ width: 560, height: 340, ...surfaceStyle(tableroTheme, "window"), background: tableroTheme.color.bg, boxSizing: "border-box", overflow: "hidden" }}>
-    <Inner />
+    <div data-qa-fixed-scale /* miniatura de la escena (tablero recreado): tamaños fijos, no se agrandan con el estrés de tipografía */ style={{ display: "contents" }}><Inner /></div>
   </ThemeScope>
 );

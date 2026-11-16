@@ -19,15 +19,17 @@ const OUT = Easing.out;
  */
 export const medidasB = (t: ReturnType<typeof useTheme>, g: Geo) => {
   const { ZB } = g;
-  const sube = g.formato === "vertical";
-  const fTag = sube ? t.type.ui.md : t.type.ui.xs;
-  const fTit = sube ? t.type.eyebrow : t.type.ui.sm;
+  // apilada (vertical y cuadrado): dos columnas de ancho fijo con la letra más grande; el título de la pila pasa a dos renglones si hace falta
+  // (la maquetación no depende de la medida de una tipografía: el chip es alto para dos renglones y con letra más ancha sigue entrando)
+  const fTag = g.apilada ? t.type.ui.md + 2 : t.type.ui.xs;
+  const fTit = g.apilada ? Math.round(t.type.eyebrow * 1.15) : t.type.ui.sm;
   const fSem = g.apilada ? t.type.eyebrow : t.type.ui.md;
-  const chipH = sube ? 72 : 56;
+  const chipH = g.apilada ? 92 : 56;
   const chipGap = 8;
   const tag = (s: string) => Math.ceil(textWidth(t, s, { size: fTag, role: "label" })) + 28; // etiqueta: texto + relleno
   let colW = 340;
-  for (const items of WEEKS) for (const [kind, title] of items) colW = Math.max(colW, 16 + tag(kind) + 10 + Math.ceil(textWidth(t, title, { size: fTit })) + 18);
+  if (g.apilada) colW = 500;
+  else for (const items of WEEKS) for (const [kind, title] of items) colW = Math.max(colW, 16 + tag(kind) + 10 + Math.ceil(textWidth(t, title, { size: fTit })) + 18);
   colW = Math.ceil(colW / 10) * 10;
   const gap = g.apilada ? 24 : 20;
   const cols = g.colsB;
@@ -87,19 +89,19 @@ export const ZonaB: React.FC<{ f: number }> = ({ f }) => {
               const y = base - (j + 1) * (chipH + chipGap);
               const c = kind === "Mejora" ? t.color.success : t.color.accent2;
               // las pilas de las semanas 1 a 3 se ven en vista general y la cámara no las acerca (solo las últimas): su letra no llega al mínimo, la forma de la pila es el mensaje
-              const q = w < 3 ? "min-size" + (g.apilada && zoomed ? " offscreen" : "") : undefined; // apilada (cuadrado): al acercar a las últimas semanas, la fila de arriba queda cortada por el borde
+              const q = g.apilada ? undefined : w < 3 ? "min-size" : undefined; // apilada: la letra ya llega al piso y la cámara encuadra cada fila entera: no se marca nada
               return (
-                <div key={title} style={{ position: "absolute", left: x, top: Math.round(y - (1 - p) * 420), width: colW, height: chipH, boxSizing: "border-box", ...surfaceStyle(t, "card", { corner: "panel" }), border: `1.5px solid ${withAlpha(c, 0.33)}`, boxShadow: `inset 5px 0 0 ${c}, ${t.shadow.sm}`, display: "flex", alignItems: "center", gap: 10, padding: "0 12px 0 16px", opacity: op(Math.min(1, p * 2)), fontSize: fTit, lineHeight: 1.25, whiteSpace: "nowrap", overflow: "hidden" }}>
+                <div key={title} style={{ position: "absolute", left: x, top: Math.round(y - (1 - p) * 420), width: colW, height: chipH, boxSizing: "border-box", ...surfaceStyle(t, "card", { corner: "panel" }), border: `1.5px solid ${withAlpha(c, 0.33)}`, boxShadow: `inset 5px 0 0 ${c}, ${t.shadow.sm}`, display: "flex", alignItems: "center", gap: 10, padding: "0 12px 0 16px", opacity: op(Math.min(1, p * 2)), fontSize: fTit, lineHeight: g.apilada ? 1.15 : 1.25, whiteSpace: g.apilada ? undefined : "nowrap", overflow: "hidden" }}>
                   <Tag c={c} size={fTag} qa={q}>{kind}</Tag>
-                  <span data-qa-ignore={q}>{title}</span>
+                  <span data-qa-ignore={q} style={g.apilada ? { flex: 1, minWidth: 0 } : undefined}>{title}</span>
                 </div>
               );
             })}
-            <div data-qa-ignore={w < 3 && g.apilada && zoomed ? "offscreen" : undefined /* ídem: la fila de arriba queda cortada al acercar */} style={{ position: "absolute", left: x, top: base + 12, width: colW, textAlign: "center" }}>
+            <div style={{ position: "absolute", left: x, top: base + 12, width: colW, textAlign: "center" }}>
               <div style={{ fontSize: fSem, color: t.color.textMuted, lineHeight: 1.25 }}>Semana {w + 1}</div>
               {/* la versión se enciende cuando se completa la pila; antes está apagada con una opacidad calculada contra el fondo, no fija */}
               <div style={{ marginTop: 8 }}>
-                <span style={{ display: "inline-block", padding: "6px 16px", lineHeight: 1.25, borderRadius: cornerRadius(t, "chip"), background: done ? t.gradient.brand : t.color.border, color: done ? t.color.onAccent : t.color.textMuted, fontSize: fSem, ...textStyle(t, "label", { strong: true }) }}>{VERS[w]}</span>
+                <span style={{ display: "inline-block", padding: "6px 16px", lineHeight: 1.25, borderRadius: cornerRadius(t, "chip"), background: done ? t.gradient.brand : t.color.border, color: done ? (g.apilada ? t.color.text : t.color.onAccent) /* apilada: tinta oscura, el blanco no llega a 3:1 con el tramo claro del degradado */ : t.color.textMuted, fontSize: fSem, ...textStyle(t, "label", { strong: true }) }}>{VERS[w]}</span>
               </div>
             </div>
           </React.Fragment>
@@ -152,7 +154,7 @@ export const ZonaC: React.FC<{ f: number }> = ({ f }) => {
   const dimBase = 0.35;
   // en la disposición angosta (vertical y cuadrado) el contenido de cada caja se apila en renglones y la letra sube un escalón del tema
   const lbl = { fontSize: v ? t.type.eyebrow : t.type.ui.md, color: t.color.textMuted, lineHeight: 1.25 } as const;
-  const tituloFs = v ? t.type.body : t.type.caption;
+  const tituloFs = v ? (g.cajaC.tall ? t.type.body : Math.round(t.type.body * 0.8)) : t.type.caption; // cuadrado: renglón más corto, con letra ancha sigue en una línea
   const tiempoFs = v ? t.type.display.md : t.type.display.sm;
   const tall = g.cajaC.tall; // vertical: caja de 700 de alto con más aire entre renglones
   const bar = tall ? { top: 410, h: 80 } : v ? { top: 300, h: 56 } : { top: 176, h: 44 };
