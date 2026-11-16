@@ -115,9 +115,10 @@ const Contador: React.FC<{ f: number; lay: Lay }> = ({ f, lay }) => {
   const dfont = Math.min(t.type.stat, S.dfmax);
   const dh = dfont * 1.15;
   const rollo = (
+    // `frame` no baja de `CONTADOR.start`: el bloque entra con su fundido desde el 832 y el contador tiene que verse ya con su "0" (DigitRoll, antes de su `start`, queda oculto: sin esto el número aparecería de golpe diez cuadros después que su etiqueta)
     // el rollo de dígitos de DigitRoll deja pasar el dígito vecino por encima de la ventana mientras rueda (fx/): solo ese cuadro pisa el área segura de arriba
     <div data-qa-ignore="safe-area" style={{ position: "relative", width: S.dw, height: dh, flex: "none" }}>
-      <DigitRoll frame={f} start={CONTADOR.start} duration={CONTADOR.duration} value={EFECTOS} from={0} fontSize={dfont} width={S.dw} height={dh} />
+      <DigitRoll frame={Math.max(f, CONTADOR.start)} start={CONTADOR.start} duration={CONTADOR.duration} value={EFECTOS} from={0} fontSize={dfont} width={S.dw} height={dh} />
     </div>
   );
   const fila = S.mode === "row";

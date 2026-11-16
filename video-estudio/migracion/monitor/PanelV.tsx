@@ -141,7 +141,7 @@ const Donut: React.FC<{ f: number; filterOn: number; shell: number }> = ({ f, fi
             );
           })}
         </g>
-        {f >= 130 && <g opacity={op(appear(f, 130, 150))} fontFamily={t.font.family} textAnchor="middle">
+        {f >= 130 && <g opacity={op(appear(f, 130, 150))} fontFamily={t.font.family} textAnchor="middle" textRendering="geometricPrecision" /* la cámara escala el panel: sin esto el texto SVG se rasteriza según el historial de cuadros (docs/reglas.md) */>
           <text x={D.cx} y={D.cy + 14} fontWeight={t.font.weights.stat} fontSize={t.type.stat * 0.38} fill={focused ? t.data.estadoInfra : t.color.text} style={{ color: focused ? t.data.estadoInfra : t.color.text }}>
             {focused ? STATUS[FOCUS_STATUS]!.n : TOTAL}
           </text>

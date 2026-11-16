@@ -24,8 +24,9 @@ function Donut() {
           return <circle key={st.key} cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke={statusColor(t, i)} strokeWidth={W} strokeDasharray={`${Math.max(len - 2, 0)} ${C}`} strokeDashoffset={-off} opacity={i === 1 ? 1 : 0.3} />;
         })}
       </g>
+      {/* `textRendering="geometricPrecision"`: la miniatura va achicada con `scale()` y el texto de un SVG bajo escala se rasteriza según el historial de cuadros (ver docs/reglas.md); con la precisión geométrica no */}
       <g fontFamily={t.font.family} textAnchor="middle">
-        <text x={SIZE / 2} y={SIZE / 2 + 8} fontSize={t.type.stat * 0.2} fontWeight={t.font.weights.stat} fill={t.data.estadoInfra} style={{ color: t.data.estadoInfra }}>61</text>
+        <text textRendering="geometricPrecision" x={SIZE / 2} y={SIZE / 2 + 8} fontSize={t.type.stat * 0.2} fontWeight={t.font.weights.stat} fill={t.data.estadoInfra} style={{ color: t.data.estadoInfra }}>61</text>
       </g>
     </svg>
   );

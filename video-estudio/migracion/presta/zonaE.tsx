@@ -274,9 +274,11 @@ const PaginaArca: React.FC<{ f: number; ok: number }> = ({ f, ok }) => {
       <div style={{ height: 52, background: t.data.azulOrganismo, color: readableOn(t, t.data.azulOrganismo!), display: "flex", alignItems: "center", padding: "0 20px", fontSize: t.type.eyebrow, ...textStyle(t, "label", { strong: true }), letterSpacing: "0.04em" }}>ARCA</div>
       <div style={{ padding: "18px 20px" }}>
         <div style={{ fontSize: t.type.caption, ...textStyle(t, "title"), lineHeight: 1.25 }}>Consulta de comprobante</div>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 12, padding: "8px 14px", borderRadius: ctl * 2, background: t.color.surfaceAlt, color: inkOn(t, t.color.success), fontSize: t.type.ui.md, ...textStyle(t, "label", { strong: true }), lineHeight: 1.25, opacity: op(ok), transform: ok < 1 ? `scale(${(0.9 + ok * 0.1).toFixed(3)})` : undefined }}>
-          <Icon d="M5 12l4 4 10-10" c={inkOn(t, t.color.success)} size={18} w={2.6} />
-          Comprobante autorizado
+        {/* El "pop" escala solo el fondo de la pastilla: el ícono SVG y el texto van fuera de la capa escalada (bajo `scale()` el trazo y el glifo se rasterizan según el historial y `--check` falla). */}
+        <div style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 8, marginTop: 12, padding: "8px 14px", color: inkOn(t, t.color.success), fontSize: t.type.ui.md, ...textStyle(t, "label", { strong: true }), lineHeight: 1.25, opacity: op(ok) }}>
+          <div style={{ position: "absolute", inset: 0, borderRadius: ctl * 2, background: t.color.surfaceAlt, transform: ok < 1 ? `scale(${(0.9 + ok * 0.1).toFixed(3)})` : undefined }} />
+          <span style={{ position: "relative", display: "flex" }}><Icon d="M5 12l4 4 10-10" c={inkOn(t, t.color.success)} size={18} w={2.6} /></span>
+          <span style={{ position: "relative" }}>Comprobante autorizado</span>
         </div>
         <div style={{ marginTop: 16 }}>
           {DATOS_ARCA.map(([l, v], i) => {

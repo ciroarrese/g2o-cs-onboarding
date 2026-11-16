@@ -228,8 +228,8 @@ const Dots: React.FC<{ f: number }> = ({ f }) => {
           y = y + (ey - y) * m - Math.sin(m * Math.PI) * 220;
         }
         if (fall <= 0) return null;
-        // posición dentro del transform (left/top enteros), como pide docs/reglas.md
-        return <div key={i} style={{ position: "absolute", left: 0, top: 0, width: COLS.dot, height: COLS.dot, borderRadius: COLS.dot / 2, background: estado(d.st), opacity: op(fade), transform: `translate(${(x - COLS.dot / 2).toFixed(2)}px, ${(y - COLS.dot / 2).toFixed(2)}px)` }} />;
+        // posición dentro del transform (left/top enteros) y con traslado entero (`Math.round`): un círculo en una posición fraccionaria rasteriza distinto según el historial (docs/reglas.md)
+        return <div key={i} style={{ position: "absolute", left: 0, top: 0, width: COLS.dot, height: COLS.dot, borderRadius: COLS.dot / 2, background: estado(d.st), opacity: op(fade), transform: `translate(${Math.round(x - COLS.dot / 2)}px, ${Math.round(y - COLS.dot / 2)}px)` }} />;
       })}
     </>
   );
@@ -366,10 +366,11 @@ const DonutPanel: React.FC<{ f: number }> = ({ f }) => {
           if (end - a0 < 0.001) return null;
           return <path key={s.key} d={arc(DONUT.cx - 20 + dx, DONUT.cy - 180 + dy, DONUT.r, a0 + 0.01, end - 0.01)} fill="none" stroke={t.data[COLOR_KEY[si]!]} strokeWidth={DONUT.w + pop * 10} opacity={focus.length && !hot ? 0.25 : undefined} />;
         })}
-        <text x={DONUT.cx - 20} y={DONUT.cy - 180 + 14} textAnchor="middle" fontSize={t.type.display.sm} fontWeight={t.font.weights.stat} fill={t.data.strong} style={{ color: t.data.strong }} fontFamily={t.font.family}>
+        {/* `textRendering="geometricPrecision"` en los dos textos: el panel va dentro del mundo con cámara (`scale()`) y el texto de un SVG bajo escala se rasteriza según el historial de cuadros (docs/reglas.md) */}
+        <text x={DONUT.cx - 20} y={DONUT.cy - 180 + 14} textAnchor="middle" fontSize={t.type.display.sm} fontWeight={t.font.weights.stat} fill={t.data.strong} style={{ color: t.data.strong, textRendering: "geometricPrecision" }} fontFamily={t.font.family}>
           {Math.round(kf(f, [T.morph[1], T.morph[1] + 24], [0, TOTAL]))}
         </text>
-        <text x={DONUT.cx - 20} y={DONUT.cy - 180 + (L.v ? 48 : 42)} textAnchor="middle" fontSize={L.v ? t.type.ui.md : t.type.ui.sm} fill={t.color.textMuted} style={{ color: t.color.textMuted }} fontFamily={t.font.family}>canales</text>
+        <text x={DONUT.cx - 20} y={DONUT.cy - 180 + (L.v ? 48 : 42)} textAnchor="middle" fontSize={L.v ? t.type.ui.md : t.type.ui.sm} fill={t.color.textMuted} style={{ color: t.color.textMuted, textRendering: "geometricPrecision" }} fontFamily={t.font.family}>canales</text>
       </svg>
       <div style={{ position: "absolute", left: L.legLeft, top: L.legTop, width: L.legW, fontSize: L.legFont ?? t.type.ui.xs }}>
         {STATES.map((s, si) => {
