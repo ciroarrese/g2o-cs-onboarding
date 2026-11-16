@@ -9,23 +9,25 @@ import {
 import "../brand/fonts";
 import { CloudBackground, CountUp } from "../brand/primitives";
 import { color, font, gradient, radius, shadow } from "../brand/theme";
+import { DockedHeadline } from "./Apertura";
+import { Cursor as MCursor, DoodleCircle } from "../brand/motion";
 
 /**
  * Sincro Monitor, rebuilt in the Grow2on style. No narration: the story is
  * told by the tool itself (its own labels), the data and the motion.
- * Aggregate figures from the live panel on 10/11/2026. Store domains and the
+ * Figures are emulated (the video uses invented numbers). Store domains and the
  * ticket number are fictional, so no client appears on screen.
  */
 
 // ---------- data ----------
 const STATUS = [
-  { key: "ok", label: "OK", kpi: "Sin problemas", n: 146, c: color.success },
-  { key: "infra", label: "Error en servidor", kpi: "Error en servidor", n: 73, c: color.error },
-  { key: "sync", label: "Error sincro", kpi: "Error sincro", n: 17, c: color.orange },
-  { key: "warn", label: "Advertencia sincro", kpi: "Advertencia sincro", n: 12, c: color.warning },
-  { key: "none", label: "Sin datos", kpi: "Sin datos", n: 67, c: color.gray300 },
+  { key: "ok", label: "OK", kpi: "Sin problemas", n: 128, c: color.success },
+  { key: "infra", label: "Error en servidor", kpi: "Error en servidor", n: 61, c: color.error },
+  { key: "sync", label: "Error sincro", kpi: "Error sincro", n: 23, c: color.orange },
+  { key: "warn", label: "Advertencia sincro", kpi: "Advertencia sincro", n: 14, c: color.warning },
+  { key: "none", label: "Sin datos", kpi: "Sin datos", n: 54, c: color.gray300 },
 ] as const;
-const TOTAL = 315;
+const TOTAL = 280; // emulated: the video uses invented figures
 const FOCUS_STATUS = 1; // the filter the cursor clicks: server errors
 const TICKET = "#48213";
 const STORE = "tienda-07.ejemplo.com.ar";
@@ -62,14 +64,43 @@ const STEPS = [
 ];
 
 // Help desk window, to the right of the dashboard in the same world.
-const MESA = { x: 1800, y: 70, w: 1080, h: 780, head: 150, row: 72 };
-const MESA_ROWS = [
-  { id: "#48212", a: "Consulta sobre facturación", e: "Administración", st: "En curso" },
-  { id: "#48209", a: "Alta de usuario en el panel", e: "Soporte", st: "En curso" },
-  { id: "#48204", a: "Duda con costos de envío", e: "Soporte", st: "Esperando cliente" },
-  { id: "#48198", a: "Cambio masivo de precios", e: "Onboarding", st: "En curso" },
-  { id: "#48190", a: "Publicaciones pausadas en Mercado Libre", e: "Soporte", st: "Resuelto" },
-  { id: "#48187", a: "Configuración de medios de pago", e: "Onboarding", st: "Resuelto" },
+// Structure copied from the real ticket desk ("No asignados" view, 11/11/2026):
+// top bar with search, dark icon rail, page title + team, one tab with a
+// counter, "Total de tickets", and one card per ticket. Every ticket, company
+// and team below is fictional.
+const MESA = { x: 1800, y: 70, w: 1320, h: 780, top: 64, rail: 64, pad: 40, head: 272, row: 90, card: 78 };
+type Sla = { v: string; tone: "ok" | "warn" | "bad"; done?: boolean };
+const MESA_ROWS: {
+  id: string; a: string; e: string; date: string; sla: [Sla, Sla]; pr: string; inc?: boolean; off?: boolean;
+}[] = [
+  { id: "# 48209", a: "Consulta de facturación", e: "Tienda 14", date: "10/11/26", sla: [{ v: "2%", tone: "ok" }, { v: "1%", tone: "ok" }], pr: "Media" },
+  { id: "# 48204", a: "Artículo sin stock", e: "Tienda 22", date: "10/11/26", sla: [{ v: "3%", tone: "ok" }, { v: "1%", tone: "ok" }], pr: "Media", inc: true },
+  { id: "# 48198", a: "Stock de combo", e: "Tienda 31", date: "09/11/26", sla: [{ v: "12%", tone: "ok" }, { v: "6%", tone: "ok" }], pr: "Media", inc: true },
+  { id: "# 48190", a: "Publicaciones pausadas", e: "Tienda 45", date: "05/11/26", sla: [{ v: "0%", tone: "ok", done: true }, { v: "51%", tone: "warn" }], pr: "Media", off: true },
+];
+const MESA_NEW = {
+  id: "# 48213", a: "Error en servidor", e: "Tienda 07", date: "10/11/26",
+  sla: [{ v: "0%", tone: "ok" }, { v: "0%", tone: "ok" }] as [Sla, Sla], pr: "Alta", inc: true,
+};
+
+// Teams chat window, to the right of the help desk. Structure copied from the
+// real "Sincro Monitor · novedades" card the monitor posts to the team chat
+// (screenshot from the user, 11/11/2026). Stores and figures are fictional.
+const TEAMS = { x: -1180, y: -40, w: 940, h: 1000 }; // to the left of the panel
+const TEAMS_CX = TEAMS.x + TEAMS.w / 2;
+const TT = { win: 744, signal: [732, 790] as const, typing: 796, card: 818, rows: 832, inc: 898, fix: 952, hi: [974, 992, 1010] };
+const NOVEDADES: { l: string; n?: number; v: string }[] = [
+  { l: "Sitios afectados", n: 3, v: "" },
+  { l: "Incidentes abiertos", n: 6, v: " (1 nuevo, 1 recurrente)" },
+  { l: "Prioridad alta", n: 1, v: "" },
+  { l: "Arreglos por aprobar", n: 3, v: "" },
+  { l: "Resueltos desde el último aviso", n: 0, v: "" },
+  { l: "Más antiguo", v: "tienda-12.ejemplo.com.ar · Errores en el log · 15 h" },
+];
+const FIXES = [
+  "Reenviar al ERP los 3 pedidos sin nota de pedido",
+  "Relanzar la sincro de pedidos de la tienda",
+  "Reintentar la sincro con un timeout de 300 s",
 ];
 
 // ---------- timing (frames, 30 fps) ----------
@@ -78,9 +109,29 @@ const T = {
   rowClick: 300,
   ticketClick: 440,
   ticketDone: 466,
-  fly: [480, 556] as const,
-  land: 556,
+  fly: [480, 546] as const,
+  land: 546,
+  // back on the panel: the alert, which folds into a bell that flies to Teams
+  alert: 642,
+  fold: [700, 730] as const,
+  // back to the help desk: open the ticket, type the answer and send it
+  openRow: 1112,
+  opened: [1116, 1140] as const,
+  responder: 1144,
+  typeFrom: 1158,
+  send: 1272,
+  through: [1404, 1440] as const,
 };
+
+const ALERT = { x: 1080, y: 150, w: 520, h: 124 };
+const BELL_HOME = { x: 1170, y: 56 };
+const BELL_LAND = { x: TEAMS.x + 48, y: TEAMS.y + 38 };
+// The opened ticket covers the help desk window.
+const TV = { x: 1800, y: 70, w: 1320, h: 780 };
+const TVX = TV.x + 64 + 40;
+const ED = { x: TVX, y: 546, w: 720, h: 220 };
+const REPLY =
+  "Hola, ¿cómo están? Detectamos un error de servidor en la sincronización de la tienda. Ya reintentamos la sincro con más tiempo de espera y quedó funcionando. Cualquier cosa, nos avisan.";
 
 // ---------- helpers ----------
 const OUT = Easing.bezier(0.16, 1, 0.3, 1);
@@ -98,19 +149,50 @@ const k = (
   });
 const hex = (a: number) => Math.round(Math.max(0, Math.min(1, a)) * 255).toString(16).padStart(2, "0");
 
-/** Camera: which world point sits at screen centre, how close, how tilted. */
+/** Camera keyframes [frame, focusX, focusY, scale]: which world point sits at screen centre. */
+const KEYS: [number, number, number, number][] = [
+  [0, 300, 668, 2.4], [112, 300, 668, 2.4], [160, 820, 410, 1], [190, 820, 410, 1],
+  [225, 760, 400, 1.12], [270, 760, 400, 1.12], [305, 1060, 610, 1.5], [470, 1060, 610, 1.5],
+  // follow the ticket to the right, into the help desk
+  [500, 1700, 470, 0.7], [546, 2460, 420, 1.0], [560, 2460, 420, 1.0], [576, 2400, 350, 1.55], [600, 2400, 350, 1.55],
+  // whip back to the panel: the alert drops from the bell
+  [630, 820, 410, 1.0], [644, 820, 410, 1.0], [658, 1340, 220, 1.7], [700, 1340, 220, 1.7], [730, 1340, 240, 1.35],
+  // follow the bell down to Teams
+  [762, 300, 260, 0.7], [792, TEAMS_CX, TEAMS.y + 500, 0.98], [998, TEAMS_CX, TEAMS.y + 500, 0.98],
+  [1012, TEAMS_CX, TEAMS.y + 740, 1.45], [1042, TEAMS_CX, TEAMS.y + 740, 1.45],
+  // fly to the help desk and open the ticket
+  [1068, 900, 420, 0.4], [1092, 2460, 420, 1.0], [1106, 2400, 381, 1.3], [1118, 2400, 381, 1.3],
+  [1140, 2460, 460, 1.0], [1150, 2460, 460, 1.0], [1166, ED.x + 360, 640, 1.6], [1268, ED.x + 360, 640, 1.6],
+  [1292, 2460, 460, 1.0], [1320, 2460, 460, 1.0],
+  // everything at once, then out through the sent reply
+  [1352, 970, 440, 0.43], [1396, 970, 440, 0.43], [1404, 970, 440, 0.43],
+];
+const camAt = (f: number) => {
+  const t = KEYS.map((q) => q[0]);
+  let c = { fx: k(f, t, KEYS.map((q) => q[1])), fy: k(f, t, KEYS.map((q) => q[2])), s: k(f, t, KEYS.map((q) => q[3])) };
+  const p = k(f, [T.through[0], T.through[1]], [0, 1], Easing.bezier(0.7, 0, 0.84, 0));
+  if (p > 0) {
+    c = {
+      fx: k(f, [T.through[0], T.through[0] + 12], [c.fx, ED.x + 330]),
+      fy: k(f, [T.through[0], T.through[0] + 12], [c.fy, ED.y + 70]),
+      s: c.s * Math.pow(60, p),
+    };
+  }
+  return c;
+};
 const camera = (f: number) => {
-  const t = [0, 112, 160, 190, 225, 270, 305, 410, 470, 520, 590, 640, 700, 760];
-  const s = [2.4, 2.4, 1, 1, 1.12, 1.12, 1.5, 1.5, 1.5, 0.6, 0.6, 1.08, 1.08, 0.6];
-  const fx = [300, 300, 820, 820, 760, 760, 1060, 1060, 1060, 1470, 1470, 2340, 2340, 1470];
-  const fy = [668, 668, 460, 460, 400, 400, 610, 610, 610, 470, 470, 400, 400, 470];
-  const tt = [0, 112, 136, 168, 470, 520, 590, 640, 700, 760, 820];
+  const c = camAt(f);
+  const prev = camAt(f - 1);
+  // velocity in screen pixels per frame drives the tilt and the motion blur
+  const vx = (c.fx - prev.fx) * c.s;
+  const vy = (c.fy - prev.fy) * c.s;
+  const v = Math.hypot(vx, vy);
+  const tt = [0, 112, 136, 168, 470, 520];
   return {
-    s: k(f, t, s),
-    fx: k(f, t, fx),
-    fy: k(f, t, fy),
-    rx: k(f, tt, [0, 0, 12, 0, 0, 8, 6, 0, 0, 6, 4]),
-    ry: k(f, tt, [0, 0, -10, 0, 0, -6, -5, 0, 0, -5, -3]),
+    ...c,
+    rx: k(f, tt, [0, 0, 12, 0, 0, 4]) + Math.max(-8, Math.min(8, vy * 0.06)),
+    ry: k(f, tt, [0, 0, -10, 0, 0, -3]) - Math.max(-10, Math.min(10, vx * 0.05)),
+    blur: f >= T.through[0] ? 0 : Math.min(7, Math.max(0, (v - 12) / 14)),
   };
 };
 
@@ -633,7 +715,8 @@ const Table: React.FC<{ f: number; filterOn: number }> = ({ f, filterOn }) => {
 // Where things are, in world coordinates.
 const firstRowY = TABLE.y + TABLE.head + TABLE.row / 2;
 const BTN = { x: TABLE.x + TABLE.w - 20 - 22 - 110, y: TABLE.y + TABLE.head + TABLE.row + DETAIL_H - 16 - 22 - 25 };
-const MESA_SLOT = { x: MESA.x + 40, y: MESA.y + MESA.head };
+const MESA_SLOT = { x: MESA.x + MESA.rail + MESA.pad, y: MESA.y + MESA.head };
+const CARD_W = MESA.w - MESA.rail - MESA.pad * 2;
 
 const Cursor: React.FC<{ f: number }> = ({ f }) => {
   const chip = { x: chipX(FOCUS_STATUS) + CHIP.w[FOCUS_STATUS] / 2, y: CHIP.y + CHIP.h / 2 };
@@ -683,50 +766,179 @@ const Cursor: React.FC<{ f: number }> = ({ f }) => {
 };
 
 // ---------- help desk ----------
-const NewTicketRow: React.FC<{ highlight: number }> = ({ highlight }) => (
+const Icon: React.FC<{ d: string; c?: string; size?: number; w?: number }> = ({ d, c = color.gray600, size = 22, w = 1.8 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+    <path d={d} fill="none" stroke={c} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const ICON = {
+  search: "M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4",
+  plus: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8v8M8 12h8",
+  alert: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7.5v5.5M12 16.2v.3",
+  bell: "M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20.5h4",
+  chart: "M4 4v16h16M7 15l4-4 3 3 5-6",
+  tag: "M3 12V4h8l10 10-8 8zM7.5 8.2v.1",
+  swap: "M4 8h14l-3-3M20 16H6l3 3",
+  team: "M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2.5 20a6.5 6.5 0 0 1 13 0M16 4.3a3.5 3.5 0 0 1 0 6.4M18 14a6.5 6.5 0 0 1 3.5 6",
+  userAdd: "M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM3 21a7 7 0 0 1 12.5-4.3M19 14v6M16 17h6",
+  company: "M6 21V8l6-4 6 4v13M4 21h16M10 21v-5h4v5",
+  calendar: "M4 6h16v14H4zM4 10h16M8 3v4M16 3v4",
+  chevron: "M7 10l5 5 5-5",
+  dots: "M12 5v.1M12 12v.1M12 19v.1",
+} as const;
+
+/** Red warning triangle for incidents, green gear for queries (as in the real desk). */
+const TypeIcon: React.FC<{ inc?: boolean }> = ({ inc }) =>
+  inc ? (
+    <svg width={24} height={24} viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+      <circle cx={12} cy={12} r={11} fill={color.error} />
+      <path d="M12 6.5l5 9h-10z" fill="none" stroke="#fff" strokeWidth={1.8} strokeLinejoin="round" />
+      <path d="M12 10.2v2.6M12 14.4v.1" stroke="#fff" strokeWidth={1.6} strokeLinecap="round" />
+    </svg>
+  ) : (
+    <Icon d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zM12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8" c={color.success} size={22} />
+  );
+
+const SlaPill: React.FC<{ s: Sla }> = ({ s }) => {
+  const c = s.tone === "ok" ? color.success : s.tone === "warn" ? color.warning : color.error;
+  return (
+    <div
+      style={{
+        height: 30,
+        padding: "0 10px",
+        borderRadius: radius.pill,
+        background: `${c}1c`,
+        color: c,
+        fontSize: 15,
+        fontWeight: font.medium,
+        display: "flex",
+        alignItems: "center",
+        gap: 5,
+      }}
+    >
+      {s.v}
+      {s.done && (
+        <svg width={15} height={15} viewBox="0 0 16 16">
+          <circle cx={8} cy={8} r={8} fill={color.success} />
+          <path d="M4.5 8.2l2.3 2.2 4.6-4.6" stroke="#fff" strokeWidth={1.8} fill="none" />
+        </svg>
+      )}
+    </div>
+  );
+};
+
+const Divider = () => <div style={{ width: 1, alignSelf: "stretch", margin: "16px 0", background: color.gray100 }} />;
+
+const TicketCard: React.FC<{ r: typeof MESA_ROWS[number]; highlight?: number; isNew?: boolean }> = ({ r, highlight = 0, isNew }) => (
   <div
     style={{
-      height: MESA.row,
+      height: MESA.card,
+      width: CARD_W,
       display: "flex",
       alignItems: "center",
-      gap: 20,
-      padding: "0 40px",
-      borderBottom: `1px solid ${color.gray100}`,
-      background: `${color.pink}${hex(0.04 + highlight * 0.1)}`,
-      boxShadow: `inset 5px 0 0 ${color.pink}`,
-      fontSize: 19,
+      gap: 14,
+      padding: "0 16px 0 20px",
+      borderRadius: radius.panel,
+      background: isNew ? `${color.pink}${hex(0.03 + highlight * 0.08)}` : color.white,
+      border: `1px solid ${isNew ? color.pink + "55" : color.gray200}`,
+      boxShadow: isNew ? `inset 5px 0 0 ${color.pink}, ${shadow.md}` : shadow.sm,
+      fontSize: 17,
+      color: color.black,
       whiteSpace: "nowrap",
     }}
   >
-    <div style={{ width: 90, fontWeight: font.semibold, color: color.pink }}>{TICKET}</div>
-    <div style={{ flex: 1, overflow: "hidden" }}>
-      <div style={{ fontWeight: font.semibold, color: color.black }}>
-        Error en servidor · {STORE}
+    <div style={{ width: 70, color: color.gray600 }}>{r.id}</div>
+    <Divider />
+    <TypeIcon inc={r.inc} />
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ fontWeight: isNew ? font.semibold : font.medium, textDecoration: "underline", textUnderlineOffset: 3, overflow: "hidden", textOverflow: "ellipsis" }}>
+        {r.a}
       </div>
-      <div style={{ fontSize: 15, color: color.gray600 }}>Creado desde Sincro Monitor · ticket interno</div>
+      <div style={{ fontSize: 13, color: color.gray600, marginTop: 3 }}>Soporte sincro</div>
     </div>
-    <div style={{ width: 170, color: color.gray600 }}>Soporte sincro</div>
-    <div style={{ width: 170 }}>
-      <span
-        style={{
-          padding: "6px 14px",
-          borderRadius: radius.pill,
-          background: gradient.brand,
-          color: color.white,
-          fontSize: 15,
-          fontWeight: font.semibold,
-        }}
-      >
-        Nuevo
-      </span>
+    <Divider />
+    <div style={{ width: 150, display: "flex", alignItems: "center", gap: 10 }}>
+      <Icon d={ICON.company} size={20} />
+      <div>
+        <div style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>{r.e}</div>
+        <div style={{ fontSize: 13, color: color.gray600, marginTop: 3, textDecoration: "underline" }}>Nivel 03</div>
+      </div>
+    </div>
+    <Divider />
+    <div style={{ width: 108, display: "flex", alignItems: "center", gap: 8, color: color.black }}>
+      <Icon d={ICON.calendar} size={18} />
+      {r.date}
+    </div>
+    <Divider />
+    <div style={{ width: 128, display: "flex", gap: 8 }}>
+      <SlaPill s={r.sla[0]} />
+      <SlaPill s={r.sla[1]} />
+    </div>
+    <Divider />
+    <div
+      style={{
+        height: 40,
+        padding: "0 18px",
+        borderRadius: radius.md,
+        border: `1.5px solid ${color.black}`,
+        display: "flex",
+        alignItems: "center",
+        fontSize: 16,
+        fontWeight: font.medium,
+      }}
+    >
+      Asignar ticket
+    </div>
+    <div
+      style={{
+        width: 86,
+        height: 40,
+        borderRadius: radius.md,
+        border: r.off ? "none" : `1.5px solid ${isNew ? color.error : color.black}`,
+        background: r.off ? color.gray100 : "transparent",
+        color: r.off ? color.gray300 : isNew ? color.error : color.black,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 4,
+        fontSize: 16,
+        fontWeight: font.medium,
+      }}
+    >
+      {r.pr}
+      <Icon d={ICON.chevron} size={14} c={r.off ? color.gray300 : isNew ? color.error : color.black} w={2.2} />
     </div>
   </div>
 );
 
+const Badge: React.FC<{ n: number; c?: string }> = ({ n, c = color.pink }) => (
+  <span
+    style={{
+      minWidth: 24,
+      height: 24,
+      padding: "0 7px",
+      borderRadius: 12,
+      background: c,
+      color: color.white,
+      fontSize: 14,
+      fontWeight: font.semibold,
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
+    {n}
+  </span>
+);
+
 const Mesa: React.FC<{ f: number }> = ({ f }) => {
-  const appear = k(f, [478, 520], [0, 1], OUT);
+  const appear = k(f, [468, 504], [0, 1], OUT);
   const insert = k(f, [T.land - 4, T.land + 16], [0, 1], OUT);
   const glow = k(f, [T.land, T.land + 10, T.land + 70], [0, 1, 0.35]);
+  const landed = f >= T.land;
+  const n = landed ? 5 : 4;
+  const bump = k(f, [T.land, T.land + 6, T.land + 16], [1, 1.35, 1]);
+  const railIcons = [ICON.chart, ICON.tag, ICON.swap, ICON.team, ICON.userAdd];
   return (
     <div
       style={{
@@ -736,7 +948,7 @@ const Mesa: React.FC<{ f: number }> = ({ f }) => {
         width: MESA.w,
         height: MESA.h,
         borderRadius: 28,
-        background: color.white,
+        background: color.gray50,
         border: `1px solid ${color.gray200}`,
         boxShadow: "0 40px 90px -30px rgba(26,26,28,.35)",
         overflow: "hidden",
@@ -744,70 +956,137 @@ const Mesa: React.FC<{ f: number }> = ({ f }) => {
         translate: `${(1 - appear) * 160}px 0`,
       }}
     >
-      <div style={{ padding: "30px 40px 0", display: "flex", alignItems: "center", gap: 16 }}>
-        <div
-          style={{
-            width: 46,
-            height: 46,
-            borderRadius: 14,
-            background: color.black,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <svg width={24} height={24} viewBox="0 0 24 24">
-            <path d="M4 7h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4z" fill="none" stroke="#fff" strokeWidth={2} />
-          </svg>
-        </div>
-        <div style={{ fontSize: 30, fontWeight: font.semibold, color: color.black }}>Mesa de ayuda</div>
-        <div style={{ flex: 1 }} />
-        <div style={{ fontSize: 18, color: color.gray600 }}>
-          Abiertos{" "}
-          <b style={{ color: color.black }}>{f >= T.land ? 24 : 23}</b>
-        </div>
-      </div>
+      {/* top bar */}
       <div
         style={{
-          display: "flex",
-          gap: 20,
-          padding: "0 40px",
-          height: 56,
-          marginTop: 22,
-          alignItems: "center",
+          height: MESA.top,
+          background: color.white,
           borderBottom: `1px solid ${color.gray100}`,
-          ...label,
+          display: "flex",
+          alignItems: "center",
+          gap: 22,
+          padding: "0 30px 0 22px",
         }}
       >
-        <div style={{ width: 90 }}>N.º</div>
-        <div style={{ flex: 1 }}>Asunto</div>
-        <div style={{ width: 170 }}>Equipo</div>
-        <div style={{ width: 170 }}>Estado</div>
-      </div>
-      <div style={{ height: insert * MESA.row, overflow: "hidden", opacity: insert }}>
-        <NewTicketRow highlight={glow} />
-      </div>
-      {MESA_ROWS.map((r) => (
+        <div style={{ width: 28, height: 28, borderRadius: 8, background: gradient.brand }} />
+        <div style={{ fontSize: 20, fontWeight: font.semibold, color: color.black }}>Mesa de ayuda</div>
+        <div style={{ flex: 1 }} />
         <div
-          key={r.id}
           style={{
-            height: MESA.row,
+            width: 330,
+            height: 38,
+            borderRadius: radius.md,
+            background: color.gray50,
+            border: `1px solid ${color.gray100}`,
             display: "flex",
             alignItems: "center",
-            gap: 20,
-            padding: "0 40px",
-            borderBottom: `1px solid ${color.gray100}`,
-            fontSize: 19,
-            color: color.black,
-            whiteSpace: "nowrap",
+            justifyContent: "space-between",
+            padding: "0 14px",
+            fontSize: 15,
+            color: color.gray300,
           }}
         >
-          <div style={{ width: 90, color: color.gray600 }}>{r.id}</div>
-          <div style={{ flex: 1 }}>{r.a}</div>
-          <div style={{ width: 170, color: color.gray600 }}>{r.e}</div>
-          <div style={{ width: 170, color: r.st === "Resuelto" ? color.success : color.gray600 }}>{r.st}</div>
+          Buscar por ticket o empresa
+          <Icon d={ICON.search} size={18} />
         </div>
-      ))}
+        <Icon d={ICON.plus} c={color.pink} />
+        <Icon d={ICON.alert} />
+        <Icon d={ICON.bell} />
+      </div>
+      {/* icon rail */}
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          top: MESA.top,
+          bottom: 0,
+          width: MESA.rail,
+          background: color.black,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 14,
+          paddingTop: 24,
+        }}
+      >
+        {railIcons.map((d, i) => (
+          <div
+            key={d}
+            style={{
+              position: "relative",
+              width: 44,
+              height: 44,
+              borderRadius: radius.md,
+              background: i === 2 ? gradient.brand : "transparent",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Icon d={d} c={color.white} size={22} />
+            {i === 2 && (
+              <div style={{ position: "absolute", right: -6, top: -6, scale: String(bump) }}>
+                <Badge n={n} c={color.error} />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      {/* page header */}
+      <div style={{ position: "absolute", left: MESA.rail + MESA.pad, top: MESA.top + 26 }}>
+        <div style={{ fontSize: 30, fontWeight: font.medium, color: color.black }}>No asignados</div>
+        <div style={{ fontSize: 17, color: color.pink, marginTop: 6 }}>Agente responsable / Equipo Soporte Sincro</div>
+      </div>
+      {/* tab bar */}
+      <div
+        style={{
+          position: "absolute",
+          left: MESA.rail + MESA.pad,
+          top: MESA.top + 118,
+          width: CARD_W,
+          height: 44,
+          borderBottom: `1px solid ${color.gray200}`,
+          display: "flex",
+          alignItems: "flex-start",
+        }}
+      >
+        <div
+          style={{
+            height: 44,
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 8,
+            fontSize: 18,
+            fontWeight: font.medium,
+            color: color.pink,
+            boxShadow: `inset 0 -3px 0 ${color.pink}`,
+            paddingRight: 4,
+          }}
+        >
+          No asignados
+          <span style={{ scale: String(bump) }}>
+            <Badge n={n} />
+          </span>
+        </div>
+        <div style={{ flex: 1 }} />
+        <Icon d={ICON.search} size={20} />
+        <div style={{ width: 1, height: 22, background: color.gray200, margin: "0 14px" }} />
+        <Icon d={ICON.dots} size={20} w={2.6} />
+      </div>
+      <div style={{ position: "absolute", left: MESA.rail + MESA.pad, top: MESA.top + 178, fontSize: 15, color: color.gray600 }}>
+        Total de tickets: {n}
+      </div>
+      {/* ticket cards */}
+      <div style={{ position: "absolute", left: MESA.rail + MESA.pad, top: MESA.head }}>
+        <div style={{ height: insert * MESA.row, opacity: insert }}>
+          <TicketCard r={MESA_NEW} highlight={glow} isNew />
+        </div>
+        {MESA_ROWS.map((r) => (
+          <div key={r.id} style={{ height: MESA.row }}>
+            <TicketCard r={r} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
@@ -825,7 +1104,7 @@ const FlyingTicket: React.FC<{ f: number }> = ({ f }) => {
     return {
       x: interpolate(p, [0, 1], [sx, ex]),
       y: interpolate(p, [0, 1], [sy, ey]) - Math.sin(p * Math.PI) * 260,
-      w: interpolate(p, [0, 1], [220, MESA.w - 80]),
+      w: interpolate(p, [0, 1], [220, CARD_W]),
       r: Math.sin(p * Math.PI) * -6,
       lift: k(ff, [a - 6, a + 6], [0, 1], OUT),
     };
@@ -844,8 +1123,8 @@ const FlyingTicket: React.FC<{ f: number }> = ({ f }) => {
               left: p.x,
               top: p.y,
               width: p.w,
-              height: MESA.row - 8,
-              borderRadius: radius.lg,
+              height: MESA.card,
+              borderRadius: radius.panel,
               background: main ? color.white : color.pink,
               border: main ? `2px solid ${color.pink}` : "none",
               boxShadow: main ? `0 ${20 * p.lift}px 40px -10px rgba(231,0,126,.45)` : "none",
@@ -879,7 +1158,7 @@ const FlyingTicket: React.FC<{ f: number }> = ({ f }) => {
   );
 };
 
-/** 315 dots that light up by status and collapse into the donut ring. */
+/** One dot per store (TOTAL) that light up by status and collapse into the donut ring. */
 const DotField: React.FC<{ f: number; s: number }> = ({ f, s }) => {
   const cols = 21;
   const sp = 40;
@@ -947,6 +1226,373 @@ const Sweep: React.FC<{ f: number; from: number; w: number }> = ({ f, from, w })
   );
 };
 
+// ---------- Teams notification ----------
+const Dot: React.FC<{ c: string; size?: number }> = ({ c, size = 14 }) => (
+  <span style={{ display: "inline-block", width: size, height: size, borderRadius: size, background: c, flexShrink: 0, boxShadow: `inset 0 0 0 1.5px ${color.white}66` }} />
+);
+const WRENCH = "M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5z";
+
+const Teams: React.FC<{ f: number }> = ({ f }) => {
+  const appear = k(f, [TT.win, TT.win + 36], [0, 1], OUT);
+  if (appear <= 0) return null;
+  const typing = f >= TT.typing && f < TT.card;
+  const card = k(f, [TT.card, TT.card + 18], [0, 1], OUT);
+  const ping = k(f, [TT.card, TT.card + 24], [0, 1], OUT);
+  const rowIn = (i: number) => k(f, [TT.rows + i * 9, TT.rows + i * 9 + 14], [0, 1], OUT);
+  const incIn = (i: number) => k(f, [TT.inc + i * 14, TT.inc + i * 14 + 16], [0, 1], OUT);
+  const fixIn = (i: number) => k(f, [TT.fix + i * 10, TT.fix + i * 10 + 16], [0, 1], OUT);
+  const fixHi = (i: number) => k(f, [TT.hi[i], TT.hi[i] + 8, TT.hi[i] + 40], [0, 1, 0.25]);
+  const pad = 28;
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: TEAMS.x,
+        top: TEAMS.y,
+        width: TEAMS.w,
+        height: TEAMS.h,
+        borderRadius: 28,
+        background: color.gray50,
+        border: `1px solid ${color.gray200}`,
+        boxShadow: "0 40px 90px -30px rgba(26,26,28,.35)",
+        overflow: "hidden",
+        opacity: appear,
+        translate: `${(1 - appear) * 160}px 0`,
+      }}
+    >
+      {/* channel header */}
+      <div style={{ height: 76, background: color.white, borderBottom: `1px solid ${color.gray100}`, display: "flex", alignItems: "center", gap: 14, padding: `0 ${pad}px` }}>
+        <div style={{ position: "relative", width: 40, height: 40, borderRadius: 20, background: color.black, color: color.white, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: font.semibold }}>
+          S
+          <div style={{ position: "absolute", inset: -4, borderRadius: 24, border: `3px solid ${color.pink}`, scale: String(1 + ping * 0.6), opacity: ping > 0 && ping < 1 ? 1 - ping : 0 }} />
+        </div>
+        <div style={{ fontSize: 22, fontWeight: font.semibold, color: color.black }}>Sincro Presta Monitor</div>
+        {["Chat", "Compartida", "Notas"].map((tab, i) => (
+          <div key={tab} style={{ fontSize: 17, height: 76, display: "flex", alignItems: "center", color: i === 0 ? color.black : color.gray600, fontWeight: i === 0 ? font.semibold : font.regular, boxShadow: i === 0 ? `inset 0 -3px 0 ${color.pink}` : "none", marginLeft: i === 0 ? 10 : 0 }}>
+            {tab}
+          </div>
+        ))}
+        <div style={{ flex: 1 }} />
+        <div style={{ fontSize: 14, color: color.gray600, padding: "6px 12px", borderRadius: radius.pill, background: color.gray100 }}>Teams · chat del equipo</div>
+      </div>
+      {/* previous message, cut at the top */}
+      <div style={{ margin: `0 ${pad + 46}px`, padding: "18px 24px", background: color.white, border: `1px solid ${color.gray200}`, borderTop: "none", borderRadius: "0 0 12px 12px", opacity: 0.55 }}>
+        <div style={{ display: "inline-block", padding: "8px 16px", border: `1.5px solid ${color.gray300}`, borderRadius: radius.md, fontSize: 15, color: color.gray600 }}>Abrir Sincro Monitor</div>
+      </div>
+      {/* sender */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, margin: `22px ${pad}px 8px` }}>
+        <div style={{ width: 34, height: 34, borderRadius: 10, background: gradient.brand }} />
+        <div style={{ fontSize: 15, color: color.gray600 }}>
+          Flujos de trabajo <span style={{ marginLeft: 8 }}>23:20</span>
+        </div>
+      </div>
+      {typing && (
+        <div style={{ marginLeft: pad + 46, display: "flex", gap: 6, padding: "14px 18px", background: color.white, borderRadius: radius.panel, width: 74, border: `1px solid ${color.gray200}` }}>
+          {[0, 1, 2].map((i) => (
+            <span key={i} style={{ width: 9, height: 9, borderRadius: 5, background: color.gray300, translate: `0 ${-Math.max(0, Math.sin((f - TT.typing) / 3 - i)) * 5}px` }} />
+          ))}
+        </div>
+      )}
+      {/* the card */}
+      <div
+        style={{
+          margin: `0 ${pad}px 0 ${pad + 46}px`,
+          padding: "22px 26px 24px",
+          background: color.white,
+          border: `1px solid ${color.gray200}`,
+          borderRadius: radius.panel,
+          boxShadow: `0 ${18 * card}px 40px -16px rgba(231,0,126,${0.3 * card})`,
+          opacity: card,
+          scale: String(0.96 + card * 0.04),
+          translate: `0 ${(1 - card) * 24}px`,
+          transformOrigin: "0 0",
+          fontSize: 17,
+          color: color.black,
+          lineHeight: 1.35,
+        }}
+      >
+        <div style={{ fontSize: 21, fontWeight: font.semibold }}>Sincro Monitor · novedades</div>
+        <div style={{ fontSize: 15, color: color.gray600, marginBottom: 12 }}>10/11 23:20 (hora AR)</div>
+        {NOVEDADES.map((r, i) => {
+          const p = rowIn(i);
+          return (
+            <div key={r.l} style={{ display: "flex", padding: "5px 0", opacity: p, translate: `${(1 - p) * 20}px 0` }}>
+              <div style={{ width: 300, fontWeight: font.medium }}>{r.l}</div>
+              <div>
+                {r.n !== undefined && <CountUp to={r.n} delay={TT.rows + i * 9} duration={16} />}
+                {r.v}
+              </div>
+            </div>
+          );
+        })}
+        <div style={{ height: 1, background: color.gray100, margin: "14px 0" }} />
+        <div style={{ fontWeight: font.semibold, marginBottom: 8, opacity: incIn(0) }}>A. Incidentes abiertos</div>
+        <div style={{ display: "flex", gap: 10, alignItems: "baseline", opacity: incIn(0), color: color.error }}>
+          <Dot c={color.error} />
+          <div>
+            <b style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>tienda-07.ejemplo.com.ar</b> · prioridad alta · 2 incidentes · desde hace 1 h
+          </div>
+        </div>
+        {[
+          { c: color.error, b: "Error en servidor", m: " (#41, nuevo, 1 h): la tienda no respondió en 120 s · ticket # 48213" },
+          { c: color.orange, b: "Pedidos sin enviar al ERP", m: " (#36, persistente, 12 h): 3 sin nota de pedido · ", fix: "2 arreglos por aprobar" },
+        ].map((it, i) => {
+          const p = incIn(i + 1);
+          return (
+            <div key={it.b} style={{ display: "flex", gap: 10, alignItems: "baseline", margin: "8px 0 0 26px", opacity: p, translate: `${(1 - p) * 20}px 0` }}>
+              <span style={{ color: color.gray300 }}>◦</span>
+              <Dot c={it.c} size={12} />
+              <div>
+                <b>{it.b}</b>
+                {it.m}
+                {it.fix && (
+                  <span style={{ whiteSpace: "nowrap" }}>
+                    <span style={{ display: "inline-block", verticalAlign: -3, marginRight: 4 }}>
+                      <Icon d={WRENCH} c={color.pink} size={17} />
+                    </span>
+                    {it.fix}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        <div style={{ height: 1, background: color.gray100, margin: "16px 0 14px" }} />
+        <div style={{ fontWeight: font.semibold, marginBottom: 8, opacity: fixIn(0) }}>B. Arreglos por aprobar</div>
+        {FIXES.map((t, i) => {
+          const p = fixIn(i);
+          const h = fixHi(i);
+          return (
+            <div
+              key={t}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "9px 12px",
+                margin: "0 -12px",
+                borderRadius: radius.md,
+                background: `${color.pink}${hex(h * 0.1)}`,
+                opacity: p,
+                translate: `${(1 - p) * 20}px 0`,
+              }}
+            >
+              <Icon d={WRENCH} c={color.pink} size={20} />
+              <div style={{ flex: 1 }}>{t}</div>
+              <span style={{ fontSize: 14, fontWeight: font.medium, color: color.pink, padding: "4px 12px", borderRadius: radius.pill, background: color.pinkLight, scale: String(1 + h * 0.08) }}>
+                Por aprobar
+              </span>
+            </div>
+          );
+        })}
+        <div style={{ marginTop: 18, display: "inline-block", padding: "10px 18px", border: `1.5px solid ${color.black}`, borderRadius: radius.md, fontSize: 16, fontWeight: font.medium, opacity: fixIn(2) }}>
+          Abrir Sincro Monitor
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ---------- alert on the panel, folding into a bell that flies to Teams ----------
+const BELL_D = "M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20.5h4";
+
+/** Bell in the panel header; rings and shows a badge when the alert arrives. */
+const HeaderBell: React.FC<{ f: number }> = ({ f }) => {
+  const on = f >= T.alert;
+  const ring = on ? Math.sin((f - T.alert) * 0.9) * 18 * Math.max(0, 1 - (f - T.alert) / 40) : 0;
+  const pop = k(f, [T.alert, T.alert + 6, T.alert + 14], [0, 1.3, 1]);
+  return (
+    <div style={{ position: "absolute", left: BELL_HOME.x - 22, top: BELL_HOME.y - 22, width: 44, height: 44, borderRadius: 22, background: on ? `${color.pink}14` : "transparent", display: "flex", alignItems: "center", justifyContent: "center", opacity: k(f, [128, 150], [0, 1]) }}>
+      <svg width={26} height={26} viewBox="0 0 24 24" style={{ rotate: `${ring}deg`, transformOrigin: "50% 10%" }}>
+        <path d={BELL_D} fill="none" stroke={on ? color.pink : color.gray600} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      {on && (
+        <span style={{ position: "absolute", right: -4, top: -4, minWidth: 22, height: 22, borderRadius: 11, background: color.error, color: "#fff", fontSize: 13, fontWeight: font.semibold, display: "flex", alignItems: "center", justifyContent: "center", scale: String(pop) }}>1</span>
+      )}
+    </div>
+  );
+};
+
+/** The incident alert: drops from the bell, then folds into a round bell. */
+const AlertToast: React.FC<{ f: number }> = ({ f }) => {
+  if (f < T.alert || f > T.fold[1] + 2) return null;
+  const drop = k(f, [T.alert, T.alert + 16], [0, 1], OUT);
+  const fold = k(f, [T.fold[0], T.fold[1]], [0, 1], Easing.bezier(0.6, 0, 0.3, 1));
+  const w = ALERT.w + (96 - ALERT.w) * fold;
+  const h = ALERT.h + (96 - ALERT.h) * fold;
+  const cx = ALERT.x + ALERT.w / 2, cy = ALERT.y + ALERT.h / 2;
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: cx - w / 2,
+        top: cy - h / 2 - (1 - drop) * 70,
+        width: w,
+        height: h,
+        borderRadius: 18 + fold * 30,
+        background: fold > 0.6 ? gradient.brand : color.white,
+        border: `1.5px solid ${color.pink}55`,
+        boxShadow: `inset ${6 * (1 - fold)}px 0 0 ${color.error}, 0 24px 50px -16px rgba(231,0,126,.45)`,
+        opacity: drop,
+        overflow: "hidden",
+        zIndex: 30,
+      }}
+    >
+      <div style={{ padding: "16px 22px", opacity: 1 - fold * 2, display: "flex", gap: 14 }}>
+        <div style={{ width: 44, height: 44, borderRadius: 22, background: `${color.error}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <svg width={24} height={24} viewBox="0 0 24 24">
+            <path d={BELL_D} fill="none" stroke={color.error} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        <div style={{ whiteSpace: "nowrap" }}>
+          <div style={{ fontSize: 20, fontWeight: font.semibold, color: color.black }}>Nuevo incidente · prioridad alta</div>
+          <div style={{ fontSize: 16, color: color.gray600, marginTop: 2 }}>{STORE} · Error en servidor</div>
+          <div style={{ fontSize: 15, color: color.pink, marginTop: 6 }}>Avisando al equipo en Teams…</div>
+        </div>
+      </div>
+      <svg width={40} height={40} viewBox="0 0 24 24" style={{ position: "absolute", left: w / 2 - 20, top: h / 2 - 20, opacity: Math.max(0, fold * 2 - 1) }}>
+        <path d={BELL_D} fill="none" stroke="#fff" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </div>
+  );
+};
+
+/** The bell flies with a trail from the panel to the Teams channel. */
+const BellFlight: React.FC<{ f: number }> = ({ f }) => {
+  const [a, b] = TT.signal;
+  if (f < a - 2 || f > b + 26) return null;
+  const sx = ALERT.x + ALERT.w / 2, sy = ALERT.y + ALERT.h / 2;
+  const pos = (ff: number) => {
+    const p = k(ff, [a, b], [0, 1], Easing.bezier(0.45, 0, 0.2, 1));
+    const mx = (sx + BELL_LAND.x) / 2, my = Math.min(sy, BELL_LAND.y) - 260;
+    return {
+      x: (1 - p) * (1 - p) * sx + 2 * (1 - p) * p * mx + p * p * BELL_LAND.x,
+      y: (1 - p) * (1 - p) * sy + 2 * (1 - p) * p * my + p * p * BELL_LAND.y,
+      size: 96 - p * 44,
+      p,
+    };
+  };
+  const now = pos(f);
+  const landed = f >= b;
+  const ping = k(f, [b, b + 24], [0, 1], OUT);
+  return (
+    <>
+      {!landed &&
+        [14, 11, 8, 5, 2].map((lag, i) => {
+          const q = pos(f - lag);
+          const sz = q.size * (0.35 + i * 0.1);
+          return <div key={lag} style={{ position: "absolute", left: q.x - sz / 2, top: q.y - sz / 2, width: sz, height: sz, borderRadius: sz, background: color.pink, opacity: 0.08 + i * 0.06, zIndex: 31 }} />;
+        })}
+      {!landed && (
+        <div style={{ position: "absolute", left: now.x - now.size / 2, top: now.y - now.size / 2, width: now.size, height: now.size, borderRadius: now.size, background: gradient.brand, boxShadow: `0 0 40px 10px ${color.pink}55`, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 32 }}>
+          <svg width={now.size * 0.45} height={now.size * 0.45} viewBox="0 0 24 24" style={{ rotate: `${Math.sin(f * 0.8) * 16}deg` }}>
+            <path d={BELL_D} fill="none" stroke="#fff" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+      )}
+      {landed &&
+        [0, 1].map((r) => (
+          <div key={r} style={{ position: "absolute", left: BELL_LAND.x - 40, top: BELL_LAND.y - 40, width: 80, height: 80, borderRadius: 40, border: `3px solid ${color.pink}`, scale: String(0.6 + (ping + r * 0.3) * 1.6), opacity: Math.max(0, 1 - ping - r * 0.3), zIndex: 32 }} />
+        ))}
+    </>
+  );
+};
+
+// ---------- the opened ticket: write the answer and send it ----------
+const TicketView: React.FC<{ f: number }> = ({ f }) => {
+  const open = k(f, [T.opened[0], T.opened[1]], [0, 1], Easing.bezier(0.3, 0, 0.2, 1));
+  if (open <= 0) return null;
+  // grows from the new ticket row of the help desk
+  const r0 = { x: MESA_SLOT.x, y: MESA_SLOT.y, w: CARD_W, h: MESA.card };
+  const x = r0.x + (TV.x - r0.x) * open, y = r0.y + (TV.y - r0.y) * open;
+  const w = r0.w + (TV.w - r0.w) * open, h = r0.h + (TV.h - r0.h) * open;
+  const editor = k(f, [T.responder + 2, T.responder + 16], [0, 1], OUT);
+  const sent = k(f, [T.send + 2, T.send + 18], [0, 1], OUT);
+  const text = typed(REPLY, f, T.typeFrom, 1.75);
+  const caret = Math.floor(f / 10) % 2 === 0 && f < T.send;
+  const waiting = f >= T.send + 10;
+  const inner = (dx: number, dy: number) => ({ position: "absolute" as const, left: dx - TV.x, top: dy - TV.y });
+  return (
+    <div style={{ position: "absolute", left: x, top: y, width: w, height: h, borderRadius: 28, background: color.gray50, border: `1px solid ${color.gray200}`, boxShadow: "0 40px 90px -30px rgba(26,26,28,.4)", overflow: "hidden", zIndex: 20 }}>
+      <div style={{ width: TV.w, height: TV.h, transformOrigin: "0 0", scale: `${w / TV.w} ${h / TV.h}`, opacity: k(f, [T.opened[0] + 8, T.opened[1]], [0, 1]) }}>
+        <div style={{ height: 64, background: color.white, borderBottom: `1px solid ${color.gray100}`, display: "flex", alignItems: "center", gap: 18, padding: "0 30px 0 22px" }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: gradient.brand }} />
+          <div style={{ fontSize: 20, fontWeight: font.semibold, color: color.black }}>Mesa de ayuda</div>
+        </div>
+        <div style={{ position: "absolute", left: 0, top: 64, bottom: 0, width: 64, background: color.black }} />
+        <div style={{ ...inner(TVX, TV.y + 64 + 24), display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 30, fontWeight: font.medium, color: color.black }}>Error en servidor · {STORE}</span>
+        </div>
+        <div style={{ ...inner(TVX, TV.y + 64 + 70), display: "flex", alignItems: "center", gap: 12, fontSize: 16 }}>
+          <span style={{ color: color.pink }}>Tickets / No asignados / {TICKET}</span>
+          <span style={{ width: 9, height: 9, borderRadius: 5, background: waiting ? color.success : color.error }} />
+          <span style={{ color: color.gray600 }}>{waiting ? "Esperando al cliente" : "Esperando al agente"}</span>
+        </div>
+        {/* first message: the ticket created by the monitor */}
+        <div style={{ ...inner(TVX, 300), width: 720, height: 172, boxSizing: "border-box", padding: "16px 22px", background: color.white, borderRadius: radius.panel, border: `1px solid ${color.gray200}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: color.gray600 }}>
+            <span style={{ width: 28, height: 28, borderRadius: 14, background: gradient.brand, color: "#fff", fontSize: 11, fontWeight: font.semibold, display: "flex", alignItems: "center", justifyContent: "center" }}>SM</span>
+            Sincro Monitor · ticket interno
+            <span style={{ marginLeft: "auto", color: color.pink, fontWeight: font.semibold }}>{TICKET}</span>
+          </div>
+          <div style={{ fontSize: 16, lineHeight: 1.55, color: color.black, marginTop: 10 }}>
+            {LOG}. Falló en "Sincronizando productos".
+            <br />
+            <span style={{ color: color.gray600 }}>Arreglo sugerido: reintentar la sincro con un timeout de 300 s.</span>
+          </div>
+        </div>
+        <div style={{ ...inner(TVX, 488), width: 720, height: 40, display: "flex", alignItems: "center", fontSize: 16 }}>
+          <span>Más opciones ⌄</span>
+          <span style={{ marginLeft: "auto", color: color.pink, marginRight: 20 }}>Derivar</span>
+          <span style={{ padding: "9px 20px", borderRadius: radius.md, background: color.pink, color: "#fff", fontWeight: font.medium, scale: String(1 - k(f, [T.responder - 3, T.responder + 1, T.responder + 8], [0, 0.08, 0])) }}>Responder</span>
+        </div>
+        {/* editor, then the sent reply */}
+        <div style={{ ...inner(ED.x, ED.y), width: ED.w, height: ED.h * editor * (1 - sent), opacity: editor * (1 - sent), overflow: "hidden", background: color.white, borderRadius: radius.panel, border: `1.5px solid ${color.pink}66`, boxShadow: `0 14px 30px -14px rgba(231,0,126,${0.3 * editor})` }}>
+          <div style={{ height: 38, display: "flex", alignItems: "center", gap: 18, padding: "0 16px", borderBottom: `1px solid ${color.gray100}`, fontSize: 16, color: color.gray600 }}>
+            <b>B</b>
+            <i>I</i>
+            <u>U</u>
+            <span>•≡</span>
+          </div>
+          <div style={{ padding: "14px 18px", fontSize: 18, lineHeight: 1.55, color: color.black }}>
+            {text}
+            {caret && <span style={{ color: color.pink }}>|</span>}
+          </div>
+          <span style={{ position: "absolute", right: 16, bottom: 12, padding: "8px 20px", borderRadius: radius.md, background: color.pink, color: "#fff", fontSize: 16, fontWeight: font.medium, scale: String(1 - k(f, [T.send - 3, T.send + 1, T.send + 8], [0, 0.08, 0])) }}>Enviar</span>
+        </div>
+        <div style={{ ...inner(ED.x, ED.y), width: ED.w, boxSizing: "border-box", padding: "14px 20px", background: color.white, borderRadius: radius.panel, border: `1.5px solid ${color.success}55`, boxShadow: `inset 5px 0 0 ${color.success}, 0 16px 34px -14px rgba(31,162,90,${0.4 * sent})`, opacity: sent, translate: `0 ${(1 - sent) * 30}px` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: color.gray600 }}>
+            <span style={{ width: 26, height: 26, borderRadius: 13, background: color.black, color: "#fff", fontSize: 11, fontWeight: font.semibold, display: "flex", alignItems: "center", justifyContent: "center" }}>AS</span>
+            Agente de soporte · hace un momento
+            <span style={{ marginLeft: "auto", color: color.success, fontWeight: font.semibold }}>Enviado ✓</span>
+          </div>
+          <div style={{ fontSize: 16, lineHeight: 1.5, color: color.black, marginTop: 8 }}>{REPLY}</div>
+        </div>
+        {/* right column */}
+        <div style={{ ...inner(TVX + 760, 300), width: 380, fontSize: 15, color: color.black }}>
+          {[["Empresa asociada", "Tienda 07"], ["Participantes", "Agente de soporte"], ["Categorización", "Integraciones"]].map(([l, v]) => (
+            <div key={l} style={{ marginBottom: 24 }}>
+              <div style={{ paddingBottom: 8, borderBottom: `1px solid ${color.gray200}`, fontSize: 16 }}>{l}</div>
+              <div style={{ marginTop: 10, height: 36, borderRadius: radius.md, border: `1px solid ${color.gray200}`, background: color.white, display: "flex", alignItems: "center", padding: "0 12px" }}>{v}</div>
+            </div>
+          ))}
+          <div style={{ paddingBottom: 8, borderBottom: `1px solid ${color.gray200}`, fontSize: 16 }}>SLA</div>
+          <div style={{ display: "flex", gap: 20, marginTop: 12 }}>
+            {[["1° Respuesta", waiting ? 1 : 0.3, color.success], ["Resolución", 0.12, color.success]].map(([l, v, c]) => (
+              <div key={l as string} style={{ flex: 1, fontSize: 14 }}>
+                {l as string}
+                <div style={{ height: 6, borderRadius: 3, background: color.gray100, marginTop: 8 }}>
+                  <div style={{ height: 6, borderRadius: 3, width: `${(v as number) * 100}%`, background: c as string }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const SincroMonitorDemo: React.FC = () => {
   const f = useCurrentFrame();
   const cam = camera(f);
@@ -965,6 +1611,7 @@ export const SincroMonitorDemo: React.FC = () => {
             height: CH,
             transformOrigin: "0 0",
             transform: `translate(960px, 540px) rotateX(${cam.rx}deg) rotateY(${cam.ry}deg) scale(${cam.s}) translate(${-cam.fx}px, ${-cam.fy}px)`,
+            filter: cam.blur > 0.3 ? `blur(${cam.blur.toFixed(1)}px)` : undefined,
           }}
         >
           <div
@@ -989,12 +1636,30 @@ export const SincroMonitorDemo: React.FC = () => {
           <div style={{ position: "absolute", left: MESA.x, top: MESA.y, width: MESA.w, height: MESA.h }}>
             <Sweep f={f} from={T.land + 2} w={MESA.w} />
           </div>
-          <div style={{ position: "absolute", inset: 0 }}>
-            <Sweep f={f} from={770} w={CW + MESA.w} />
-          </div>
+          <TicketView f={f} />
+          <Teams f={f} />
+          <HeaderBell f={f} />
+          <AlertToast f={f} />
+          <BellFlight f={f} />
+          <DoodleCircle f={f} start={TT.hi[0] + 4} end={1046} cx={TEAMS_CX + 20} cy={TEAMS.y + 742} rx={440} ry={90} id="dc-fixes" />
+          <MCursor
+            f={f}
+            show={[1094, 1296]}
+            clicks={[T.openRow, T.responder, T.send]}
+            keys={[
+              [1094, 2700, 700],
+              [T.openRow - 8, 2420, 381],
+              [T.responder - 10, TVX + 720 - 60, 508],
+              [T.typeFrom, TVX + 720 - 60, 508],
+              [T.send - 10, ED.x + ED.w - 70, ED.y + ED.h - 26],
+              [1296, 2700, 800],
+            ]}
+          />
         </div>
       </AbsoluteFill>
       <DotField f={f} s={cam.s} />
+      <DockedHeadline i={2} f={f} start={150} hide={Math.max((cam.s - 1.0) / 0.08, k(f, [744, 770, 1050, 1070], [0, 1, 1, 0]))} />
+      <AbsoluteFill style={{ background: color.gray50, opacity: k(f, [T.through[1] - 14, T.through[1]], [0, 1], Easing.linear) }} />
     </AbsoluteFill>
   );
 };

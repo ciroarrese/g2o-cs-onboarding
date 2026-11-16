@@ -1,9 +1,27 @@
 import { Composition, Folder } from "remotion";
 import { BrandCheck } from "./scenes/BrandCheck";
 import { SincroMonitorDemo } from "./scenes/SincroMonitorDemo";
+import { Apertura } from "./scenes/Apertura";
+import { AsistenteIA } from "./scenes/AsistenteIA";
+import { Sincropresta } from "./scenes/Sincropresta";
+import { HealthScore } from "./scenes/HealthScore";
+import { Cierre } from "./scenes/Cierre";
+import { ProyectosConIA, TOTAL_FRAMES } from "./ProyectosConIA";
+import { AGENDA_FRAMES, Agenda } from "./scenes/Agenda";
 
 export const RemotionRoot: React.FC = () => {
   return (
+    <>
+    <Composition id="ProyectosConIA" component={ProyectosConIA} durationInFrames={TOTAL_FRAMES} fps={30} width={1920} height={1080} />
+    <Folder name="Video">
+      <Composition id="Apertura" component={Apertura} durationInFrames={300} fps={30} width={1920} height={1080} />
+      <Composition id="AsistenteIA" component={AsistenteIA} durationInFrames={840} fps={30} width={1920} height={1080} />
+      <Composition id="Sincropresta" component={Sincropresta} durationInFrames={1200} fps={30} width={1920} height={1080} />
+      <Composition id="SincroMonitor" component={SincroMonitorDemo} durationInFrames={1440} fps={30} width={1920} height={1080} />
+      <Composition id="HealthScore" component={HealthScore} durationInFrames={1080} fps={30} width={1920} height={1080} />
+      <Composition id="Cierre" component={Cierre} durationInFrames={450} fps={30} width={1920} height={1080} />
+      <Composition id="Agenda" component={Agenda} durationInFrames={AGENDA_FRAMES} fps={30} width={1920} height={1080} defaultProps={{ done: 1 }} />
+    </Folder>
     <Folder name="Pruebas">
       <Composition
         id="BrandCheck"
@@ -23,11 +41,12 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="SincroMonitorDemo"
         component={SincroMonitorDemo}
-        durationInFrames={840}
+        durationInFrames={1440}
         fps={30}
         width={1920}
         height={1080}
       />
     </Folder>
+    </>
   );
 };

@@ -1,6 +1,6 @@
 # Idea 3: Sincro Monitor, el tablero de las sincros PrestaShop
 
-**Fecha del relevamiento:** 10/11/2026, recorrido del panel en vivo. **Fuente:** el propio panel (vistas, filtros y datos agregados).
+**Fecha del relevamiento:** 10/11/2026, recorrido del panel en vivo. **Fuentes:** el propio panel (vistas, filtros y datos agregados) y un aviso que el monitor publicó en el chat de Teams del equipo el 11/11/2026 a las 11:50 (captura que pasó el usuario).
 
 **Hecho con:** Claude.
 
@@ -16,6 +16,10 @@
 - **Controlar la salud de los datos:** un control diario compara cada tienda con su ERP (conexión, sincros atrasadas, pedidos sin enviar, productos a $0, stock y catálogo distintos). Un problema se confirma solo si aparece dos veces seguidas o si es grave, para no generar falsas alarmas.
 - **Seguir cada incidente de punta a punta:** desde que se detecta hasta que se resuelve, con un diagnóstico probable y la acción sugerida.
 - **Escalar en un clic:** desde la fila de la tienda se crea el ticket interno en la mesa de ayuda.
+- **Avisar al equipo en Teams sin que nadie entre al panel:** el monitor publica solo, en el chat "Sincro Presta Monitor", una tarjeta "Sincro Monitor · novedades" con:
+  - un resumen: sitios afectados, incidentes abiertos (nuevos y recurrentes), prioridad alta, arreglos por aprobar, resueltos desde el último aviso y el caso más antiguo;
+  - el detalle de cada incidente por tienda: qué pasa (por ejemplo, pedidos sin enviar al ERP o catálogo distinto al ERP), desde cuándo y si es persistente;
+  - los arreglos posibles que el equipo puede aprobar, y un botón para abrir el Sincro Monitor.
 
 ## Cifras clave (al 10/11/2026)
 
@@ -39,11 +43,23 @@
 
 En total, **102 tiendas con algo para atender**, detectadas por el equipo sin esperar el reclamo del cliente.
 
+**Aviso en Teams del 11/11/2026, 11:50:**
+
+| Dato | Valor |
+|---|---|
+| Sitios afectados | 3 |
+| Incidentes abiertos | 6 (0 nuevos, 1 recurrente) |
+| Prioridad alta | 1 |
+| Arreglos por aprobar | 3 |
+| Resueltos desde el último aviso | 0 |
+| Caso más antiguo | 15 h |
+
 ## Qué se logró
 
 - **De reactivo a proactivo:** antes, un problema de sincro se conocía cuando el cliente lo reportaba. Ahora el equipo ve primero las 315 tiendas, sabe cuáles fallan y por qué.
 - **Un solo lugar en vez de revisar tienda por tienda:** más de 1,2 millones de corridas ya clasificadas por estado y causa.
 - **Del error al diagnóstico:** el panel no solo avisa, también sugiere la causa probable y el siguiente paso, y permite crear el ticket interno al instante.
+- **El aviso llega solo:** el equipo se entera en Teams, con el problema explicado y los arreglos posibles, sin tener que abrir el panel.
 
 ## Estado actual y próximo paso
 
@@ -58,3 +74,4 @@ En total, **102 tiendas con algo para atender**, detectadas por el equipo sin es
 - **Contador de corridas:** un número que sube hasta 1,2 millones mientras pasan líneas de log que se ordenan solas en categorías.
 - **Antes y después:** a la izquierda, un cliente que escribe "no me sincroniza"; a la derecha, la alerta que aparece en el panel antes de ese mensaje.
 - **Del aviso a la acción:** una alerta que se abre, muestra el diagnóstico y termina en el botón "Crear ticket".
+- **El mensaje en Teams:** una señal sale del monitor y aterriza en el chat del equipo; se arma la tarjeta de novedades con el incidente y los arreglos por aprobar (hecho en la escena de prueba).
