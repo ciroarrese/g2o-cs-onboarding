@@ -30,6 +30,8 @@ const CuentaInterior: React.FC<{ f: number }> = ({ f }) => {
   const acento = inkOn(t, t.color.accent);
   const ctl = cornerRadius(t, "control");
   let saldo = 0;
+  // apilada: el detalle sube desde abajo con `top`/`bottom` enteros (no con `translateY`): con transform, opacidad y sombra pegado al borde redondeado de la ventana, el borde se rasteriza según el historial en los últimos cuadros de la entrada
+  const dEntra = Math.round((1 - detail) * 160);
   const cut = useZoomed(0.9) ? "offscreen" : undefined; // la tabla es más ancha que el encuadre del zoom: las columnas del borde quedan cortadas a propósito
   return (
     <>
@@ -73,7 +75,7 @@ const CuentaInterior: React.FC<{ f: number }> = ({ f }) => {
         })}
       </div>
       {/* detalle del movimiento */}
-      <div data-qa-ignore={cut} style={{ position: "absolute", right: 0, top: detalle.top, bottom: 0, width: detalle.w, background: t.color.surface, ...(detalle.lateral ? { borderLeft: `1px solid ${t.color.border}` } : { borderTop: `1px solid ${t.color.border}` }), boxShadow: t.shadow.md, padding: detalle.lateral ? "20px 24px" : "20px 26px", boxSizing: "border-box", ...(detalle.lateral ? entrance(t, detail, 0, { native: "slide", side: "right", distance: 460 }) : { opacity: op(detail), transform: detail < 1 ? `translateY(${Math.round((1 - detail) * 160)}px)` : undefined }) }}>
+      <div data-qa-ignore={cut} style={{ position: "absolute", right: 0, top: detalle.top + (detalle.lateral ? 0 : dEntra), bottom: detalle.lateral ? 0 : -dEntra, width: detalle.w, background: t.color.surface, ...(detalle.lateral ? { borderLeft: `1px solid ${t.color.border}` } : { borderTop: `1px solid ${t.color.border}` }), boxShadow: t.shadow.md, padding: detalle.lateral ? "20px 24px" : "20px 26px", boxSizing: "border-box", ...(detalle.lateral ? entrance(t, detail, 0, { native: "slide", side: "right", distance: 460 }) : { opacity: op(detail) }) }}>
         <div style={{ fontSize: fs, color: t.color.textMuted, lineHeight: 1.25 }}>Detalle del movimiento</div>
         <div style={{ fontSize: t.type.eyebrow, ...textStyle(t, "title"), margin: "4px 0 14px", lineHeight: 1.25 }}>Factura A 0004-00012911</div>
         {LINEAS_FACTURA.map(([n, q, p]) => (
