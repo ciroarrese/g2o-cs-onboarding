@@ -88,12 +88,16 @@ export const TicketView: React.FC<{ zoomed: boolean; recede: number }> = ({ zoom
   const cut = zoomed ? "offscreen" : undefined; // el encuadre de la cámara deja cortado el resto de la mesa a propósito
   const sink = recede > 0 ? { transform: `perspective(2200px) translateZ(${-60 * recede}px)` } : {};
   const ink = t.color.text;
+  // En formatos angostos la cámara baja al editor y al panel y no vuelve a mostrar la parte alta de la mesa (barra, encabezado, mensaje y tira de datos):
+  // fuera de los cuadros en que se ve (en vertical, hasta el cuadro 200 y desde el 764; en cuadrado, solo hasta el 200) no se dibuja. Así el control
+  // de calidad juzga texto que está en cuadro y no texto fuera de él. En horizontal no cambia nada.
+  const altaVisible = !g.angosta || f <= 200 || (g.formato === "vertical" && f >= 764);
   return (
     /* reproducción de la mesa de ayuda: tamaños fijos de la herramienta real */
     <div data-qa-fixed-scale style={{ position: "absolute", left: W.x, top: W.y, width: W.w, height: W.h, ...sink }}>
       {/* ventana: barra superior y riel (marco de la herramienta) */}
       <div data-qa-decor style={{ position: "absolute", inset: 0, boxSizing: "border-box", ...surfaceStyle(t, "window"), background: t.color.bg, overflow: "hidden" }}>
-        <div style={{ height: W.top, boxSizing: "border-box", background: t.color.surface, borderBottom: `1px solid ${t.color.border}`, display: "flex", alignItems: "center", gap: 18, padding: "0 26px 0 18px" }}>
+        {altaVisible && <div style={{ height: W.top, boxSizing: "border-box", background: t.color.surface, borderBottom: `1px solid ${t.color.border}`, display: "flex", alignItems: "center", gap: 18, padding: "0 26px 0 18px" }}>
           <div style={{ width: 26, height: 26, borderRadius: cornerRadius(t, "control"), background: t.gradient.brand }} />
           <div style={{ fontSize: t.type.ui.sm, lineHeight: 1.25, ...textStyle(t, "title"), color: ink }}>Mesa de ayuda</div>
           <div style={{ flex: 1 }} />
@@ -103,7 +107,7 @@ export const TicketView: React.FC<{ zoomed: boolean; recede: number }> = ({ zoom
           </div>
           <Icon d={ICON.plus} c={t.color.accent} size={20} />
           <Icon d={ICON.bell} size={20} />
-        </div>
+        </div>}
         <div style={{ position: "absolute", left: 0, top: W.top, bottom: 0, width: W.rail, background: ink, display: "flex", flexDirection: "column", alignItems: "center", gap: 12, paddingTop: 20 }}>
           {[ICON.chart, ICON.tag, ICON.swap, ICON.team, ICON.userAdd].map((d, i) => (
             <div key={d} style={{ width: 40, height: 40, borderRadius: cornerRadius(t, "control"), background: i === 1 ? t.gradient.brand : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -114,6 +118,7 @@ export const TicketView: React.FC<{ zoomed: boolean; recede: number }> = ({ zoom
       </div>
 
       {/* encabezado */}
+      {altaVisible && (<>
       <div data-qa-ignore={cut} style={{ position: "absolute", left: rx(MAIN.x), top: ry(W.y + W.top + 26), display: "flex", alignItems: "center", gap: 12, whiteSpace: "nowrap" }}>
         <Icon d={ICON.tag} c={t.color.accent} size={26} />
         <div style={{ fontSize: t.type.caption, lineHeight: 1.25, ...textStyle(t, "label"), color: ink }}>Pedidos que no bajan al ERP</div>
@@ -146,6 +151,7 @@ export const TicketView: React.FC<{ zoomed: boolean; recede: number }> = ({ zoom
           ¿Nos pueden revisar? Gracias.
         </div>
       </div>
+      </>)}
 
       {/* acciones */}
       <div style={{ position: "absolute", left: rx(MAIN.x), top: ry(g.actY), width: MAIN.w, minHeight: 40, display: "flex", alignItems: "center", fontSize: t.type.ui.sm, lineHeight: 1.25, whiteSpace: "nowrap" }}>
@@ -154,8 +160,8 @@ export const TicketView: React.FC<{ zoomed: boolean; recede: number }> = ({ zoom
         <span data-qa-ignore={cut} /* la cámara encuadra el panel y deja el borde de la mesa cortado */ style={{ padding: "9px 20px", borderRadius: cornerRadius(t, "control"), background: t.color.accent, color: t.color.onAccent, ...textStyle(t, "label") }}>Responder</span>
       </div>
 
-      {/* editor de respuesta */}
-      <div
+      {/* editor de respuesta (angosto: no se monta mientras está cerrado, su texto es invisible) */}
+      {(!g.angosta || editorOpen > 0) && <div
         style={{
           position: "absolute", left: rx(MAIN.x), top: ry(EDITOR.y), width: MAIN.w, height: EDITOR.h * editorOpen, boxSizing: "border-box", overflow: "hidden", opacity: op(editorOpen),
           ...surfaceStyle(t, "card", { corner: "panel", on: editorOpen > 0.5, glow: 0.5 * editorOpen }),
@@ -186,14 +192,14 @@ export const TicketView: React.FC<{ zoomed: boolean; recede: number }> = ({ zoom
             })
           )}
         </div>
-      </div>
+      </div>}
 
       {/* comentarios */}
       <div style={{ position: "absolute", left: rx(MAIN.x), top: ry(g.comHdrY), width: MAIN.w, display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: t.type.ui.sm, lineHeight: 1.25, color: ink, paddingBottom: 8, borderBottom: `1px solid ${t.color.border}` }}>
         <span data-qa-ignore="min-size" /* rótulo de la interfaz recreada: con la cámara alejándose queda por debajo de 18 px, se lee al acercar */>Comentarios</span>
         <span data-qa-ignore={cut} /* encuadre del panel: el contador queda cortado a propósito */ style={{ color: t.color.textMuted, fontSize: t.type.ui.xs, whiteSpace: "pre" }}><span>Total de comentarios: </span><span data-qa-decor /* el contador sube de 4 a 5 en el cuadro final: no se lee a este zoom */>{f >= C.fly[1] ? 5 : 4}</span></span>
       </div>
-      <div
+      {(!g.angosta || commentIn > 0) && <div
         style={{
           position: "absolute", left: rx(MAIN.x), top: ry(COMMENT_Y), width: MAIN.w, height: 96, boxSizing: "border-box", padding: "14px 20px", overflow: "hidden",
           ...surfaceStyle(t, "card", { corner: "panel", on: true, glow }), ...entrance(t, commentIn, 0, { native: "rise", distance: 20 }),
@@ -208,11 +214,11 @@ export const TicketView: React.FC<{ zoomed: boolean; recede: number }> = ({ zoom
         <div style={{ fontSize: t.type.ui.sm, lineHeight: 1.3, marginTop: 8, color: ink, whiteSpace: "nowrap" }}>
           <b>Ticket interno creado para Desarrollo:</b> <span data-qa-ignore="min-size" /* número de ticket de la interfaz recreada, se lee al acercar */ style={{ color: t.color.accent, textDecoration: "underline" }}>#{NEW_TICKET}</span>
         </div>
-      </div>
+      </div>}
 
       {/* columna derecha: en la disposición angosta, una tira plegada de dos filas con lo esencial de cada bloque */}
       {g.angosta ? (
-        <div style={{ position: "absolute", left: rx(MAIN.x), top: ry(g.stripY), width: MAIN.w, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 16px", boxSizing: "border-box" }}>
+        altaVisible && <div style={{ position: "absolute", left: rx(MAIN.x), top: ry(g.stripY), width: MAIN.w, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 16px", boxSizing: "border-box" }}>
           {[
             ["Empresa asociada", <span key="e">Tienda 18</span>],
             ["Participantes", <span key="p">Agente de soporte, Agente de guardia</span>],

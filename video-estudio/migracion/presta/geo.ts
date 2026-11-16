@@ -19,7 +19,7 @@ export type Geo = {
   EW: Rect;
   HUB: { x: number; y: number };
   /** Cajas de la zona C (antes / ahora). `v`: disposición angosta del contenido de cada caja. */
-  cajaC: { x: number; w: number; h: number; top: number; bot: number; trackX: number; trackW: number; limite: number; v: boolean };
+  cajaC: { x: number; w: number; h: number; top: number; bot: number; trackX: number; trackW: number; limite: number; v: boolean; tall: boolean };
   CFG: Rect & { rowY: number; rowH: number };
   /** Esquina superior izquierda de la tarjeta de función `i` (ancho `cw`) antes de fundirse en la pantalla de configuración. */
   tarjeta: (i: number, cw: number) => { x: number; y: number };
@@ -42,7 +42,7 @@ const HORIZONTAL: Geo = {
   formato: "horizontal",
   apilada: false,
   ZB, ZC, ZD, SW, EW, HUB,
-  cajaC: { x: ZC.x - 760, w: 1520, h: 330, top: ZC.y - 420, bot: ZC.y + 40, trackX: 330, trackW: 1080, limite: 0.42, v: false },
+  cajaC: { x: ZC.x - 760, w: 1520, h: 330, top: ZC.y - 420, bot: ZC.y + 40, trackX: 330, trackW: 1080, limite: 0.42, v: false, tall: false },
   CFG,
   tarjeta: (i, cw) => ({ x: ZD.x - 820 + (i % 2) * (cw + 40), y: ZD.y - 330 + Math.floor(i / 2) * 230 }),
   SE,
@@ -60,7 +60,9 @@ const apilada = (formato: "vertical" | "cuadrado"): Geo => {
   const zD = { x: 1000, y: 3300 };
   const se: Rect = { x: 60, y: 5000, w: 960, h: 1020 };
   const pdf: Rect = { x: 40, y: se.y + 1060, w: 560, h: 840 };
-  const cajaH = 520;
+  const tall = formato === "vertical"; // en vertical (1920 de alto) las dos cajas se agrandan para llenar el cuadro
+  const cajaH = tall ? 700 : 520;
+  const cajaGap = tall ? 100 : 240;
   return {
     formato,
     apilada: true,
@@ -68,8 +70,8 @@ const apilada = (formato: "vertical" | "cuadrado"): Geo => {
     EW: { x: 110, y: 200, w: 860, h: 580 },
     SW: { x: 110, y: 930, w: 860, h: 800 },
     HUB: { x: 540, y: 865 },
-    cajaC: { x: zC.x - 480, w: 960, h: cajaH, top: zC.y - 120 - cajaH, bot: zC.y + 120, trackX: 50, trackW: 860, limite: 0.42, v: true },
-    CFG: { x: zD.x - 410, y: zD.y - 80, w: 820, h: 800, rowY: 150, rowH: 96 },
+    cajaC: { x: zC.x - 480, w: 960, h: cajaH, top: zC.y - cajaGap / 2 - cajaH, bot: zC.y + cajaGap / 2, trackX: 50, trackW: 860, limite: 0.42, v: true, tall },
+    CFG: { x: zD.x - 410, y: zD.y - 80, w: 820, h: tall ? 1090 : 800, rowY: 150, rowH: tall ? 150 : 96 },
     tarjeta: (i, cw) => ({ x: zD.x - cw - 20 + (i % 2) * (cw + 40), y: zD.y - 800 + Math.floor(i / 2) * 230 }),
     SE: se,
     detalle: { lateral: false, top: 580, w: se.w, descTop: 352 },

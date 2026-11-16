@@ -79,14 +79,15 @@ const PanelBody: React.FC<{ open: number }> = ({ open }) => {
   const total = GROUPS.reduce((a, g) => a + g.n, 0);
   const d = t.data;
   // en vertical y cuadrado el panel está debajo del comentario y el ticket que vuela lo cruza de punta a punta: su texto queda tapado unos cuadros
-  const cover = useGeo().angosta && f >= C.fly[0] && f <= C.fly[1] + 6 ? "contrast covered" : undefined;
+  const angosta = useGeo().angosta;
+  const cover = angosta && f >= C.fly[0] && f <= C.fly[1] + 6 ? "contrast covered" : undefined;
   return (
     <>
       <div style={{ height: 44, boxSizing: "border-box", background: t.color.surface, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 14px", borderBottom: open > 0 ? `1px solid ${t.color.border}` : "none" }}>
         <span data-qa-ignore={cover} /* el ticket que vuela cruza el panel */ style={{ fontSize: t.type.ui.sm, lineHeight: 1.25, whiteSpace: "nowrap", ...textStyle(t, "title") }}>Sugerencia IA - Ticket {TICKET}</span>
         <span data-qa-decor /* botón de minimizar del marco del panel */ style={{ width: 24, height: 24, borderRadius: cornerRadius(t, "control"), background: t.color.surfaceAlt, fontSize: t.type.ui.sm, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>{open > 0.5 ? "—" : "▢"}</span>
       </div>
-      {open > 0 && <div style={{ height: bodyH * open, overflow: "hidden" }}>
+      {open > 0 && <div style={{ height: bodyH * open, overflow: "hidden", opacity: angosta ? op(kf(open, [0.8, 1], [0, 1])) : undefined /* angosto: el cuerpo se enciende al terminar de abrirse, así no hay botones cortados a medias mientras crece */ }}>
         <div style={{ padding: 16 }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: BTN_GAP }}>
             <PBtn label={loading ? "..." : "Solo corregir"} fill={t.color.surfaceAlt} />

@@ -285,9 +285,11 @@ export const DotFieldV: React.FC<{ s: number }> = ({ s }) => {
   const f = useFrame();
   const t = useTheme();
   const { width, height, format } = useFormat();
-  const cols = format === "vertical" ? 14 : 20;
+  // la grilla llena el cuadro: en vertical 13 x 22 puntos de 26 px cada 76 (912 x 1672), en cuadrado 18 x 16 de 20 px cada 54
+  const cols = format === "vertical" ? 13 : 18;
   const rows = Math.ceil(TOTAL / cols);
-  const sp = format === "vertical" ? 56 : 46;
+  const sp = format === "vertical" ? 76 : 54;
+  const dot0 = format === "vertical" ? 26 : 20;
   const cx = width / 2;
   const cy = height / 2;
   const ox = cx - ((cols - 1) * sp) / 2;
@@ -311,7 +313,7 @@ export const DotFieldV: React.FC<{ s: number }> = ({ s }) => {
         const m = kf(f, [58 + d.ringIdx * 0.08, 96 + d.ringIdx * 0.08], [0, 1]);
         const x = ox + col * sp + (cx + Math.cos(a) * R - (ox + col * sp)) * m;
         const y = oy + row * sp + (cy + Math.sin(a) * R - (oy + row * sp)) * m;
-        const size = 16 + (13 - 16) * m;
+        const size = dot0 + (13 - dot0) * m;
         const k = p * (1 + Math.sin(lit * Math.PI) * 0.6);
         if (k <= 0) return null;
         const color = lit > 0.5 ? monitorTheme.data![STATUS[d.st]!.rol]! : t.color.border;

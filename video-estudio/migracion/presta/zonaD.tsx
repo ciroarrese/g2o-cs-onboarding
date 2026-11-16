@@ -16,7 +16,7 @@ const OUT = Easing.out;
 /** Fila `i` de la pantalla de configuración (esquina superior izquierda en el mundo). */
 export const filaCfg = (i: number, { CFG }: Pick<Geo, "CFG">) => ({ x: CFG.x + 26, y: CFG.y + CFG.rowY + i * CFG.rowH - 50, w: CFG.w - 52, h: CFG.rowH - 12 });
 /** Centro del interruptor SÍ / NO de la fila `i` (el cursor hace clic ahí). */
-export const interruptor = (i: number, { CFG }: Pick<Geo, "CFG">) => ({ x: CFG.x + CFG.w - 70, y: CFG.y + CFG.rowY + i * CFG.rowH - 50 + 42 });
+export const interruptor = (i: number, { CFG }: Pick<Geo, "CFG">) => ({ x: CFG.x + CFG.w - 70, y: CFG.y + CFG.rowY + i * CFG.rowH - 50 + (CFG.rowH - 12) / 2 });
 
 const Configuracion: React.FC<{ f: number }> = ({ f }) => {
   const t = useTheme();
@@ -27,6 +27,7 @@ const Configuracion: React.FC<{ f: number }> = ({ f }) => {
   const acento = inkOn(t, t.color.accent);
   const ctl = cornerRadius(t, "control");
   const guardar = saved ? t.color.success : t.color.accent;
+  const tall = CFG.rowH > 96; // vertical: filas altas y letra un escalón más grande
   return (
     <>
       <div data-qa-decor style={{ height: 56, background: t.data.boCabecera, color: readableOn(t, t.data.boCabecera!), display: "flex", alignItems: "center", padding: "0 22px", fontSize: t.type.ui.md, gap: 10, lineHeight: 1.25 }}>
@@ -48,8 +49,8 @@ const Configuracion: React.FC<{ f: number }> = ({ f }) => {
         return (
           <div key={name} data-qa-ignore={f >= 858 && f <= 940 ? "offscreen" : undefined /* las filas de abajo entran justo cuando la cámara arranca el acercamiento a los interruptores y quedan en el borde del encuadre */} style={{ position: "absolute", left: 26, top: CFG.rowY + i * CFG.rowH - 50, width: r.w, minHeight: r.h, boxSizing: "border-box", display: "flex", alignItems: "center", gap: 16, borderBottom: `1px solid ${t.color.border}`, opacity: op(rowIn) }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: t.type.eyebrow, ...textStyle(t, "title"), lineHeight: 1.25 }}>{name}</div>
-              <div style={{ fontSize: t.type.ui.sm, color: t.color.textMuted, marginTop: 4, lineHeight: 1.25 }}>{desc}</div>
+              <div style={{ fontSize: tall ? Math.round(t.type.eyebrow * 1.2) : t.type.eyebrow, ...textStyle(t, "title"), lineHeight: 1.25 }}>{name}</div>
+              <div style={{ fontSize: tall ? t.type.ui.md : t.type.ui.sm, color: t.color.textMuted, marginTop: 4, lineHeight: 1.25 }}>{desc}</div>
             </div>
             {/* el interruptor "SÍ / NO" de PrestaShop; el que se cambia da un pequeño salto */}
             <div data-qa-ignore="min-size" /* interruptor recreado de la interfaz: con la cámara abierta su letra baja de 18 px, se lee al acercar */ style={{ display: "flex", borderRadius: ctl, overflow: "hidden", border: `1px solid ${t.color.border}`, fontSize: t.type.ui.md, ...textStyle(t, "label", { strong: true }), lineHeight: 1.25, transform: xform({ scale: 1 + (i === 1 || i === 3 ? Math.sin(flip * Math.PI) * 0.12 : 0) }) }}>

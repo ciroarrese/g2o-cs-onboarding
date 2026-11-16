@@ -96,7 +96,7 @@ export function SceneBody() {
       <World camera={cam} width={width} height={height} perspective={2200}>
         <TicketView zoomed={zoomed} recede={recede} />
         <Waveform />
-        <Panel />
+        {(g.formato !== "cuadrado" || f >= 96) && <Panel />}{/* en cuadrado el panel espera abajo, fuera de la vista, hasta que la cámara baja */}
         <FlyingTicket />
         <DoodleCircle start={C.formato + 6} end={C.formatoDone + 4} cx={pc(PH.x + 270, PH.y + 60 + 68).x} cy={pc(PH.x + 270, PH.y + 60 + 68).y} rx={282} ry={36} id="dc-formato" />
         <DoodleCircle start={C.cards + 26} end={C.cwClose - 4} cx={pc(PH.x + 150, PH.y + 274 + 158).x} cy={pc(PH.x + 150, PH.y + 274 + 158).y} rx={150} ry={26} id="dc-cards" />

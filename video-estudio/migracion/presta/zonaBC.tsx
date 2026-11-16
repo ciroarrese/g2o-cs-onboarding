@@ -154,27 +154,28 @@ export const ZonaC: React.FC<{ f: number }> = ({ f }) => {
   const lbl = { fontSize: v ? t.type.eyebrow : t.type.ui.md, color: t.color.textMuted, lineHeight: 1.25 } as const;
   const tituloFs = v ? t.type.body : t.type.caption;
   const tiempoFs = v ? t.type.display.md : t.type.display.sm;
-  const bar = v ? { top: 300, h: 56 } : { top: 176, h: 44 };
-  const wall = v ? { top: 270, h: 116 } : { top: 150, h: 96 };
-  const etiquetaTop = v ? 236 : 136;
-  const infoTop = v ? 400 : 252;
-  const avisoTop = v ? 456 : 268;
+  const tall = g.cajaC.tall; // vertical: caja de 700 de alto con más aire entre renglones
+  const bar = tall ? { top: 410, h: 80 } : v ? { top: 300, h: 56 } : { top: 176, h: 44 };
+  const wall = tall ? { top: 370, h: 160 } : v ? { top: 270, h: 116 } : { top: 150, h: 96 };
+  const etiquetaTop = tall ? 330 : v ? 236 : 136;
+  const infoTop = tall ? 545 : v ? 400 : 252;
+  const avisoTop = tall ? 620 : v ? 456 : 268;
   const wallLabelFs = v ? t.type.eyebrow : t.type.ui.md;
   const tituloAntes = (
-    <div data-qa-ignore={cut} style={{ position: "absolute", left: 50, top: v ? 28 : 34, display: "flex", alignItems: v ? "flex-start" : "center", flexDirection: v ? "column" : "row", gap: v ? 12 : 14 }}>
+    <div data-qa-ignore={cut} style={{ position: "absolute", left: 50, top: tall ? 40 : v ? 28 : 34, display: "flex", alignItems: v ? "flex-start" : "center", flexDirection: v ? "column" : "row", gap: v ? 12 : 14 }}>
       <Tag c={t.color.textMuted} size={v ? t.type.ui.md : undefined}>Antes</Tag>
       <span style={{ fontSize: tituloFs, ...textStyle(t, "title"), lineHeight: 1.25 }}>Dentro de la página web</span>
     </div>
   );
   const tituloAhora = (
-    <div data-qa-ignore={cut} style={{ position: "absolute", left: 50, top: v ? 28 : 34, display: "flex", alignItems: v ? "flex-start" : "center", flexDirection: v ? "column" : "row", gap: v ? 12 : 14 }}>
+    <div data-qa-ignore={cut} style={{ position: "absolute", left: 50, top: tall ? 40 : v ? 28 : 34, display: "flex", alignItems: v ? "flex-start" : "center", flexDirection: v ? "column" : "row", gap: v ? 12 : 14 }}>
       <Tag c={t.color.success} size={v ? t.type.ui.md : undefined}>Ahora</Tag>
       <span style={{ fontSize: tituloFs, ...textStyle(t, "title"), lineHeight: 1.25 }}>Proceso interno en el servidor</span>
     </div>
   );
   // en la disposición angosta el ícono de la caja no entra: queda el rótulo ("Petición del navegador" / "Servidor") bajo el título
   const rotulo = (txt: string) => (v
-    ? <div data-qa-ignore={cut} style={{ position: "absolute", left: 50, top: 168, ...lbl }}>{txt}</div>
+    ? <div data-qa-ignore={cut} style={{ position: "absolute", left: 50, top: tall ? 240 : 168, ...lbl }}>{txt}</div>
     : <div data-qa-ignore={cut} style={{ position: "absolute", left: 5, top: 270, width: 300, textAlign: "center", ...lbl }}>{txt}</div>);
   return (
     <>
@@ -184,7 +185,7 @@ export const ZonaC: React.FC<{ f: number }> = ({ f }) => {
           {tituloAntes}
           {!v && <Icono d="M3 5h18v14H3zM3 9h18M7 7h.1M10 7h.1" c={t.color.textMuted} />}
           {rotulo("Petición del navegador")}
-          <div data-qa-ignore={cut} style={{ position: "absolute", right: 50, top: 24, fontSize: tiempoFs, ...textStyle(t, "title", { strong: true }), lineHeight: 1.2, color: failed ? t.color.danger : t.color.text, fontVariantNumeric: "tabular-nums" }}>{mmss(webSecs)}</div>
+          <div data-qa-ignore={cut} style={{ position: "absolute", right: 50, top: tall ? 36 : 24, fontSize: tiempoFs, ...textStyle(t, "title", { strong: true }), lineHeight: 1.2, color: failed ? t.color.danger : t.color.text, fontVariantNumeric: "tabular-nums" }}>{mmss(webSecs)}</div>
           <div data-qa-ignore={v ? cut : undefined} style={{ position: "absolute", left: trackX, top: etiquetaTop, ...lbl }}>Sincronizando descuentos</div>
           <div style={{ position: "absolute", left: trackX, top: bar.top, width: trackW, height: bar.h, borderRadius: cornerRadius(t, "bar"), background: t.color.surfaceAlt, overflow: "hidden" }}>
             <div style={{ width: `${p1 * (1 - revert) * 100}%`, height: "100%", borderRadius: cornerRadius(t, "bar"), background: failed ? t.color.danger : t.gradient.brand }} />
@@ -201,14 +202,14 @@ export const ZonaC: React.FC<{ f: number }> = ({ f }) => {
         {tituloAhora}
         {!v && <Icono d="M4 4h16v6H4zM4 14h16v6H4zM8 7h.1M8 17h.1M12 7h5M12 17h5" c={t.color.chart[2]!} />}
         {rotulo("Servidor")}
-        <div data-qa-ignore={cut} style={{ position: "absolute", right: 50, top: 24, fontSize: tiempoFs, ...textStyle(t, "title", { strong: true }), lineHeight: 1.2, color: done ? t.color.success : t.color.text, fontVariantNumeric: "tabular-nums" }}>{mmss(srvSecs)}</div>
+        <div data-qa-ignore={cut} style={{ position: "absolute", right: 50, top: tall ? 36 : 24, fontSize: tiempoFs, ...textStyle(t, "title", { strong: true }), lineHeight: 1.2, color: done ? t.color.success : t.color.text, fontVariantNumeric: "tabular-nums" }}>{mmss(srvSecs)}</div>
         <div data-qa-ignore="min-size" /* el contador cambia en cada cuadro: con la cámara alejada (cuadro de salida) es detalle y no se puede emparejar con una lectura a otro zoom */ style={{ position: "absolute", left: trackX, top: etiquetaTop, ...lbl }}>Sincronizando descuentos · {Math.round(srvP * 486250).toLocaleString("es-AR")}</div>
         <div style={{ position: "absolute", left: trackX, top: bar.top, width: trackW, height: bar.h, borderRadius: cornerRadius(t, "bar"), background: t.color.surfaceAlt, overflow: "hidden" }}>
           <div style={{ width: `${srvP * 100}%`, height: "100%", borderRadius: cornerRadius(t, "bar"), background: done ? t.color.success : t.gradient.brand }} />
         </div>
         {/* el fantasma del límite de antes: ya no hay muro */}
         <div style={{ position: "absolute", left: trackX + trackW * 0.48 - 2, top: wall.top, width: 4, height: wall.h, borderLeft: `3px dashed ${t.color.border}` }} />
-        <div style={{ position: "absolute", left: trackX + trackW * 0.48 - 170, top: v ? infoTop : 100, width: 340, textAlign: "center", ...lbl, ...textStyle(t, "label") }}>2:00 · sin límite</div>
+        <div style={{ position: "absolute", left: trackX + trackW * 0.48 - 170, top: v ? infoTop : 100, width: 340, textAlign: "center", ...lbl, ...textStyle(t, "label") }} data-qa-ignore={v && f >= 716 ? "offscreen" : undefined /* la cámara ya parte hacia la zona D: el rótulo asoma 10 px por el borde mientras vuela */}>2:00 · sin límite</div>
         {done && <div data-qa-ignore="min-size" /* aparece sobre el final y la cámara ya se aleja: es detalle del tablero */ style={{ position: "absolute", ...(v ? { left: 50 } : { right: 50 }), top: avisoTop, fontSize: t.type.eyebrow, ...textStyle(t, "label", { strong: true }), lineHeight: 1.25, color: t.color.success, opacity: op(kf(f, [T.srv[1], T.srv[1] + 8], [0, 1])) }}>Completo</div>}
       </Caja>
 

@@ -70,7 +70,7 @@ const clavesHorizontal = (t: ReturnType<typeof useTheme>, g: Geo): CameraKey[] =
  * (en cuadrado, la zona A y la D muestran solo la franja donde pasa la acción) y los acercamientos caen sobre lo que cambia.
  */
 const clavesApiladas = (t: ReturnType<typeof useTheme>, g: Geo, W: number, H: number): CameraKey[] => {
-  const { EW, SW, ZB, ZC, ZD, CFG, SE, PDF, PHONE, cajaC } = g;
+  const { EW, SW, ZB, ZC, ZD, CFG, SE, PDF, QR, PHONE, cajaC } = g;
   const v = g.formato === "vertical";
   const R = v ? 250 : 215; // franja del titular
   const lejos = v ? 0.45 : 0.4; // escala de los vuelos entre zonas
@@ -80,6 +80,8 @@ const clavesApiladas = (t: ReturnType<typeof useTheme>, g: Geo, W: number, H: nu
   // zona A: en vertical toda la pila (ERP, módulo y tienda); en cuadrado la franja entre las filas del ERP y los productos de la tienda
   const overA = v ? encuadre({ x: EW.x, y: EW.y, w: EW.w, h: SW.y + SW.h - EW.y }, W, H, { top: R, max: 1 }) : { x: g.HUB.x, y: 905, s: 0.72 };
   // la letra del ERP (12 a 15 px) y de la tienda (13 a 18 px) se lee a partir de 1,5: el acercamiento recorta los costados y deja entera la parte que cambia
+  // las pastillas viajan por el centro entre el ERP y la tienda: en vertical la cámara se queda ahí, a 1,3 (la letra de 12 a 15 px pasa a 16 a 20)
+  const hub = { x: Math.round(EW.x + EW.w / 2), y: g.HUB.y, s: 1.3 };
   const precio = { x: EW.x + 500, y: EW.y + 250, s: 1.6 };
   const tienda = { x: SW.x + 380, y: SW.y + 300, s: 1.5 };
   const pedido = { x: EW.x + 560, y: EW.y + EW.h - 90, s: 1.6 };
@@ -91,31 +93,35 @@ const clavesApiladas = (t: ReturnType<typeof useTheme>, g: Geo, W: number, H: nu
     ? overB // en vertical la grilla ya llena el ancho: no hay acercamiento que valga
     : encuadre({ x: Math.min(...ultimas.map((p) => p.x)), y: topUlt, w: 2 * b.colW + b.gap, h: b.bottom - topUlt }, W, H, { top: 70, max: 1.45 });
   // zona C: las dos cajas; el acercamiento va a cada caja
-  const cajasC = encuadre({ x: cajaC.x, y: cajaC.top, w: cajaC.w, h: cajaC.bot + cajaC.h - cajaC.top }, W, H, { top: R });
+  // vertical: las dos cajas (700 de alto cada una) llenan el cuadro a 1,1 (el titular ya se apartó); cuadrado: la que encuadra la franja del titular
+  const cajasC = v ? { x: Math.round(cajaC.x + cajaC.w / 2), y: ZC.y, s: 1.1 } : encuadre({ x: cajaC.x, y: cajaC.top, w: cajaC.w, h: cajaC.bot + cajaC.h - cajaC.top }, W, H, { top: R });
   // en cuadrado las dos cajas juntas no dejan leer la letra: la cámara sigue la acción, primero la caja de arriba (antes) y después la de abajo (ahora)
   const cajaArriba = v ? cajasC : encuadre({ x: cajaC.x, y: cajaC.top, w: cajaC.w, h: cajaC.h }, W, H, { top: R });
   const cajaAbajo = v ? cajasC : encuadre({ x: cajaC.x, y: cajaC.bot, w: cajaC.w, h: cajaC.h }, W, H, { top: R });
   const zC = v ? 1.2 : 1.25;
-  const muro = { x: cajaC.x + cajaC.w / 2, y: cajaC.top + (v ? 262 : 300), s: v ? zC : 1.1 };
-  const srv = { x: cajaC.x + cajaC.w / 2, y: cajaC.bot + (v ? 262 : 300), s: v ? zC : 1.1 };
+  const muro = v ? cajasC : { x: cajaC.x + cajaC.w / 2, y: cajaC.top + 300, s: 1.1 };
+  const srv = v ? cajasC : { x: cajaC.x + cajaC.w / 2, y: cajaC.bot + 300, s: 1.1 };
   // zona D: tarjetas arriba y pantalla de configuración abajo (en cuadrado la cámara baja de una a otra mientras se funden)
   const cw = 390;
   const tarj = encuadre({ x: ZD.x - cw - 20, y: g.tarjeta(0, cw).y, w: 2 * cw + 40, h: 650 }, W, H, { top: R, max: 1.15 });
   const ventana = encuadre({ x: CFG.x, y: CFG.y, w: CFG.w, h: CFG.h }, W, H, { top: R, max: 1.15 });
   const overD = v ? encuadre({ x: CFG.x, y: ZD.y - 800, w: CFG.w, h: CFG.y + CFG.h - (ZD.y - 800) }, W, H, { top: R, max: 1 }) : null;
   const zD = v ? 1.35 : 1.3;
-  const interr = { x: CFG.x + CFG.w / 2, y: CFG.y + 334, s: zD };
-  const guardar = { x: CFG.x + CFG.w / 2, y: CFG.y + 600, s: zD };
+  // los interruptores de las filas 2 y 4 (centro entre ambos) y el botón Guardar, con el alto de fila del formato
+  const interr = { x: CFG.x + CFG.w / 2, y: CFG.y + CFG.rowY - 50 + 2 * CFG.rowH + (CFG.rowH - 12) / 2, s: zD };
+  const guardar = { x: CFG.x + CFG.w / 2, y: CFG.y + CFG.h - 200, s: zD };
   // zona E: la cuenta corriente, y debajo la factura con el teléfono
   const cuenta = encuadre({ x: SE.x, y: SE.y, w: SE.w, h: SE.h }, W, H, { top: R });
   const detalle = v ? { x: SE.x + SE.w / 2, y: SE.y + 560, s: 1.1 } : { x: SE.x + SE.w / 2, y: SE.y + 600, s: 1.08 };
   const fila = encuadre({ x: PDF.x, y: PDF.y, w: PHONE.x + PHONE.w - PDF.x, h: PDF.h }, W, H, { top: R });
+  // vertical: la factura y el teléfono juntos ocupan 1000 de ancho y 840 de alto (a 0,94 sobra la mitad del alto); en el escaneo se encuadra de la esquina del QR al teléfono a 1,5
+  const escaneo = { x: Math.round((QR.x + PHONE.x + PHONE.w) / 2), y: PDF.y + 420, s: 1.5 };
   const telefono = { x: PHONE.x + PHONE.w / 2, y: PHONE.y + 390, s: v ? 1.75 : 1.2 };
   const ks: CameraKey[] = [
     kk(0, overA), kk(28, overA),
     kk(40, precio), kk(62, precio), // el precio cambia en el ERP
     kk(76, tienda), kk(104, tienda), // y llega a la tienda
-    kk(118, overA), kk(184, overA),
+    kk(118, v ? hub : overA), kk(184, v ? hub : overA),
     kk(198, pedido), kk(228, pedido), // el pedido de la web llega al ERP
     k(242, (EW.x + EW.w / 2 + ZB.x) / 2, 900, lejos), kk(258, overB), kk(384, overB),
     kk(396, zonaUlt), kk(434, zonaUlt), // una semana entera de arreglos y mejoras
@@ -131,7 +137,7 @@ const clavesApiladas = (t: ReturnType<typeof useTheme>, g: Geo, W: number, H: nu
     k(940, (ZD.x + SE.x + SE.w / 2) / 2, (ZD.y + CFG.h + SE.y) / 2, lejos), kk(954, cuenta), kk(1000, cuenta),
     kk(1010, detalle), kk(1042, detalle), // detalle del movimiento
     kk(1060, fila), kk(1086, fila),
-    kk(1098, fila), kk(1116, fila),
+    kk(1098, v ? escaneo : fila), kk(1116, v ? escaneo : fila),
     kk(1126, telefono), kk(1166, telefono), // ARCA en el teléfono
   ];
   return ks;
@@ -167,10 +173,10 @@ export function SceneBody() {
   const zoomIn = Math.max(0, Math.min(1, (cam.scale - 1.05) / 0.4));
   const cfgCursor = (i: number) => interruptor(i, g);
   // centro del carril de la caja (la barra) y medidas de los garabatos de la zona C
-  const barY = (y0: number) => y0 + (cajaC.v ? 328 : 198);
+  const barY = (y0: number) => y0 + (cajaC.tall ? 450 : cajaC.v ? 328 : 198);
   const muroX = cajaC.x + cajaC.trackX + cajaC.trackW * cajaC.limite;
   const nolimX = cajaC.x + cajaC.trackX + cajaC.trackW * 0.48;
-  const dm = cajaC.v ? { rx: 70, ry: 100, rx2: 80 } : { rx: 64, ry: 84, rx2: 72 };
+  const dm = cajaC.tall ? { rx: 76, ry: 130, rx2: 86 } : cajaC.v ? { rx: 70, ry: 100, rx2: 80 } : { rx: 64, ry: 84, rx2: 72 };
   return (
     <>
       <World camera={cam} width={width} height={height} perspective={2400}>
