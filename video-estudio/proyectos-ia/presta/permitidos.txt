@@ -1,0 +1,10 @@
+# Datos emulados de la escena que el verificador toma por teléfono o dominio (números de comprobante, CUIT y CAE inventados; dominio público del organismo que la escena nombra; dominio de ejemplo de la tienda ficticia).
+0002-00004410
+0004-00000318
+0004-00012873
+0004-00012911
+0004-00012960
+30-71234567-8
+76451238904512
+afip.gob.ar
+ejemplo.com.ar

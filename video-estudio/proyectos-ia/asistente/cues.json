@@ -1,0 +1,62 @@
+[
+ {
+  "frame": 110,
+  "sfx": "barrido"
+ },
+ {
+  "frame": 232,
+  "sfx": "clic",
+  "gain": 1.4
+ },
+ {
+  "frame": 342,
+  "sfx": "clic",
+  "gain": 1.4
+ },
+ {
+  "frame": 384,
+  "sfx": "clic",
+  "gain": 1.4
+ },
+ {
+  "frame": 412,
+  "sfx": "golpe"
+ },
+ {
+  "frame": 520,
+  "sfx": "clic",
+  "gain": 1.4
+ },
+ {
+  "frame": 556,
+  "sfx": "clic",
+  "gain": 1.4
+ },
+ {
+  "frame": 620,
+  "sfx": "clic",
+  "gain": 1.4
+ },
+ {
+  "frame": 646,
+  "sfx": "clic",
+  "gain": 1.4
+ },
+ {
+  "frame": 708,
+  "sfx": "clic",
+  "gain": 1.4
+ },
+ {
+  "frame": 730,
+  "sfx": "golpe"
+ },
+ {
+  "frame": 776,
+  "sfx": "golpe"
+ },
+ {
+  "frame": 806,
+  "sfx": "barrido"
+ }
+]

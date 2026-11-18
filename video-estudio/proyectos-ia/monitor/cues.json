@@ -1,0 +1,19 @@
+[
+  {"frame": 112, "sfx": "barrido", "gain": 1},
+  {"frame": 218, "sfx": "clic", "gain": 1.4},
+  {"frame": 300, "sfx": "clic", "gain": 1.4},
+  {"frame": 440, "sfx": "clic", "gain": 1.4},
+  {"frame": 466, "sfx": "tilde", "gain": 0.8},
+  {"frame": 480, "sfx": "barrido", "gain": 1},
+  {"frame": 630, "sfx": "barrido", "gain": 1},
+  {"frame": 642, "sfx": "aviso", "gain": 1},
+  {"frame": 646, "sfx": "campanita", "gain": 1},
+  {"frame": 732, "sfx": "barrido", "gain": 1},
+  {"frame": 790, "sfx": "campanita", "gain": 0.8},
+  {"frame": 1068, "sfx": "barrido", "gain": 1},
+  {"frame": 1112, "sfx": "clic", "gain": 1.4},
+  {"frame": 1144, "sfx": "clic", "gain": 1.4},
+  {"frame": 1272, "sfx": "clic", "gain": 1.4},
+  {"frame": 1274, "sfx": "tilde", "gain": 1},
+  {"frame": 1404, "sfx": "barrido", "gain": 1}
+]

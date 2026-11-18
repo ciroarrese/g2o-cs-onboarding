@@ -1,0 +1,2 @@
+# Dominios ficticios de la escena (los mismos del original): las tiendas del monitor. No son de ningún cliente; el dominio base es de ejemplo.
+ejemplo.com.ar
