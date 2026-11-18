@@ -1,0 +1,102 @@
+import type React from "react";
+import { Easing } from "../../engine";
+import { kf } from "../../kit";
+import { cornerRadius, textStyle } from "../../themes";
+import { bareShadow, svgSurface } from "../data/styleKit";
+import { hiddenBefore, fxBox, fxDensity, progress, useFx } from "../core";
+import type { FxProps } from "../core";
+
+export type BeforeAfterProps = FxProps & {
+  before?: React.ReactNode;
+  after?: React.ReactNode;
+  /** Donde queda la manija al final (0..1). */
+  rest?: number;
+  beforeLabel?: string;
+  afterLabel?: string;
+};
+
+/** Posicion de la manija (0..1): barre hasta el otro extremo y se asienta en `rest`. */
+export function wipePosition(t: number, rest = 0.5): number {
+  const t0 = Math.min(1, Math.max(0, t));
+  return kf(t0, [0, 0.7, 1], [0.04, 0.96, rest], Easing.inOut);
+}
+
+/** Recorte (en % desde la derecha) de la capa "despues" para una posicion de manija. */
+export const wipeInset = (pos: number): number => +(100 - pos * 100).toFixed(3);
+
+function Wireframe({ w, h, k = 1 }: { w: number; h: number; k?: number }) {
+  const { theme } = useFx({});
+  // con densidad distinta de 1 el dibujo se arma en la caja de diseño (w/k x h/k) y el viewBox lo achica a la caja real
+  const vb = k === 1 ? {} : { viewBox: `0 0 ${w / k} ${h / k}` };
+  if (k !== 1) { w /= k; h /= k; }
+  const rx = Math.min(4, cornerRadius(theme, "control"));
+  const s = { fill: "none", stroke: theme.color.textMuted, strokeWidth: 2.5, strokeDasharray: "9 7" } as const;
+  return (
+    <svg width={w * k} height={h * k} {...vb} style={{ display: "block" }}>
+      <rect width={w} height={h} fill={theme.color.bg} />
+      <rect x={40} y={36} width={w - 80} height={64} rx={rx} {...s} />
+      <rect x={40} y={128} width={(w - 120) * 0.55} height={h - 270} rx={rx} {...s} />
+      <line x1={40} y1={128} x2={40 + (w - 120) * 0.55} y2={h - 142} {...s} />
+      <line x1={40 + (w - 120) * 0.55} y1={128} x2={40} y2={h - 142} {...s} />
+      {[0, 1, 2].map((i) => <rect key={i} x={40 + (w - 120) * 0.55 + 40} y={128 + i * 70} width={(w - 120) * 0.45} height={46} rx={rx} {...s} />)}
+      <rect x={40} y={h - 100} width={180} height={52} rx={rx} {...s} />
+    </svg>
+  );
+}
+
+function Design({ w, h, k = 1 }: { w: number; h: number; k?: number }) {
+  const { theme } = useFx({});
+  const vb = k === 1 ? {} : { viewBox: `0 0 ${w / k} ${h / k}` };
+  if (k !== 1) { w /= k; h /= k; }
+
+  const mw = (w - 120) * 0.55;
+  // La interfaz del "después" sigue las esquinas del diseño.
+  const rMd = cornerRadius(theme, "control"), rLg = cornerRadius(theme, "card"), rPill = cornerRadius(theme, "chip");
+  return (
+    <svg width={w * k} height={h * k} {...vb} style={{ display: "block" }}>
+      <rect width={w} height={h} fill={theme.color.surface} />
+      <rect x={40} y={36} width={w - 80} height={64} rx={rMd} fill={theme.color.surfaceAlt} />
+      <circle cx={76} cy={68} r={14} fill={theme.color.accent} />
+      <rect x={104} y={60} width={110} height={16} rx={8} fill={theme.color.text} />
+      <rect x={40} y={128} width={mw} height={h - 270} rx={rLg} fill={theme.color.accent} />
+      <circle cx={40 + mw * 0.7} cy={128 + (h - 270) * 0.35} r={(h - 270) * 0.22} fill={theme.color.accent2} opacity={0.85} />
+      {[0, 1, 2].map((i) => <rect key={i} x={40 + mw + 40} y={128 + i * 70} width={(w - 120) * 0.45} height={46} rx={rMd} fill={theme.color.surfaceAlt} stroke={theme.color.border} />)}
+      <rect x={40} y={h - 100} width={180} height={52} rx={rPill} fill={theme.color.accent} />
+      <rect x={72} y={h - 80} width={116} height={12} rx={6} fill={theme.color.onAccent} />
+    </svg>
+  );
+}
+
+/** Una manija que barre y revela el "despues" sobre el "antes" (por defecto: esquema de alambre -> diseño). */
+export function BeforeAfter(p: BeforeAfterProps) {
+  const { local, theme } = useFx(p);
+  const { width: w, height: h } = fxBox(p, { width: 900, height: 560 });
+  // `density` (fx/core/density.ts): rótulos, manija y borde bajan juntos en una caja chica; sin él, k = 1 (el de siempre). El "antes" y el "después" por defecto se dibujan a la medida de la caja.
+  const k = fxDensity(p.density, { width: w, height: h }, { width: 900, height: 560 });
+  const dur = p.duration ?? 70;
+  const pos = wipePosition(progress(local, 0, dur), p.rest ?? 0.5);
+  const hx = pos * w;
+  const fs = theme.type.eyebrow * 0.85 * k;
+  // Estilo del diseño: marco (borde grueso, esquinas) y rótulos (relleno, borde, esquinas) según `surfaceStyle`.
+  const frame = svgSurface(theme, "card", { bold: true });
+  const tag = svgSurface(theme, "headline");
+  const tagBorder = tag.border;
+  const knob = cornerRadius(theme, "chip");
+  const chip = (txt: string, left: boolean) => (
+    <div style={{ position: "absolute", top: 18 * k, [left ? "left" : "right"]: 18 * k, padding: `${6 * k}px ${18 * k}px`, fontSize: fs, fontWeight: textStyle(theme, "label", { strong: true }).fontWeight, background: tag.fill, color: theme.color.text, border: tagBorder > 0 ? `${tagBorder}px solid ${tag.edge}` : "none", borderRadius: tag.radius, boxShadow: bareShadow(tag), ...textStyle(theme, "eyebrow") }}>{txt}</div>
+  );
+  return (
+    <div style={{ position: "relative", width: w, height: h, overflow: "hidden", fontFamily: theme.font.family, border: frame.border > 0 ? `${frame.border}px solid ${frame.edge}` : "none", borderRadius: frame.radius, boxShadow: bareShadow(frame), boxSizing: "border-box", ...p.style, ...hiddenBefore(local) }}>
+      <div style={{ position: "absolute", inset: 0 }}>{p.before ?? <Wireframe w={w} h={h} k={k} />}</div>
+      <div style={{ position: "absolute", inset: 0, clipPath: `inset(0 ${wipeInset(pos)}% 0 0)` }}>{p.after ?? <Design w={w} h={h} k={k} />}</div>
+      <div style={{ position: "absolute", left: hx - 2 * k, top: 0, width: 4 * k, height: h, background: theme.color.accent }} />
+      <svg width={56 * k} height={56 * k} style={{ position: "absolute", left: hx - 28 * k, top: h / 2 - 28 * k }} viewBox="0 0 56 56">
+        {knob >= 26 ? <circle cx={28} cy={28} r={26} fill={theme.color.accent} stroke={theme.color.surface} strokeWidth={4} /> : <rect x={2} y={2} width={52} height={52} rx={knob} fill={theme.color.accent} stroke={theme.color.surface} strokeWidth={4} />}
+        <path d="M22 20 L14 28 L22 36 M34 20 L42 28 L34 36" fill="none" stroke={theme.color.onAccent} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      {/* Los rótulos van después de la manija: ella pasa por debajo y nunca tapa un texto. */}
+      {chip(p.afterLabel ?? "Después", true)}
+      {chip(p.beforeLabel ?? "Antes", false)}
+    </div>
+  );
+}

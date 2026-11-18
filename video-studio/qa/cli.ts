@@ -1,0 +1,280 @@
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { json, leerListas, num, one, parseArgs, type Parsed } from './args';
+import { formatElement } from './geometry';
+import { groupFindings, RANK, whereOf } from './informe';
+import { makeSheet } from './sheet';
+import { openSession } from './session';
+import { budgetFromScenes, formatStoryBudget } from '../stories/budget';
+import { formatSceneList, parseFormat, suffixOf } from '../render/index';
+import { resolverSalida, salidaPorDefecto } from '../render/dirs';
+import { resolverRutaVideos } from '../render/rutas';
+import { fichasEmuladas, runPrivacy } from './privacy';
+import { parseTermList } from './privacyCore';
+import { failsAt, runQa } from './run';
+import { RULES } from './rules';
+import { canonicalReport as canonical, diffReports } from './repeat';
+import { parseOverrides } from './thresholds';
+import { QA_RULES, type Finding, type JudgedSummary, type RuleId } from './types';
+import { buildMatrix, formatDifferences, formatMatrix, parseThemes, runQaThemes, type ThemeSkip } from './themes';
+import { formatResolved, resolveThemes } from './resolved';
+
+const USAGE = {
+  sheet: `Uso: ve-sheet <videoId> [--frames 0,60,120 | --every N | --count 12] [--props json] [--format horizontal|vertical|cuadrado] [--scene id|índice] [--list-scenes]
+             [--assets dir]... [--allow-missing-fonts] [--strict-fonts] [--cols 4] [--scale 0.25] [--out out/<id>[-<formato>]-sheet.png] [--no-labels]   (--out acepta cualquier ruta, se crean las carpetas)`,
+  qa: `Uso: ve-qa <videoId> [--frames 0,60,120 | --every N | --count 24] [--props json] [--format horizontal|vertical|cuadrado] [--scene id|índice] [--list-scenes] [--json salida.json | --out salida.json] [--fail-on error|warn] [--verbose] [--max 40]
+             [--per-scene 4] [--pares 40] [--assets dir]... [--allow-missing-fonts] [--strict-fonts] [--rules clip,overlap,...] [--skip regla,...] [--set regla.umbral=valor]... [--concurrency N] [--repeat N]
+             [--themes neutral,dark,editorial,neon,papel|all] [--font-scale 1.2] [--font-fallback wide|narrow]
+Reglas: ${QA_RULES.join(', ')}  (silenciar: data-qa-ignore="regla" en el elemento o un ancestro; adorno de interfaz: data-qa-decor)
+Interfaz recreada bajo una cámara: data-qa-world (el mundo que la cámara transforma: con zoom, lo que el borde corta baja a info y texto-chico solo juzga el objetivo),
+  data-qa-overlay (capa fija con anotaciones: lo que tapa del mundo no cuenta), data-qa-target (objetivo de la señal activa: nunca se exceptúa) y data-qa-settled (en el
+  mundo: cámara asentada). Solo cuentan si la corrida es de un tutorial (algún cuadro muestreado tiene data-qa-target o data-qa-settled; un data-qa-world solo no alcanza). Activan las reglas salto (saltos entre cuadros vecinos) y foco-centro (el objetivo asentado cae en el 60 % central).
+--pares N: cuadros extra (40 por defecto; 0 = ninguno) con sus vecinos alrededor de los cambios de data-qa-settled y de data-qa-target, para la regla salto
+Umbrales: --set salto.px=24 --set salto.ratio=0.25 --set foco-centro.zone=0.6 --set foco-centro.error=0.85`,
+  privacy: `Uso: ve-privacy [<videoId>] --deny lista.txt [--deny otra.txt]... [--allow lista.txt]...  [--frames … | --every N | --count 24] [--props json] [--format …] [--scene id|índice] [--scan-source dir]... [--assets dir]... [--allow-missing-fonts] [--json salida.json | --out salida.json]
+Permitidos: --allow lista.txt (repetible) y, sola, la ficha de datos emulados \`datos-emulados.txt\` que esté junto a cada --deny o dentro de cada --scan-source (un valor por línea; /regex/ para un patrón; # comenta).`,
+};
+
+/** Opciones comunes de estáticos y fuentes (`--assets`, `--allow-missing-fonts`) que entienden sheet, qa y privacy. */
+const common = (p: Parsed) => ({ assets: p.flags.get('assets'), allowMissingFonts: p.bools.has('allow-missing-fonts') || undefined });
+/** `--strict-fonts` (qa y sheet): una familia del sistema que falta hace fallar en vez de avisar. */
+const strict = (p: Parsed) => ({ strictFonts: p.bools.has('strict-fonts') || undefined });
+
+const sample = (p: Parsed) => ({ frames: one(p, 'frames'), every: num(p, 'every'), count: num(p, 'count') });
+
+/** Regla de la historia (no mira cuadros: ver `stories/fit.ts`); se imprime con las demás. */
+const STORY_FIT = { id: 'story-fit' as const, description: 'Largos del guion de la historia (título, nombres, bajadas) que no entran en este formato' };
+
+function printQa(findings: Finding[], sampled: number[], o: { verbose: boolean; max: number }) {
+  const shown = o.verbose ? findings : findings.filter((f) => f.severity !== 'info');
+  let lines = 0;
+  let more = 0;
+  for (const rule of [...RULES, STORY_FIT]) {
+    const groups = groupFindings(shown.filter((f) => f.rule === rule.id));
+    if (!groups.length) continue;
+    const room = Math.max(0, o.max - lines);
+    console.log(`\n[${rule.id}] ${rule.description}: ${groups.length} elementos`);
+    groups.sort((a, b) => RANK[b.severity] - RANK[a.severity] || a.frames[0]! - b.frames[0]!);
+    groups.forEach(({ first: f, severity, frames }, i) => {
+      if (i >= room) { more++; return; }
+      lines++;
+      const where = whereOf(rule.id, frames, sampled);
+      console.log(`  ${severity === 'error' ? 'ERROR' : severity === 'warn' ? 'warn ' : 'info '} ${where}  ${formatElement(f.element)}: ${f.message}${f.other ? ` | con ${formatElement(f.other)}` : ''}`);
+    });
+  }
+  if (more) console.log(`\n… ${more} más (--max N o --verbose)`);
+}
+
+const n = (x: number) => String(x);
+
+/** La linea que dice cuanto texto juzgo el control y cuanto no (y por que): hace imposible no ver la ceguera. */
+export function formatJudged(j: JudgedSummary): string[] {
+  const out: string[] = [];
+  const pct = j.texts ? Math.round((100 * j.judged) / j.texts) : 100;
+  const nj = j.notJudged;
+  const why = [
+    nj.hidden ? `tapados por una capa opaca de cuadro completo ${nj.hidden}` : '', nj.outside ? `fuera del cuadro ${nj.outside}` : '', nj.invisible ? `casi transparentes ${nj.invisible}` : '',
+    nj.ignoredAll ? `excluidos por data-qa-ignore de todas las reglas ${nj.ignoredAll}` : '',
+  ].filter(Boolean);
+  out.push(`juzgados: ${n(j.judged)} de ${n(j.texts)} textos x cuadros (${pct}%); NO juzgados: ${n(nj.total)}${why.length ? ` (${why.join('; ')})` : ''}`);
+  const part = [j.partial.decor ? `adorno (sin min-size ni contrast) ${j.partial.decor}` : '', j.partial.veil ? `bajo un velo de transicion (contrast baja a info) ${j.partial.veil}` : '', j.partial.gradientText ? `con relleno de degradado (contrast no los puede juzgar) ${j.partial.gradientText}` : '',
+    j.partial.ignoredSome ? `con marcas data-qa-ignore de algunas reglas ${j.partial.ignoredSome} (${Object.entries(j.ignoredByRule).sort(([a], [b]) => a.localeCompare(b)).map(([r, c]) => `${r}: ${c}`).join(', ')})` : ''].filter(Boolean);
+  if (part.length) out.push(`  juzgados solo en parte: ${part.join('; ')}`);
+  if (j.partial.worldText) out.push(`  dentro de data-qa-world: ${n(j.partial.worldText)} textos x cuadros (texto-chico solo juzga el objetivo asentado); de ellos ${n(j.partial.worldCut ?? 0)} los corta el borde del cuadro con el mundo acercado y sus hallazgos de offscreen, covered, overlap y contrast bajan a info (no se cuentan como no juzgados, pero tampoco como errores posibles)`);
+  if (j.partial.worldText && (j.partial.worldCut ?? 0) / j.partial.worldText >= 0.5) out.push(`  ATENCION: la mitad o mas del texto del mundo (${Math.round((100 * (j.partial.worldCut ?? 0)) / j.partial.worldText)}%) esta cortado por el borde del cuadro: el control solo vio enteros a ${n(j.partial.worldText - (j.partial.worldCut ?? 0))}; revisar con la hoja y con cuadros donde la camara este mas lejos`);
+  if (j.overlayCoverSkipped) out.push(`  ${n(j.overlayCoverSkipped)} textos x cuadros del mundo tenian encima una capa data-qa-overlay (no se informa como tapa; el objetivo si)`);
+  if (j.coverMarkerSkipped) out.push(`  ${n(j.coverMarkerSkipped)} textos x cuadros tenian encima una capa solida con data-qa-ignore="covered" (no se informa como tapa)`);
+  if (j.hiddenButVisible) out.push(`  ATENCION: ${n(j.hiddenButVisible)} textos x cuadros que el control creia tapados por una capa de cuadro completo SE VEN en pantalla; se juzgaron igual (revisar la capa que los tapa)`);
+  if (j.texts && nj.hidden / j.texts >= 0.5) out.push(`  ATENCION: mas de la mitad del texto (${Math.round((100 * nj.hidden) / j.texts)}%) quedo sin juzgar por estar bajo una capa opaca: un "0 errores" aca no dice nada; revisar con --verbose y la hoja`);
+  if (j.unjudgedVisible) out.push(`  ERROR del control: ${n(j.unjudgedVisible)} textos x cuadros se ven en pantalla y no los juzgo ninguna regla (regla unjudged)`);
+  return out;
+}
+
+/** Escribe el informe JSON (`--out` o `--json`, cualquier ruta; crea las carpetas) y dice dónde quedó. */
+function writeReport(out: string | undefined, data: unknown) {
+  if (!out) return;
+  const abs = resolve(resolverSalida(out));
+  mkdirSync(dirname(abs), { recursive: true });
+  writeFileSync(abs, JSON.stringify(data, null, 2));
+  console.log(`informe: ${abs}`);
+}
+
+async function main(cmd: string, argv: string[]): Promise<number> {
+  const usage = USAGE[cmd as keyof typeof USAGE];
+  if (!usage) throw new Error(`Comando desconocido: ${cmd}`);
+  const p = parseArgs(argv);
+  if (p.bools.has('help')) { console.log(usage); return 0; }
+  const log = (m: string) => console.error(m);
+  const props = json(p, 'props');
+  const id = p.positional[0];
+  const format = parseFormat(one(p, 'format'));
+  const scene = one(p, 'scene');
+
+  if (p.bools.has('list-scenes')) {
+    if (!id) throw new Error('Falta <videoId>');
+    const session = await openSession({ videoId: id, props, format, ...common(p), log });
+    try {
+      const scenes = await session.scenes();
+      console.log(formatSceneList(id, scenes, session.meta.fps));
+      // si es una historia (defineStory), el presupuesto de cuadros por bloque
+      const budget = budgetFromScenes(scenes, session.meta.fps);
+      if (budget) console.log(`\n${formatStoryBudget(budget)}`);
+    } finally {
+      await session.close();
+    }
+    return 0;
+  }
+
+  if (cmd === 'sheet') {
+    if (!id) throw new Error('Falta <videoId>');
+    const r = await makeSheet({ videoId: id, props, format, scene, ...sample(p), cols: num(p, 'cols'), scale: num(p, 'scale'), out: one(p, 'out') ?? salidaPorDefecto(`${id}${suffixOf({ format, scene })}-sheet.png`), labels: !p.bools.has('no-labels'), ...common(p), ...strict(p), log });
+    console.log(`hoja: ${r.out} (${r.width}x${r.height}, ${r.frames.length} cuadros: ${r.frames.join(',')})`);
+    return 0;
+  }
+
+  if (cmd === 'qa') {
+    if (!id) throw new Error('Falta <videoId>');
+    for (const f of ['allow', 'deny']) if (p.flags.has(f)) throw new Error(`--${f} es de \`privacy\` (npm run privacy -- <id> --deny lista.txt [--allow lista.txt]...); \`qa\` no lo usa`);
+    const only = one(p, 'rules')?.split(',').filter(Boolean) as RuleId[] | undefined;
+    const skip = (one(p, 'skip')?.split(',').filter(Boolean) ?? []) as RuleId[];
+    for (const r of [...(only ?? []), ...skip]) if (!QA_RULES.includes(r)) throw new Error(`Regla desconocida: ${r}`);
+    const failOn = one(p, 'fail-on') ?? 'error';
+    if (failOn !== 'error' && failOn !== 'warn') throw new Error('--fail-on debe ser error o warn');
+    const repeat = num(p, 'repeat') ?? 1;
+    if (!Number.isInteger(repeat) || repeat < 1) throw new Error('--repeat debe ser un entero >= 1');
+    const fontScale = num(p, 'font-scale');
+    if (fontScale !== undefined && !(fontScale > 0 && fontScale <= 4)) throw new Error('--font-scale debe ser un numero entre 0 y 4 (1.2 = letra 20 % mas grande)');
+    const fallback = one(p, 'font-fallback');
+    if (fallback !== undefined && fallback !== 'wide' && fallback !== 'narrow') throw new Error('--font-fallback debe ser wide o narrow');
+    const stress = fontScale !== undefined || fallback !== undefined ? { ...(fontScale !== undefined ? { fontScale } : {}), ...(fallback ? { fontFallback: fallback as 'wide' | 'narrow' } : {}) } : undefined;
+    const themesSpec = one(p, 'themes');
+    const themes = themesSpec !== undefined ? parseThemes(themesSpec) : undefined;
+    if (themes && props && 'theme' in props) throw new Error('--themes y --props con "theme" se pisan: dejá solo uno');
+    const pares = num(p, 'pares');
+    if (pares !== undefined && (!Number.isInteger(pares) || pares < 0)) throw new Error('--pares debe ser un entero >= 0');
+    const perScene = num(p, 'per-scene');
+    if (perScene !== undefined && (!Number.isInteger(perScene) || perScene < 0)) throw new Error('--per-scene debe ser un entero >= 0');
+    const qaOpts = {
+      videoId: id, props, format, scene, ...sample(p), perScene, pares, rules: (only ?? QA_RULES).filter((x) => !skip.includes(x)),
+      thresholds: parseOverrides(p.flags.get('set') ?? []), concurrency: num(p, 'concurrency'), stress, ...common(p), ...strict(p), log,
+    };
+    const verbose = p.bools.has('verbose');
+    const max = verbose && one(p, 'max') === undefined ? Infinity : num(p, 'max') ?? 40;
+
+    // Resumen de un informe (lo mismo en un solo sistema que en cada uno de --themes).
+    const printSummary = (r: Awaited<ReturnType<typeof runQa>>, label = '') => {
+      printQa(r.findings, r.summary.frames, { verbose, max });
+      const s = r.summary;
+      if (s.detailSmallText) console.log(`\ninfo: ${s.detailSmallText.texts} ${s.detailSmallText.texts === 1 ? 'texto' : 'textos'} por debajo del mínimo en el plano general ${s.detailSmallText.texts === 1 ? 'se lee' : 'se leen'} al acercar dentro de su escena (detalle, no es error; ${s.detailSmallText.frames} ${s.detailSmallText.frames === 1 ? 'cuadro afectado' : 'cuadros afectados'}; --verbose lo muestra por cuadro)`);
+      if (s.decor) console.log(`\ninfo: ${s.decor.texts} ${s.decor.texts === 1 ? 'texto de adorno' : 'textos de adorno'} (data-qa-decor) quedaron fuera de min-size y contrast (${s.decor.frames} ${s.decor.frames === 1 ? 'cuadro' : 'cuadros'}); clip, overlap contra texto normal y offscreen (si es data-qa-decor="main") siguen aplicando`);
+      if (s.fixedScale) {
+        const fx = s.fixedScale;
+        console.log(fx.refused
+          ? `\nADVERTENCIA: data-qa-fixed-scale RECHAZADA: cubre todo el escenario y no hay otro texto fuera de la marca en ningun cuadro revisado; apagaria el estres de todo el video. Se aplico el estres igual (${fx.texts} ${fx.texts === 1 ? 'texto habria quedado' : 'textos habrian quedado'} exento${fx.texts === 1 ? '' : 's'}). Marcar solo la reproduccion, no el escenario entero`
+          : `\ninfo: ${fx.texts} ${fx.texts === 1 ? 'texto' : 'textos'} fuera del estres de tipografia por data-qa-fixed-scale (${fx.frames} ${fx.frames === 1 ? 'cuadro' : 'cuadros'}); el resto de las reglas los sigue juzgando`);
+      }
+      if (s.silenced) {
+        const parts = Object.entries(s.silenced).map(([rule, c]) => `${rule}: ${[c.ignore ? `${c.ignore} por data-qa-ignore` : '', c.decor ? `${c.decor} por data-qa-decor` : ''].filter(Boolean).join(', ')}`);
+        console.log(`\ncallados (no cuentan arriba): ${parts.join('; ')}`);
+      }
+      console.log('');
+      if (s.frames.length) console.log(s.tutorial ? 'corrida de tutorial (hay data-qa-target o data-qa-settled): cuentan data-qa-world, data-qa-overlay y data-qa-target, y corren salto y foco-centro' : 'corrida normal (sin data-qa-target ni data-qa-settled): no se tratan como tutorial; salto y foco-centro no corren y data-qa-world no cambia nada');
+      if (s.sampling) console.log(`muestreo: ${s.sampling.even} cuadros repartidos + ${s.sampling.anchored} anclados al cuadro local de ${s.sampling.scenes} ${s.sampling.scenes === 1 ? 'escena' : 'escenas'} (hasta ${s.sampling.perScene} por escena: no se mueven si cambia la duración del resto del video; --per-scene 0 los apaga)`);
+      if (s.frames.length) for (const l of formatJudged(s.judged)) console.log(l);
+      if (s.pares) console.log(`pares consecutivos (regla salto): ${s.pares.juzgados} juzgados de ${s.pares.comparados} comparados${s.pares.cortes ? `; ${s.pares.cortes} salteados por ser cortes de escena o un cambio de pantalla` : ''}; ${s.pares.porTransicion} ${s.pares.porTransicion === 1 ? 'cuadro sumado' : 'cuadros sumados'} alrededor de ${s.pares.cambios} ${s.pares.cambios === 1 ? 'cambio' : 'cambios'} de data-qa-settled/data-qa-target (--pares N)`);
+      const per = Object.entries(s.byRule).map(([k, v]) => `${k}=${v}`).join(' ') || 'ninguno';
+      console.log(`\n${label}${id}: ${s.frames.length ? `${s.frames.length} cuadros revisados` : 'sin cuadros (solo el largo del guion)'} en ${s.seconds}s; ${s.errors} errores, ${s.warnings} avisos, ${s.infos} info${verbose ? '' : ' (ocultos; --verbose)'} (${per})`);
+    };
+    if (stress) console.log(`estres de tipografia: ${[stress.fontScale !== undefined ? `letra x${stress.fontScale}` : '', stress.fontFallback ? `fuente de reemplazo ${stress.fontFallback}` : ''].filter(Boolean).join(', ')}`);
+
+    // --themes: el mismo control bajo cada design system, con una matriz y las diferencias entre ellos.
+    if (themes) {
+      const skipped: ThemeSkip[] = [];
+      const reports = await runQaThemes(qaOpts, themes, skipped);
+      const ran = themes.filter((t) => reports[t]);
+      let unstable = false;
+      for (let i = 2; i <= repeat; i++) {
+        const again = await runQaThemes(qaOpts, ran);
+        for (const t of ran) {
+          const diff = diffReports(reports[t]!, again[t]!);
+          if (diff.length) {
+            unstable = true;
+            console.log(`\nREPETICION ${i}/${repeat} [${t}]: el informe difiere de la primera corrida (${diff.length} ${diff.length === 1 ? 'diferencia' : 'diferencias'}):`);
+            for (const d of diff.slice(0, 40)) console.log(`  ${d}`);
+          }
+        }
+      }
+      for (const t of ran) { console.log(`\n===== sistema: ${t} =====`); printSummary(reports[t]!, `[${t}] `); }
+      if (skipped.length) console.log(`\nsistemas salteados (no pueden dibujar este video): ${skipped.map((x) => `${x.theme} (${x.reason})`).join('; ')}`);
+      const matrix = buildMatrix(reports);
+      console.log(`\n===== matriz (${id}) =====\n${formatMatrix(matrix)}\n\n${formatResolved(resolveThemes(ran))}\n\n${formatDifferences(matrix, max === Infinity ? 1e9 : max)}`);
+      if (ran.length > 1 && ran.every((t) => canonical(reports[t]!) === canonical(reports[ran[0]!]!))) console.log('\nnota: los informes de todos los sistemas son iguales; si el video no lee props.theme, la matriz no prueba nada (hello y audio-check no lo leen)');
+      writeReport(one(p, 'out') ?? one(p, 'json'), { themes: ran, ...(skipped.length ? { skipped } : {}), reports, matrix, resolved: resolveThemes(ran) });
+      if (repeat > 1) console.log(unstable ? `\nrepeticiones: NO reproducible (algún informe de ${repeat} difiere del primero)` : `\nrepeticiones: ${repeat} corridas con informes idénticos (salvo el tiempo)`);
+      if (unstable) return 3;
+      return ran.some((t) => failsAt(reports[t]!, failOn)) ? 1 : 0;
+    }
+
+    const r = await runQa(qaOpts);
+    // --repeat N: autocomprobación. Corre el mismo control N veces; si algún informe difiere del primero, imprime qué hallazgos
+    // cambian y falla (código 3): el control tiene que ser determinista. Sin diferencias, sigue como siempre con el primer informe.
+    let unstable = false;
+    for (let i = 2; i <= repeat; i++) {
+      const again = await runQa(qaOpts);
+      const diff = diffReports(r, again);
+      if (diff.length) {
+        unstable = true;
+        console.log(`\nREPETICION ${i}/${repeat}: el informe difiere de la primera corrida (${diff.length} ${diff.length === 1 ? 'diferencia' : 'diferencias'}):`);
+        for (const d of diff.slice(0, 40)) console.log(`  ${d}`);
+        if (diff.length > 40) console.log(`  … ${diff.length - 40} más`);
+      }
+    }
+    printSummary(r);
+    writeReport(one(p, 'out') ?? one(p, 'json'), r);
+    if (repeat > 1) console.log(unstable ? `\nrepeticiones: NO reproducible (algún informe de ${repeat} difiere del primero)` : `\nrepeticiones: ${repeat} corridas con informes idénticos (salvo el tiempo)`);
+    if (unstable) return 3;
+    return failsAt(r, failOn) ? 1 : 0;
+  }
+
+  // privacy
+  // Con VE_VIDEOS_DIR, `videos/<slug>/...` se busca primero tal cual y después en esa carpeta (render/rutas.ts); si no está en ningún lado, el error nombra lo probado.
+  for (const f of ['deny', 'allow', 'scan-source']) {
+    if (!p.flags.has(f)) continue;
+    p.flags.set(f, p.flags.get(f)!.map((r) => {
+      try {
+        return resolverRutaVideos(r);
+      } catch (e) {
+        throw new Error(`--${f} ${r}: ${(e as Error).message}`);
+      }
+    }));
+  }
+  const deny = leerListas(p, 'deny', (f) => readFileSync(f, 'utf8'));
+  if (!deny.rutas.length) throw new Error('Falta --deny <archivo> (se puede repetir)');
+  const dirs = p.flags.get('scan-source') ?? [];
+  if (!id && !dirs.length) throw new Error('Indica un <videoId> y/o --scan-source <dir>');
+  const allow = leerListas(p, 'allow', (f) => readFileSync(f, 'utf8'));
+  // La ficha de datos emulados del video (`datos-emulados.txt`, junto a la lista de prohibidos o dentro de la carpeta escaneada) es la fuente de la lista de permitidos: lo que figura ahí se permite solo.
+  const fichas = fichasEmuladas([...deny.rutas.map((r) => dirname(r)), ...dirs]);
+  const fichaTxt = fichas.map((f) => readFileSync(f, 'utf8'));
+  for (const f of fichas) console.log(`ficha de datos emulados: ${f} (${parseTermList(readFileSync(f, 'utf8')).length} entradas permitidas)`);
+  const r = await runPrivacy({
+    videoId: id, props, format, scene, ...sample(p), deny: deny.contenido, allow: [allow.contenido, ...fichaTxt].filter(Boolean).join('\n'), scanSource: dirs, skipFiles: [...deny.rutas, ...allow.rutas, ...fichas], ...common(p), log,
+  });
+  for (const f of r.findings) {
+    console.log(`${f.kind.toUpperCase().padEnd(11)} "${f.value}"${f.term ? ` (termino: ${f.term})` : ''}  en ${f.where}${f.frames ? ` cuadros ${f.frames.join(',')}` : ''}\n       ...${f.context}...`);
+    if (f.kind === 'deny-joined') console.log('       (solo aparece al juntar textos de elementos o letras sueltas de la misma linea: no esta en ningun nodo de texto entero; si en pantalla se lee como dos cosas distintas, es un falso positivo: ajustar la lista o usar --allow)');
+  }
+  console.log(`\nprivacidad: ${r.ok ? 'OK' : `FALLO (${r.findings.length} hallazgos)`}; ${r.scannedTexts} textos, ${r.scannedFiles} archivos, ${r.frames.length} cuadros`);
+  writeReport(one(p, 'out') ?? one(p, 'json'), r);
+  return r.ok ? 0 : 1;
+}
+
+const [cmd, ...rest] = process.argv.slice(2);
+let code: number;
+try {
+  code = await main(cmd ?? '', rest);
+} catch (e) {
+  console.error(`Error: ${(e as Error).message}`);
+  code = 2;
+}
+process.exit(code);

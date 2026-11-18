@@ -1,0 +1,264 @@
+import { parseArgs } from 'node:util';
+import type { FormatName } from '../engine';
+import { parseFormat } from './meta';
+import { LIVIANO_MB_POR_DEFECTO } from './liviano';
+
+export type CliOptions = {
+  videoId: string;
+  out?: string;
+  props: Record<string, unknown>;
+  frames?: [number, number];
+  concurrency?: number;
+  scale: number;
+  crf: number;
+  segment: number;
+  audio: boolean;
+  cache: boolean;
+  keepFrames: boolean;
+  frameFormat: 'png' | 'jpeg';
+  jpegQuality: number;
+  check: boolean;
+  checkMaxDelta: number;
+  checkMaxRatio: number;
+  checkStrict: boolean;
+  assets: string[];
+  allowMissingFonts: boolean;
+  strictFonts: boolean;
+  checkCount?: number;
+  checkPerScene?: number;
+  checkAll: boolean;
+  format?: FormatName;
+  scene?: string;
+  /** `--seconds a-b`: rango en tiempo (segundos o m:ss); se convierte a cuadros cuando se conoce el fps. */
+  seconds?: [number, number];
+  audioBitrate: string;
+  audioPeakMax: number;
+  audioPeakStrict: boolean;
+  audioPeakCheck: boolean;
+  /** `--liviano [MB]`: copia `<salida>-liviano.mp4` de como mucho estos MB. */
+  liviano?: number;
+  list: boolean;
+  listScenes: boolean;
+  help: boolean;
+};
+
+export const USAGE = `Uso: ve-render <videoId> [opciones]
+       ve-render --list                      (videos descubiertos: examples/* y videos/*)
+       ve-render <videoId> --list-scenes     (escenas con nombre del video)
+
+  --out <archivo>        Salida (por defecto out/<id>.mp4)
+  --props '<json>'       Props (objeto JSON) que se mezclan con defaultProps
+  --frames a-b           Solo ese rango de cuadros (inclusive)
+  --format <f>           horizontal, vertical o cuadrado (el video tiene que admitirlo; ver defineVideo({ formats }))
+  --seconds a-b          Solo ese tramo, en segundos o m:ss (p. ej. 12.5-20 o 1:30-2:05; el fin no se incluye); no se combina con --frames ni --scene
+  --scene <id|indice>    Solo esa escena (indice desde 0, como en --list-scenes); no se combina con --frames
+  --list                 Lista los videos disponibles con su tamaño y formatos
+  --list-scenes          Lista las escenas con nombre del video y sus cuadros
+  --concurrency N        Paginas en paralelo (por defecto min(cpus, 6))
+  --scale N              Escala de salida, p. ej. 0.5 o 2 (por defecto 1)
+  --crf N                Calidad x264, 0-51 (por defecto 18)
+  --segment N            Cuadros por parte en cache (por defecto 150)
+  --no-audio             No mezclar audio
+  --audio-bitrate <r>    Tasa del AAC (por defecto 192k; p. ej. 256k)
+  --audio-peak-max=<dB>  Pico verdadero maximo del audio YA codificado (por defecto -1 dBTP); si lo supera, avisa. Con el signo menos va con "="
+  --audio-peak-strict    Si el pico del audio codificado supera el maximo, falla (no deja el mp4)
+  --no-audio-peak-check  No medir el pico del audio codificado
+  --liviano [MB]         Ademas deja <salida>-liviano.mp4 de como mucho MB mebibytes (por defecto 25; el audio se copia, el video se recodifica). Con un id numerico va con "=": --liviano=25
+  --no-cache             Ignorar y reescribir la cache de partes
+  --keep-frames          Conservar los PNG junto a la salida
+  --frame-format png|jpeg  Formato de captura (png sin perdida, por defecto; jpeg mas rapido)
+  --jpeg-quality N       Calidad JPEG 1-100 (por defecto 95)
+  --assets <dir>         Directorio extra con archivos estaticos y de audio (repetible; también VE_ASSETS).
+                         Se sirven solas videos/<slug>/assets, videos/<slug>/audio y <VE_VIDEOS_DIR>/assets
+  --check                Verificar determinismo en vez de codificar (tolerante por defecto)
+  --check-max-delta N    Con --check: maxima diferencia por canal tolerada (por defecto 2)
+  --check-max-ratio R    Con --check: fraccion maxima de pixeles distintos (por defecto 0.001 = 0.1%)
+  --check-strict         Con --check: comparacion byte a byte
+  --check-count N        Con --check: cuadros repartidos parejos en el rango (por defecto 12)
+  --check-per-scene N    Con --check: cuadros por escena con nombre, varios cerca del inicio (por defecto 6)
+  --check-all            Con --check: todos los cuadros del rango (lento)
+                         (con --frames a-b se verifica dentro del rango; con --scene, dentro de la escena)
+  --allow-missing-fonts  Borrador: una fuente que no carga avisa en vez de fallar (también VE_ALLOW_MISSING_FONTS=1)
+  --strict-fonts         Una familia del sistema que el tema nombra sin archivo y no está instalada hace fallar (por defecto avisa; también VE_STRICT_FONTS=1)
+  -h, --help             Esta ayuda
+`;
+
+/** Segundos a partir de `12`, `12.5` o `m:ss(.f)` / `h:mm:ss(.f)`. */
+export function parseTiempo(name: string, txt: string): number {
+  const partes = txt.trim().split(':');
+  if (partes.length > 3 || partes.some((p) => !/^\d+(?:\.\d+)?$/.test(p))) throw new Error(`${name}: "${txt}" no es un tiempo (usá segundos, 12.5, o m:ss, 1:30)`);
+  return partes.reduce((acc, p) => acc * 60 + Number(p), 0);
+}
+
+const int = (name: string, v: string, min: number): number => {
+  if (!/^-?\d+$/.test(v)) throw new Error(`${name} debe ser un entero (recibido "${v}")`);
+  const n = Number(v);
+  if (n < min) throw new Error(`${name} debe ser >= ${min} (recibido ${n})`);
+  return n;
+};
+
+export function parseCliArgs(argvIn: string[]): CliOptions {
+  // `--audio-peak-max -1`: node:util toma "-1" por una opción; se junta con "=" para que se lea como valor.
+  const argv = argvIn.flatMap((a, i) => (i > 0 && argvIn[i - 1] === '--audio-peak-max' && /^-\d/.test(a) ? [] : a === '--audio-peak-max' && /^-\d/.test(argvIn[i + 1] ?? '') ? [`--audio-peak-max=${argvIn[i + 1]}`] : [a]));
+  // `--liviano` lleva un valor opcional: parseArgs no lo admite, así que se lo junta con "=" (sin valor numérico a continuación, vale el de por defecto).
+  const conLiviano = argv.flatMap((a, i) => (a === '--liviano' ? [`--liviano=${/^\d+(?:\.\d+)?$/.test(argv[i + 1] ?? '') ? argv[i + 1] : LIVIANO_MB_POR_DEFECTO}`] : i > 0 && argv[i - 1] === '--liviano' && /^\d+(?:\.\d+)?$/.test(a) ? [] : [a]));
+  let parsed;
+  try {
+    parsed = parseArgs({
+      args: conLiviano,
+      allowPositionals: true,
+      options: {
+        out: { type: 'string' },
+        props: { type: 'string' },
+        frames: { type: 'string' },
+        concurrency: { type: 'string' },
+        scale: { type: 'string' },
+        crf: { type: 'string' },
+        segment: { type: 'string' },
+        'no-audio': { type: 'boolean' },
+        seconds: { type: 'string' },
+        'audio-bitrate': { type: 'string' },
+        'audio-peak-max': { type: 'string' },
+        'audio-peak-strict': { type: 'boolean' },
+        'no-audio-peak-check': { type: 'boolean' },
+        liviano: { type: 'string' },
+        'no-cache': { type: 'boolean' },
+        'keep-frames': { type: 'boolean' },
+        'frame-format': { type: 'string' },
+        'jpeg-quality': { type: 'string' },
+        check: { type: 'boolean' },
+        'check-max-delta': { type: 'string' },
+        'check-max-ratio': { type: 'string' },
+        'check-strict': { type: 'boolean' },
+        'check-count': { type: 'string' },
+        'check-per-scene': { type: 'string' },
+        'check-all': { type: 'boolean' },
+        'allow-missing-fonts': { type: 'boolean' },
+        'strict-fonts': { type: 'boolean' },
+        assets: { type: 'string', multiple: true },
+        format: { type: 'string' },
+        scene: { type: 'string' },
+        list: { type: 'boolean' },
+        'list-scenes': { type: 'boolean' },
+        help: { type: 'boolean', short: 'h' },
+      },
+    });
+  } catch (e) {
+    throw new Error((e as Error).message);
+  }
+  const { values: v, positionals } = parsed;
+  if (v.help) {
+    return { videoId: '', props: {}, scale: 1, crf: 18, segment: 150, audio: true, cache: true, keepFrames: false, frameFormat: 'png', jpegQuality: 95, check: false, checkMaxDelta: 2, checkMaxRatio: 0.001, checkStrict: false, assets: [], allowMissingFonts: false, strictFonts: false, checkAll: false, audioBitrate: '192k', audioPeakMax: -1, audioPeakStrict: false, audioPeakCheck: true, list: false, listScenes: false, help: true };
+  }
+  if (v.list) {
+    if (positionals.length) throw new Error('--list no lleva <videoId>');
+    return { videoId: '', props: {}, scale: 1, crf: 18, segment: 150, audio: true, cache: true, keepFrames: false, frameFormat: 'png', jpegQuality: 95, check: false, checkMaxDelta: 2, checkMaxRatio: 0.001, checkStrict: false, assets: [], allowMissingFonts: false, strictFonts: false, checkAll: false, audioBitrate: '192k', audioPeakMax: -1, audioPeakStrict: false, audioPeakCheck: true, list: true, listScenes: false, help: false };
+  }
+  if (positionals.length !== 1) throw new Error('Falta <videoId> (o sobran argumentos posicionales)');
+  if ((v['check-count'] !== undefined || v['check-per-scene'] !== undefined || v['check-all']) && !v.check && !v['check-strict']) throw new Error('--check-count, --check-per-scene y --check-all van con --check');
+
+  const format = parseFormat(v.format);
+  if (v.scene !== undefined && v.scene === '') throw new Error('--scene necesita un id o un índice');
+  if (v.scene !== undefined && v.frames !== undefined) throw new Error('--scene y --frames no se combinan: --scene ya fija el rango de cuadros');
+  if (v.seconds !== undefined && (v.frames !== undefined || v.scene !== undefined)) throw new Error('--seconds no se combina con --frames ni con --scene: cada uno fija el rango de cuadros');
+  let seconds: [number, number] | undefined;
+  if (v.seconds !== undefined) {
+    const m = /^([^-]+)-([^-]+)$/.exec(v.seconds);
+    if (!m) throw new Error(`--seconds debe ser "a-b" (segundos o m:ss; recibido "${v.seconds}")`);
+    const a = parseTiempo('--seconds', m[1]!);
+    const b = parseTiempo('--seconds', m[2]!);
+    if (b <= a) throw new Error(`--seconds: el final (${b} s) tiene que ser mayor que el inicio (${a} s)`);
+    seconds = [a, b];
+  }
+  const audioBitrate = v['audio-bitrate'] ?? '192k';
+  if (!/^\d+(?:\.\d+)?[kKmM]?$/.test(audioBitrate)) throw new Error(`--audio-bitrate debe ser una tasa como 192k o 256k (recibido "${audioBitrate}")`);
+  let audioPeakMax = -1;
+  if (v['audio-peak-max'] !== undefined) {
+    audioPeakMax = Number(v['audio-peak-max']);
+    if (!Number.isFinite(audioPeakMax) || audioPeakMax > 3 || audioPeakMax < -60) throw new Error(`--audio-peak-max debe ser un valor en dBTP entre -60 y 3 (recibido "${v['audio-peak-max']}")`);
+  }
+  if (v['audio-peak-strict'] && v['no-audio-peak-check']) throw new Error('--audio-peak-strict y --no-audio-peak-check se contradicen');
+  let liviano: number | undefined;
+  if (v.liviano !== undefined) {
+    liviano = Number(v.liviano);
+    if (!Number.isFinite(liviano) || liviano <= 0 || liviano > 100_000) throw new Error(`--liviano debe ser un tamaño máximo en MB mayor que 0 (recibido "${v.liviano}")`);
+  }
+  let props: Record<string, unknown> = {};
+  if (v.props !== undefined) {
+    let p: unknown;
+    try {
+      p = JSON.parse(v.props);
+    } catch (e) {
+      throw new Error(`--props no es JSON valido: ${(e as Error).message}`);
+    }
+    if (p === null || typeof p !== 'object' || Array.isArray(p)) throw new Error('--props debe ser un objeto JSON');
+    props = p as Record<string, unknown>;
+  }
+
+  let frames: [number, number] | undefined;
+  if (v.frames !== undefined) {
+    const m = /^(\d+)(?:-(\d+))?$/.exec(v.frames);
+    if (!m) throw new Error(`--frames debe ser "a-b" o "a" (recibido "${v.frames}")`);
+    const a = Number(m[1]);
+    const b = m[2] === undefined ? a : Number(m[2]);
+    if (b < a) throw new Error(`--frames: el final (${b}) es menor que el inicio (${a})`);
+    frames = [a, b];
+  }
+
+  let scale = 1;
+  if (v.scale !== undefined) {
+    scale = Number(v.scale);
+    if (!Number.isFinite(scale) || scale <= 0 || scale > 8) throw new Error(`--scale debe estar en (0, 8] (recibido "${v.scale}")`);
+  }
+  const crf = v.crf === undefined ? 18 : int('--crf', v.crf, 0);
+  if (crf > 51) throw new Error('--crf debe estar entre 0 y 51');
+
+  const frameFormat = v['frame-format'] ?? 'png';
+  if (frameFormat !== 'png' && frameFormat !== 'jpeg') throw new Error(`--frame-format debe ser png o jpeg (recibido "${frameFormat}")`);
+  const jpegQuality = v['jpeg-quality'] === undefined ? 95 : int('--jpeg-quality', v['jpeg-quality'], 1);
+  if (jpegQuality > 100) throw new Error('--jpeg-quality debe estar entre 1 y 100');
+
+  const checkMaxDelta = v['check-max-delta'] === undefined ? 2 : int('--check-max-delta', v['check-max-delta'], 0);
+  let checkMaxRatio = 0.001;
+  if (v['check-max-ratio'] !== undefined) {
+    checkMaxRatio = Number(v['check-max-ratio']);
+    if (!Number.isFinite(checkMaxRatio) || checkMaxRatio < 0 || checkMaxRatio > 1) throw new Error(`--check-max-ratio debe estar en [0, 1] (recibido "${v['check-max-ratio']}")`);
+  }
+
+  return {
+    videoId: positionals[0]!,
+    out: v.out,
+    props,
+    frames,
+    concurrency: v.concurrency === undefined ? undefined : int('--concurrency', v.concurrency, 1),
+    scale,
+    crf,
+    segment: v.segment === undefined ? 150 : int('--segment', v.segment, 1),
+    audio: !v['no-audio'],
+    cache: !v['no-cache'],
+    keepFrames: !!v['keep-frames'],
+    frameFormat,
+    jpegQuality,
+    check: !!v.check,
+    checkMaxDelta,
+    checkMaxRatio,
+    checkStrict: !!v['check-strict'],
+    checkCount: v['check-count'] === undefined ? undefined : int('--check-count', v['check-count'], 1),
+    checkPerScene: v['check-per-scene'] === undefined ? undefined : int('--check-per-scene', v['check-per-scene'], 1),
+    checkAll: !!v['check-all'],
+    allowMissingFonts: !!v['allow-missing-fonts'],
+    strictFonts: !!v['strict-fonts'],
+    assets: v.assets ?? [],
+    format,
+    scene: v.scene,
+    seconds,
+    audioBitrate,
+    audioPeakMax,
+    audioPeakStrict: !!v['audio-peak-strict'],
+    audioPeakCheck: !v['no-audio-peak-check'],
+    liviano,
+    list: false,
+    listScenes: !!v['list-scenes'],
+    help: false,
+  };
+}

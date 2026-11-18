@@ -12,10 +12,14 @@
     "esModuleInterop": true,
     "types": [],
     "paths": {
-      "video-estudio/*": ["/home/user/video-estudio/*"],
-      "react": ["/home/user/video-estudio/node_modules/@types/react"],
-      "react/jsx-runtime": ["/home/user/video-estudio/node_modules/@types/react/jsx-runtime"]
+      "video-estudio/*": ["../video-studio/*"],
+      "react": ["../video-studio/node_modules/@types/react"],
+      "react/jsx-runtime": ["../video-studio/node_modules/@types/react/jsx-runtime"],
+      "react/jsx-dev-runtime": ["../video-studio/node_modules/@types/react/jsx-dev-runtime"],
+      "react-dom": ["../video-studio/node_modules/@types/react-dom"],
+      "react-dom/client": ["../video-studio/node_modules/@types/react-dom/client"]
     }
   },
-  "include": ["migracion/**/*.ts", "migracion/**/*.tsx"]
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "assets", "out", ".ve-cache"]
 }

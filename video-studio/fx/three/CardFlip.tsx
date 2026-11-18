@@ -1,0 +1,120 @@
+import React from "react";
+import { hiddenBefore, Easing, fxDensity, lerp, progress, styleKey, xform } from "../core";
+import { cornerRadius } from "../../themes";
+import { cardSurface, useThreeFx } from "./common";
+import type { ThreeProps } from "./common";
+
+export type CardFlipProps = ThreeProps & {
+  /** Cara frontal (se ve al principio). */
+  front?: React.ReactNode;
+  /** Cara trasera (se ve al final). */
+  back?: React.ReactNode;
+  /** Tamaño de la tarjeta en px. */
+  cardWidth?: number;
+  cardHeight?: number;
+  /**
+   * Borde nítido en cajas chicas: la superficie (relleno, borde, sombra) se dibuja con ancho y alto enteros y SIN `scale` (solo el contenido se escala dentro),
+   * con posiciones enteras y la rendija de canto oculta. Es lo que usa un muro de baldosas; sin `crisp` la tarjeta se dibuja como siempre (un solo `scale`).
+   */
+  crisp?: boolean;
+};
+
+// Una escala casi 1 (menos de 1,5 %) se toma como 1: bordes con escala casi identidad bajo una cámara con zoom se rasterizan distinto según el historial.
+const snap = (k: number) => (Math.abs(k - 1) < 0.015 ? 1 : k);
+
+/** Tarjeta que da media vuelta; la cara que no mira al espectador se oculta por ángulo. Proyección a mano: escala en X y en Y, sin `rotateY`. */
+export function CardFlip(p: CardFlipProps) {
+  const { local, rawLocal, duration, width, height, theme, pal } = useThreeFx(p, { width: 900, height: 600, duration: 75 });
+  const cw = p.cardWidth ?? Math.min(width * 0.8, 1000);
+  const ch = p.cardHeight ?? Math.min(height * 0.8, 620);
+  const sc = Math.min(cw / 620, ch / 400);
+  // `density` (fx/core/density.ts): borde, elevación y, si pasás tus propias caras, la escala a la que se dibujan (se diseñan para la tarjeta de 620 x 400 y
+  // se achican con la tarjeta). Sin `density`, el de siempre.
+  const dk = p.density === undefined ? 1 : fxDensity(p.density, { width: cw, height: ch }, { width: 620, height: 400 });
+  const faces = (node: React.ReactNode) => (dk === 1 ? node : <div style={{ width: cw / dk, height: ch / dk, transform: `scale(${+dk.toFixed(4)})`, transformOrigin: "0 0" }}>{node}</div>);
+  const k = progress(local, 6, Math.max(1, duration - 18), Easing.inOut);
+  const ang = Math.PI * k;
+  const c = Math.cos(ang), s = Math.sin(ang);
+  const showFront = c >= 0;
+  const sx = Math.max(0.0001, Math.abs(c));
+  const grow = 1 + 0.1 * s; // la tarjeta se "acerca" mientras gira
+  const lift = Math.round(lerp(0, 26 * sc * (dk === 1 ? 1 : dk), s));
+  const shadeA = 0.28 * s;
+  // Los rótulos de relleno bajan con la tarjeta cuando es más chica que el diseño base (620 x 400); en tamaños normales (escala >= 1) quedan en el tamaño del tema.
+  const fit = Math.min(1, sc);
+  const placeholder = (title: string, hint: string, accent: boolean) => (
+    <div style={{ padding: Math.round(36 * sc), display: "flex", flexDirection: "column", gap: Math.round(14 * sc), height: "100%", boxSizing: "border-box", justifyContent: "center" }}>
+      <div style={{ width: Math.round(64 * sc), height: Math.round(64 * sc), borderRadius: cornerRadius(theme, "control"), background: accent ? pal.accent : pal.line, opacity: accent ? 1 : 0.5 }} />
+      <div style={{ fontSize: theme.type.h1 * fit, fontWeight: theme.font.weights.stat, color: pal.ink, lineHeight: 1.05 }}>{title}</div>
+      <div style={{ fontSize: theme.type.body * fit, color: theme.color.textMuted }}>{hint}</div>
+    </div>
+  );
+  // La transformación solo se emite mientras la tarjeta se mueve o gira (en reposo no queda `translateY(0px) scale(1, 1)`).
+  if (p.crisp) {
+    const gx = snap(sx * grow), gy = snap(grow);
+    const surf = cardSurface(theme, showFront ? {} : { alt: true, accent: pal.accent }, dk);
+    const bw = surf.border ? parseFloat(String(surf.border)) || 0 : 0;
+    const bw2 = Math.round(bw * 2) / 2;
+    const W = Math.max(1, Math.round(cw * gx)), H = Math.max(1, Math.round(ch * gy));
+    // de canto la tarjeta es una rendija: bajo 0,012 de ancho, o bajo unos 8 px, se oculta (el borde y la sombra de una rendija se rasterizan según el historial)
+    const hidden = sx < Math.max(0.012, 8 / cw);
+    const faceNode = showFront ? (p.front ? faces(p.front) : placeholder("Anverso", "Primera cara", false)) : p.back ? faces(p.back) : placeholder("Reverso", "Segunda cara", true);
+    const crispStyle: React.CSSProperties = {
+      position: "absolute",
+      left: Math.round((width - W) / 2),
+      top: Math.round((height - H) / 2 - lift),
+      width: W,
+      height: H,
+      boxSizing: "border-box",
+      ...surf,
+      overflow: "hidden",
+      visibility: hidden ? "hidden" : "visible",
+      fontFamily: theme.font.family,
+    };
+    // el contenido conserva su tamaño y se escala dentro de la superficie, centrado con posiciones enteras
+    const inner: React.CSSProperties = {
+      position: "absolute",
+      left: Math.round((W - 2 * bw2 - cw) / 2),
+      top: Math.round((H - 2 * bw2 - ch) / 2),
+      width: cw,
+      height: ch,
+      transform: xform({ scaleX: gx, scaleY: gy }),
+      transformOrigin: "50% 50%",
+      textRendering: "geometricPrecision",
+    };
+    return (
+      <div style={{ position: "relative", width, height, ...p.style, ...hiddenBefore(rawLocal) }}>
+        <div key={styleKey(crispStyle)} style={crispStyle}>
+          <div key={styleKey(inner)} style={inner}>{faceNode}</div>
+          {shadeA > 0.0005 && <div style={{ position: "absolute", inset: 0, background: pal.darkest, opacity: +shadeA.toFixed(4) }} />}
+        </div>
+      </div>
+    );
+  }
+  const cardStyle: React.CSSProperties = {
+    position: "absolute",
+    left: (width - cw) / 2,
+    top: (height - ch) / 2,
+    width: cw,
+    height: ch,
+    boxSizing: "border-box",
+    // Forma, relleno, borde y sombra del design system (por defecto: radio `lg`, borde de 2 px y sin sombra).
+    ...cardSurface(theme, showFront ? {} : { alt: true, accent: pal.accent }, dk),
+    overflow: "hidden",
+    transform: xform({ y: -lift, scaleX: snap(sx * grow), scaleY: snap(grow) }),
+    transformOrigin: "50% 50%",
+    visibility: sx < 0.012 ? "hidden" : "visible",
+    fontFamily: theme.font.family,
+  };
+  return (
+    <div style={{ position: "relative", width, height, ...p.style, ...hiddenBefore(rawLocal) }}>
+      <div
+        key={styleKey(cardStyle)}
+        style={cardStyle}
+      >
+        {showFront ? (p.front ? faces(p.front) : placeholder("Anverso", "Primera cara", false)) : p.back ? faces(p.back) : placeholder("Reverso", "Segunda cara", true)}
+        {shadeA > 0.0005 && <div style={{ position: "absolute", inset: 0, background: pal.darkest, opacity: +shadeA.toFixed(4) }} />}
+      </div>
+    </div>
+  );
+}

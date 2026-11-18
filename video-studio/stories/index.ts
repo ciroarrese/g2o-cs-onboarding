@@ -1,0 +1,28 @@
+export type { StorySpec, StoryTopic, StoryTiming, StoryDesign, StoryListOptions, TopicScene, TopicHandoff, TopicArrival } from "./types";
+export { validateSpec, parseRich, plainRich, MIN_TOPICS, MAX_TOPICS, lateStart, withoutLate } from "./types";
+export { planScenes, continuesIntoScene } from "./plan";
+export type { ScenePlan, InterludePlan } from "./plan";
+export { storyCues } from "./cues";
+export type { StoryCue, StoryCueKind, StoryCueOptions } from "./cues";
+export { Opening, OPENING_FRAMES, openingFrames } from "./Opening";
+export { Interlude, INTERLUDE_FRAMES, interludeFrames, INTERLUDE_REVEAL_FRAMES, REVEAL_STAGE_FRAMES, interludeRevealFrames, nextTopic } from "./Interlude";
+export { InterludeCompact, INTERLUDE_COMPACT_FRAMES, interludeCompactFrames } from "./InterludeCompact";
+export { MIN_COMPACT_FRAMES, MIN_REVEAL_FRAMES } from "./durations";
+export { Closing, CLOSING_FRAMES, closingFrames, DefaultThumbnail } from "./Closing";
+export { composeStory } from "./compose";
+export type { ComposeOptions, TimelineEntry } from "./compose";
+export { defineStory, resolveTheme } from "./define";
+export type { StoryProps, ThemeInput } from "./define";
+export { useTopic, useTopicOrNull, TopicHeadline, TopicContext, TopicProvider, headlineDefaults } from "./topic";
+// piezas para armar la historia a mano (ver "Armar a mano" en stories/README.md)
+export { StoryStage, scaler, useEase, Chip, Pill, CheckMark, HeadlineRow, HighlightedTitle, RichText, pillNumberColor, StoryNumeral, moveIn, useStoryDesign, useStorySpec, resolveStoryDesign, resolveStorySpec } from "./shared";
+export { listLayout } from "./layout";
+export type { ListLayout } from "./layout";
+export type { TopicInfo, HeadlineDefaults } from "./topic";
+export { fitText } from "./layout";
+export { storyBudget, formatStoryBudget, budgetFromScenes, MIN_BLOCK_FRAMES } from "./budget";
+export type { StoryBudget } from "./budget";
+export { checkStoryFit, formatFitReport, fitSize, FIT_MARGIN, NAME_FLOOR, LINE_FLOOR, MAX_NAME_ROWS } from "./fit";
+export type { FitReport, FitIssue, FitIssueKind } from "./fit";
+export { useStoryReserve, useSubtitleBand, subtitleReserve } from "./subtitles";
+export type { StorySubtitles } from "./subtitles";

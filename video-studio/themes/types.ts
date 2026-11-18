@@ -1,0 +1,160 @@
+import type { ThemeStyle, ThemeStyleInput } from "./styleTypes";
+
+/** Tema de video a 1920x1080, 30 fps. Solo React; sin dependencias del motor. */
+export type CubicBezier = [number, number, number, number];
+
+export interface ThemeColors {
+  bg: string;
+  surface: string;
+  surfaceAlt: string;
+  text: string;
+  textMuted: string;
+  border: string;
+  accent: string;
+  accent2: string;
+  onAccent: string;
+  success: string;
+  warning: string;
+  danger: string;
+  /** Serie categórica para gráficos. */
+  chart: string[];
+}
+
+export interface ThemeFontFile {
+  weight: number;
+  src: string;
+}
+
+export interface ThemeFont {
+  family: string;
+  /**
+   * Familia opcional para los títulos (titulares, cifras grandes, cartel de una historia). Si falta, los títulos usan `family`: un tema
+   * que no la declara se ve igual que siempre. Los textos de las interfaces recreadas siguen en `family`. Se lee con `titleFamily(theme)`
+   * y `titleFont(theme)`; con tokens, `--font-family-display`. Sus archivos locales van en `displayFiles`.
+   */
+  display?: string;
+  weights: { regular: number; medium: number; semibold: number; stat: number };
+  /** Archivos locales opcionales (para @font-face). */
+  files?: ThemeFontFile[];
+  /** Archivos locales de la familia `display` (para @font-face). */
+  displayFiles?: ThemeFontFile[];
+}
+
+export interface Theme {
+  name: string;
+  color: ThemeColors;
+  gradient: { brand: string };
+  font: ThemeFont;
+  radius: { sm: number; md: number; panel: number; lg: number; pill: number };
+  shadow: { sm: string; md: string; lg: string };
+  /** Escala tipográfica en px para video. */
+  type: {
+    hero: number;
+    h1: number;
+    h2: number;
+    body: number;
+    caption: number;
+    eyebrow: number;
+    stat: number;
+    /**
+     * Subescala para interfaces recreadas (tablas, fichas, menús) que se leen con la cámara acercada.
+     * No es para texto que se lee en pantalla completa: ahí van los escalones de arriba.
+     * Si un tema no la declara, `useTheme()` completa los valores de `neutral` (15, 20 y 24 px).
+     */
+    ui?: TypeUi;
+    /**
+     * Escalones intermedios entre `body` (44) y `h2` (72) para textos grandes que no son un titular: cifras de una ficha,
+     * rótulos de pantalla completa, títulos de un panel. Si un tema no los declara, `useTheme()` completa los de `neutral` (48, 56 y 64 px).
+     */
+    display?: TypeDisplay;
+  };
+  /** Área segura en px. */
+  safe: { x: number; y: number };
+  motion: {
+    easing: { standard: CubicBezier; out: CubicBezier; inOut: CubicBezier };
+    /** Duraciones en cuadros a 30 fps. */
+    duration: { fast: number; base: number; slow: number };
+  };
+  /** Fondo de nubes difuminadas. */
+  cloud: ThemeCloud;
+  /**
+   * Capa de estilo: forma, superficies, tratamiento del texto, fondo, movimiento, decoración y diseño de las historias.
+   * Todo es opcional; lo que falte sale de los valores por defecto (el aspecto de siempre) y `useTheme().style` siempre viene completo.
+   * Un valor inválido lanza un error que lista lo que se acepta. Contrato: `docs/estilo.md`.
+   */
+  style?: ThemeStyleInput;
+  /**
+   * Colores con nombre que define el video (estados, severidades, fondos de ficha...) y que no tienen rol en `color`.
+   * Se leen con `useTheme().data.<nombre>`; un nombre que no existe lanza un error que lista los declarados.
+   * Los nombres son identificadores simples (letras y números, empezando con letra).
+   */
+  data?: Record<string, string>;
+  /** Sobre qué superficies se apoya cada color de `data` y qué contraste mínimo se le pide (lo usa `checkTheme`). */
+  dataChecks?: Record<string, DataCheck>;
+  /**
+   * Pares de contraste de marca que se dan por conocidos, p. ej. `["accent/bg", "data.estado/surface"]`.
+   * `checkTheme` los informa como `note` en vez de aviso; el control de calidad (`qa`) sigue juzgando el texto real en pantalla.
+   */
+  acknowledge?: string[];
+  /**
+   * Con qué colores se aprobó cada par de `acknowledge` (`par -> [primer plano, fondo]`). `themeFromTokens` lo completa solo
+   * (también para los pares que hereda de `base`, con los colores de `base`). Si los colores actuales del par ya no son
+   * esos, el reconocimiento no vale: `checkTheme` informa el par como aviso y nombra el reconocimiento vencido.
+   * Un nombre de `acknowledge` sin pin (escrito a mano) vale mientras el par exista, sin importar sus colores.
+   */
+  acknowledgePins?: Record<string, [string, string]>;
+}
+
+export type TypeDisplay = { sm: number; md: number; lg: number };
+export type TypeUi = { xs: number; sm: number; md: number };
+export type Surface = "bg" | "surface" | "surfaceAlt";
+
+export interface DataCheck {
+  /**
+   * Superficies sobre las que se dibuja (por defecto `["surface"]`). Cada una es un rol (`bg`, `surface`, `surfaceAlt`), otro color de datos (`data.fichaFondo`) o
+   * un color (`#f4f4f4`): sirve para declarar las superficies PROPIAS de una interfaz recreada que vive en un ámbito (`ThemeScope`) con otros fondos.
+   * `checkTheme` juzga el color solo contra estas; con una lista vacía no lo juzga contra nada del tema.
+   */
+  on: DataSurface[];
+  /** Contraste mínimo: 3 para rellenos y gráficos (por defecto), 4.5 si se usa como texto. */
+  min: number;
+  /**
+   * Nota de dónde aparece el color (por ejemplo "dentro de la ficha de la herramienta recreada"). No cambia el cálculo: queda en `report.data` y en el
+   * aviso de `checkTheme`. Ojo: `qa` sigue juzgando el texto real en pantalla contra su fondo real, con o sin esta declaración.
+   */
+  scope?: string;
+}
+
+/** Superficie declarada de un color de datos: un rol de superficie, `data.<nombre>` o un color. */
+export type DataSurface = Surface | (string & {});
+
+/** Mancha explícita del fondo de nubes. `x` e `y` son fracciones del cuadro (0 a 1), `size` va en px. */
+export interface CloudBlob {
+  x: number;
+  y: number;
+  /** Diámetro en px (por defecto 700). */
+  size?: number;
+  /** Rol del tema (`accent`, `data.estado`...) o color; por defecto, uno de `colors` en orden. */
+  color?: string;
+}
+
+export interface ThemeCloud {
+  /** Colores de las manchas, en orden y en vuelta. */
+  colors: string[];
+  opacity: number;
+  /** Desenfoque de las manchas, en px (por defecto 110; `--cloud-blur`). `CloudBackground`, `Stage` y `StoryStage` lo leen; una escena puede pasar el suyo en `cloud.blur`. */
+  blur?: number;
+  /** Cantidad de manchas del reparto sembrado (por defecto 6). Se ignora si hay `blobs`. */
+  count?: number;
+  /** Semilla del reparto sembrado (por defecto "clouds"). */
+  seed?: string;
+  /** Manchas explícitas: reemplazan al reparto sembrado. */
+  blobs?: CloudBlob[];
+}
+
+/** El tema que devuelve `useTheme()`: con `type.ui`, `type.display`, `style` y `data` siempre presentes. */
+export type ResolvedTheme = Theme & {
+  type: Theme["type"] & { ui: TypeUi; display: TypeDisplay };
+  style: ThemeStyle;
+  data: Record<string, string>;
+};
