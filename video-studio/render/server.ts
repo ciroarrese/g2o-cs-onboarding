@@ -1,0 +1,88 @@
+import { createServer, type Server } from 'node:http';
+import { createReadStream, statSync } from 'node:fs';
+import { basename, extname, join, normalize, sep } from 'node:path';
+
+export const MIME: Record<string, string> = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf',
+  '.otf': 'font/otf',
+  '.wav': 'audio/wav',
+  '.mp3': 'audio/mpeg',
+  '.mp4': 'video/mp4',
+};
+
+export const fileIn = (root: string, urlPath: string): string | null => {
+  const rel = normalize(decodeURIComponent(urlPath)).replace(/^[/\\]+/, '');
+  const full = join(root, rel);
+  if (full !== root && !full.startsWith(root + sep)) return null; // path traversal
+  try {
+    const st = statSync(full);
+    if (st.isFile()) return full;
+    if (st.isDirectory()) {
+      const idx = join(full, 'index.html');
+      return statSync(idx).isFile() ? idx : null;
+    }
+  } catch {
+    /* not found */
+  }
+  return null;
+};
+
+/** Subcarpeta de una carpeta `audio/` que nunca se sirve: para las pistas originales y los intermedios (`audio/fuentes/`). Ver "Cache por partes" en render/README.md. */
+export const SUBCARPETA_SIN_SERVIR = 'fuentes';
+
+/** `fileIn` con la regla de lo que no se sirve: dentro de una carpeta llamada `audio`, la subcarpeta `fuentes/` da 404 (nada de ahí entra al render ni a la clave de la caché). */
+export const fileInServido = (root: string, urlPath: string): string | null => {
+  if (basename(root) === 'audio') {
+    const primero = normalize(decodeURIComponent(urlPath)).replace(/^[/\\]+/, '').split(/[/\\]/)[0];
+    if (primero === SUBCARPETA_SIN_SERVIR) return null;
+  }
+  return fileIn(root, urlPath);
+};
+
+/** Tiny static server over several roots (first match wins; the page itself only from `pageRoot`). Listens on a free port. */
+export async function serveStatic(roots: string[], pageRoot?: string, opts: { onPedido?: (pathname: string) => void } = {}): Promise<{ url: string; server: Server; close(): Promise<void> }> {
+  const server = createServer((req, res) => {
+    try {
+      const pathname = new URL(req.url ?? '/', 'http://x').pathname;
+      // The runtime page ('/' and '/index.html') only ever comes from pageRoot, so an index.html in an
+      // extra assets directory cannot shadow it.
+      const isPage = pathname === '/' || pathname === '/index.html';
+      if (!isPage) opts.onPedido?.(pathname);
+      for (const root of isPage && pageRoot ? [pageRoot] : roots) {
+        const f = fileInServido(root, pathname);
+        if (f) {
+          res.writeHead(200, { 'content-type': MIME[extname(f).toLowerCase()] ?? 'application/octet-stream', 'cache-control': 'no-store' });
+          createReadStream(f).pipe(res);
+          return;
+        }
+      }
+      res.writeHead(404).end('not found');
+    } catch {
+      res.writeHead(400).end('bad request');
+    }
+  });
+  await new Promise<void>((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  const addr = server.address();
+  if (!addr || typeof addr === 'string') throw new Error('static server: no address');
+  return {
+    url: `http://127.0.0.1:${addr.port}`,
+    server,
+    close: () => new Promise<void>((r) => { server.close(() => r()); server.closeAllConnections?.(); }),
+  };
+}

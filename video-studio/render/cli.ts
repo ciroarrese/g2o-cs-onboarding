@@ -1,0 +1,64 @@
+import { parseCliArgs, USAGE } from './args';
+import { installSignalHandlers, isInterrupted } from './cleanup';
+import { checkVideo, discoverVideos, listScenes, renderVideo } from './render';
+import { notaCarpetaExterna, videosDirExterna } from './dirs';
+import { budgetFromScenes, formatStoryBudget } from '../stories/budget';
+import { formatLoadErrors, formatSceneList, formatVideoList } from './meta';
+
+installSignalHandlers();
+
+async function main(): Promise<number> {
+  let o;
+  try {
+    o = parseCliArgs(process.argv.slice(2));
+  } catch (e) {
+    console.error(`Error: ${(e as Error).message}\n\n${USAGE}`);
+    return 2;
+  }
+  if (o.help) {
+    console.log(USAGE);
+    return 0;
+  }
+  const log = (m: string) => console.log(m);
+  const base = {
+    videoId: o.videoId, out: o.out, props: o.props, frames: o.frames, concurrency: o.concurrency, scale: o.scale,
+    crf: o.crf, segment: o.segment, audio: o.audio, cache: o.cache, keepFrames: o.keepFrames, frameFormat: o.frameFormat, jpegQuality: o.jpegQuality, assets: o.assets, allowMissingFonts: o.allowMissingFonts || undefined, strictFonts: o.strictFonts || undefined, checkCount: o.checkCount, checkPerScene: o.checkPerScene, checkAll: o.checkAll, checkMaxDelta: o.checkMaxDelta, checkMaxRatio: o.checkMaxRatio, checkStrict: o.checkStrict, format: o.format, scene: o.scene, seconds: o.seconds, audioBitrate: o.audioBitrate, audioPeakMax: o.audioPeakMax, audioPeakStrict: o.audioPeakStrict, audioPeakCheck: o.audioPeakCheck, liviano: o.liviano, log,
+  };
+  try {
+    if (o.list) {
+      const { videos, errors } = await discoverVideos({ log });
+      const nota = notaCarpetaExterna(videosDirExterna());
+      if (nota) console.log(nota);
+      console.log(formatVideoList(videos));
+      if (errors.length) console.log(`\n${formatLoadErrors(errors)}`);
+      return 0;
+    }
+    if (o.listScenes) {
+      const r = await listScenes(base);
+      console.log(formatSceneList(r.meta.id, r.scenes, r.meta.fps));
+      // si es una historia (defineStory), el presupuesto de cuadros por bloque (igual que `qa`)
+      const budget = budgetFromScenes(r.scenes, r.meta.fps);
+      if (budget) console.log(`\n${formatStoryBudget(budget)}`);
+      return 0;
+    }
+    if (o.check || o.checkStrict) {
+      const r = await checkVideo(base);
+      console.log(r.ok ? `check: OK (determinista; ${r.frames.length} cuadros verificados)` : `check: FALLO (no determinista; ${r.frames.length} cuadros verificados)`);
+      return r.ok ? 0 : 1;
+    }
+    const r = await renderVideo(base);
+    if (r.liviano && !r.liviano.ok) {
+      console.error(`Error: la copia liviana pesa ${(r.liviano.bytes / 1048576).toFixed(1)} MB y el tope es ${(r.liviano.topeBytes / 1048576).toFixed(1)} MB (el mp4 completo quedó bien en ${r.out}). Probá un tope mayor, --scale menor o un tramo más corto.`);
+      return 1;
+    }
+    return 0;
+  } catch (e) {
+    console.error(`Error: ${(e as Error).message}`);
+    return 1;
+  }
+}
+
+const code = await main();
+// A signal handler is closing the browser: let it finish and exit with 128+signal.
+if (isInterrupted()) await new Promise(() => {});
+process.exit(code);

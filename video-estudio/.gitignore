@@ -2,3 +2,5 @@
 out/
 # audio derivado (contiene la pista con licencia: no se redistribuye)
 migracion/audio/
+# cortina sonora del cierre de Grow2on: regla del repo, ningún mp3/wav/mp4 se versiona (copiala a mano para que el cierre suene; ver g2o/LEEME.md)
+assets/g2o/audio/cierre-musica.mp3

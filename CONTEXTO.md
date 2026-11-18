@@ -169,6 +169,19 @@ Después: aprobación del guion y producción de las escenas.
   - `src/scenes/BrandCheck.tsx`: una composición de prueba con texto de ejemplo. El render de prueba funcionó.
 - **Entorno:** el contenedor tiene Node 22 y FFmpeg, y Chromium viene preinstalado para Playwright.
 
+## Video Studio con el design system de Grow2on (`video-studio/` y `video-estudio/`)
+
+Además de `video/` (Remotion), el repo trae el motor Video Studio ya combinado con el design system de la marca.
+
+- **Estructura:**
+  - `video-studio/`: la herramienta (copia del `main` del repo público de Video Studio, sin `.github/` ni la skill). Ahí se corren todos los comandos.
+  - `video-estudio/`: los videos y el design system. `g2o/` (tema, `Intro`, `Cierre`; leé `g2o/README.md` y `g2o/LEEME.md`), `assets/g2o/` (tipografía, imágenes), `g2o-base/` (ejemplo de tres videos), `migracion/` (el video existente) y `tsconfig.json` con rutas relativas a `../video-studio`.
+  - `.claude/skills/video-estudio/SKILL.md`: la skill, con una nota al principio que explica esta estructura.
+  - `video-studio/.video-studio.local.json` (versionado, `{"videosDir": "../video-estudio"}`) enlaza las dos carpetas; no hace falta `VE_VIDEOS_DIR` y las rutas relativas valen en Windows.
+- **Cómo arrancar:** `cd video-studio && npm install && npm run doctor`; después `npm run render -- --list`, `npm run typecheck`, `npm run render -- <id> --check`, `npm run qa -- <id> --count 40`, `npm run sheet -- <id> --count 12`. Las salidas y la caché caen en `video-estudio/out` y `video-estudio/.ve-cache` (ignoradas). Para un video nuevo, pedirle al agente que use la skill `video-estudio` y el design system de `video-estudio/g2o/` (el `theme.ts` del video reexporta `../g2o/theme`).
+- **Sin mp3, wav ni mp4 en el repo** (excepción previa: `video-estudio/assets/sfx/clic.wav`). La cortina del cierre, `video-estudio/assets/g2o/audio/cierre-musica.mp3`, se copia a mano y está ignorada; sin ella `<Cierre />` sale mudo y no da error.
+- **Actualizar la herramienta desde el repo público:** exportar su `main` sin historia, sin `.github/` ni `.claude/` (`git -C <clon-publico> archive main | tar -x -C <carpeta-temporal>`, y quitar `.github` y `.claude`), reemplazar el contenido de `video-studio/` conservando las diferencias propias, correr `npm install` y la verificación de arriba. Las diferencias propias son: `video-studio/.gitignore` sin la línea `.video-studio.local.json`, el archivo `video-studio/.video-studio.local.json`, y en `.claude/skills/video-estudio/SKILL.md` el párrafo "Este repo (privado, herramienta y videos juntos)" (se vuelve a copiar la skill del público y se reinserta). Nunca se edita la herramienta para producir un video.
+
 ## Skills disponibles en el repo
 
 - `.claude/skills/grow2on-design`: el design system completo, con tokens, componentes React de referencia, assets, fuentes y guías. Su README es la fuente de verdad de la marca.
