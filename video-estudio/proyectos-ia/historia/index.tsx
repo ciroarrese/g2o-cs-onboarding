@@ -30,6 +30,8 @@ import { HEALTH_FRAME } from "../studio/datos";
 import { MiniStudio } from "../studio/thumb";
 import { CIERRE_DURACION, Cierre } from "../../g2o/Cierre";
 import { INTRO_DURACION, Intro } from "../../g2o/Intro";
+import { Particulas } from "../../g2o/Particulas";
+import { PUENTE1, PuenteIntroApertura, PuenteRecapCierre, cierrePildoraDesde } from "../puentes";
 
 // La mezcla (`audio/audio-proyectos-ia.wav`: música con licencia y efectos; ver ../audio) no se versiona (regla del repo: ningún wav). Si no está, el video
 // queda mudo en vez de fallar: se detecta al compilar (vite resuelve el glob en el build, igual que `g2o/Cierre`). El tipo del glob está en `../../g2o/vite-glob.d.ts`.
@@ -69,8 +71,8 @@ const scenes: TopicScene[] = [
 void D_HEALTH;
 
 const { component: Story, durationInFrames, timeline } = composeStory(spec, scenes, {});
-// bloques que empiezan después de un velo liso: la apertura (viene de la intro, que termina en blanco), todas las vueltas y las escenas salvo la primera y la sorpresa (esa sigue a Health Score sin nada en medio)
-const conVelo = timeline.filter((e) => e.kind === "opening" || e.kind === "interlude" || (e.kind === "topic" && e.id !== scenes[0]!.id && e.id !== "video-studio"));
+// bloques que empiezan después de un velo liso: (la apertura NO: la intro se transforma en ella con el velo propio de `PuenteIntroApertura`), todas las vueltas y las escenas salvo la primera y la sorpresa (esa sigue a Health Score sin nada en medio)
+const conVelo = timeline.filter((e) => e.kind === "interlude" || (e.kind === "topic" && e.id !== scenes[0]!.id && e.id !== "video-studio"));
 
 // Línea de tiempo del video: intro de Grow2on, la historia (apertura corta, escenas, vueltas, recapitulación) y el cierre de Grow2on.
 const HISTORIA_DESDE = INTRO_DURACION;
@@ -82,7 +84,7 @@ const Video: React.FC = () => (
     <Fill>
       {HAY_AUDIO ? <Audio src={asset("audio-proyectos-ia.wav")} /> : null}
       <Sequence from={0} durationInFrames={INTRO_DURACION}>
-        <Intro eyebrow="Novedades" titulo1="Proyectos" titulo2="con IA" />
+        <Intro eyebrow="Novedades" titulo1="Proyectos" titulo2="con IA" salida={4.7} traspaso={PUENTE1.toma} />
       </Sequence>
       <Sequence from={HISTORIA_DESDE} durationInFrames={durationInFrames}>
         <Fill>
@@ -95,8 +97,12 @@ const Video: React.FC = () => (
         </Fill>
       </Sequence>
       <Sequence from={CIERRE_DESDE} durationInFrames={CIERRE_DURACION}>
-        <Cierre sonido={false} />
+        <Cierre sonido={false} mensaje={1} pildoraDesde={cierrePildoraDesde(HISTORIA_DESDE + timeline.find((e) => e.kind === "closing")!.from, CIERRE_DESDE)} />
       </Sequence>
+      {/* Empalmes con un elemento que se transforma (cuadro absoluto, encima de todo) y partículas de marca continuas durante todo el video. */}
+      <PuenteIntroApertura />
+      <PuenteRecapCierre recapDesde={HISTORIA_DESDE + timeline.find((e) => e.kind === "closing")!.from} cierreDesde={CIERRE_DESDE} />
+      <Particulas />
     </Fill>
   </ThemeProvider>
 );

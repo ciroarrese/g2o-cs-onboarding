@@ -20,9 +20,12 @@ const HAY_CORTINA = Object.keys(import.meta.glob("../assets/g2o/audio/cierre-mus
 export const CIERRE_DURACION = 210;
 const CUE = { mensaje: 2 };
 
-export type CierreProps = { titulo?: string; url?: string; /** false deja el cierre mudo; con true suena solo si el archivo `assets/g2o/audio/cierre-musica.mp3` está copiado (no se versiona) */ sonido?: boolean };
+export type CierreProps = {
+  titulo?: string; url?: string;
+  /** segundo en que entra la frase (por defecto 2: lo de siempre); la píldora entra 0,6 s después */ mensaje?: number;
+  /** cuadro local desde el cual la píldora de la URL está puesta y quieta, sin entrada (otra capa la trajo hasta su lugar); antes de ese cuadro ocupa su lugar pero no se ve */ pildoraDesde?: number; /** false deja el cierre mudo; con true suena solo si el archivo `assets/g2o/audio/cierre-musica.mp3` está copiado (no se versiona) */ sonido?: boolean };
 
-export function Cierre({ titulo = "¡Animate a crecer más!", url = "grow2on.com", sonido = true }: CierreProps) {
+export function Cierre({ titulo = "¡Animate a crecer más!", url = "grow2on.com", sonido = true, mensaje = CUE.mensaje, pildoraDesde }: CierreProps) {
   const f = useFrame();
   const { fps } = useVideoConfig();
   const t = useTheme();
@@ -31,14 +34,14 @@ export function Cierre({ titulo = "¡Animate a crecer más!", url = "grow2on.com
   const aro = entra(T, 0, 1.6);
   const aroGiro = T * (360 / 46);
   const logo = entra(T, 0.4, 1.3);
-  const frase = entra(T, CUE.mensaje, CUE.mensaje + 0.9);
-  const pildora = salta(T, CUE.mensaje + 0.6, CUE.mensaje + 1.3);
+  const frase = entra(T, mensaje, mensaje + 0.9);
+  const pildora = pildoraDesde === undefined ? salta(T, mensaje + 0.6, mensaje + 1.3) : 1;
 
   return (
     <Stage clouds={false}>
       {/* La cortina arranca 0,2 s después de que entra el mensaje, como en la plantilla. */}
       {sonido && HAY_CORTINA ? (
-        <Sequence from={Math.round((CUE.mensaje + 0.2) * fps)}>
+        <Sequence from={Math.round((mensaje + 0.2) * fps)}>
           <Audio src={G2O.audioCierre} />
         </Sequence>
       ) : null}
@@ -53,7 +56,9 @@ export function Cierre({ titulo = "¡Animate a crecer más!", url = "grow2on.com
           <div style={{ fontSize: t.type.h1 * 0.875, fontWeight: t.font.weights.semibold, letterSpacing: "-0.03em", lineHeight: 1.1, paddingBottom: 6, ...sube(frase) }}>
             <GradientText>{titulo}</GradientText>
           </div>
-          <Pildora p={pildora} size={t.type.caption * 1.125} padding="16px 44px">{url}</Pildora>
+          <div style={{ display: "contents", ...(pildoraDesde !== undefined && f < pildoraDesde ? { visibility: "hidden" } : {}) }}>
+            <Pildora p={pildora} size={t.type.caption * 1.125} padding="16px 44px">{url}</Pildora>
+          </div>
         </div>
       </div>
     </Stage>
