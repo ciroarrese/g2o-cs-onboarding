@@ -10,9 +10,9 @@
 //     su titular ya puestos. `AparecerContenido` hace entrar ese contenido en 10 cuadros sobre las mismas nubes.
 import React from "react";
 import { Audio, Fill, Sequence, asset, defineVideo, useFrame } from "video-estudio/engine";
-import { kf } from "video-estudio/kit";
+import { VeilContent, kf } from "video-estudio/kit";
 import { fade } from "video-estudio/fx/core";
-import { composeStory } from "video-estudio/stories";
+import { BackdropLayer, StoryBackdropProvider, composeStory } from "video-estudio/stories";
 import type { TopicScene } from "video-estudio/stories";
 import { ThemeProvider, useTheme } from "video-estudio/themes";
 import { DURACION as D_ASISTENTE, SceneBody as Asistente } from "../asistente/Scene";
@@ -45,7 +45,8 @@ const EntradaSuave: React.FC = () => {
   const f = useFrame();
   const o = kf(f, [0, ENTRADA], [1, 0]);
   if (o <= 0) return null;
-  return <div data-qa-veil={o.toFixed(3)} data-qa-ignore="covered" style={{ position: "absolute", inset: 0, background: t.color.bg, opacity: fade(o), zIndex: 100, pointerEvents: "none" }} />;
+  // `VeilContent`: las partículas de fondo viajan dentro del velo (misma opacidad), así no desaparecen ni parpadean al levantarse.
+  return <div data-qa-veil={o.toFixed(3)} data-qa-ignore="covered" style={{ position: "absolute", inset: 0, background: t.color.bg, opacity: fade(o), zIndex: 100, pointerEvents: "none" }}><VeilContent /></div>;
 };
 
 /** El contenido de la escena (no las nubes) entra en `ENTRADA` cuadros. */
@@ -79,12 +80,17 @@ const HISTORIA_DESDE = INTRO_DURACION;
 const CIERRE_DESDE = HISTORIA_DESDE + durationInFrames;
 const TOTAL = CIERRE_DESDE + CIERRE_DURACION;
 
+const CAPA = <BackdropLayer>{Particulas}</BackdropLayer>;
+
 const Video: React.FC = () => (
   <ThemeProvider theme={theme}>
+    {/* Capa de fondo global (partículas): las del video entero salen de acá. La historia la dibuja por `spec.backdrop`; la intro y el cierre por su prop `capa`;
+        los velos propios de este archivo y de los empalmes la llevan adentro (`VeilContent`). Todas con el cuadro absoluto: una sola población continua. */}
+    <StoryBackdropProvider backdrop={Particulas}>
     <Fill>
       {HAY_AUDIO ? <Audio src={asset("audio-proyectos-ia.wav")} /> : null}
       <Sequence from={0} durationInFrames={INTRO_DURACION}>
-        <Intro eyebrow="Novedades" titulo1="Proyectos" titulo2="con IA" salida={4.7} traspaso={PUENTE1.toma} aroSalida={{ dx: 520, escala: 0.55 }} />
+        <Intro eyebrow="Novedades" titulo1="Proyectos" titulo2="con IA" capa={CAPA} salida={4.7} traspaso={PUENTE1.toma} aroSalida={{ dx: 520, escala: 0.55 }} />
       </Sequence>
       {/* La apertura, quieta en su cuadro 0, antes de que empiece de verdad: el muro y las nubes aparecen mientras el título todavía viaja. */}
       <AperturaTemprana />
@@ -102,14 +108,14 @@ const Video: React.FC = () => (
       <Sequence from={CIERRE_DESDE - CIERRE_ADELANTO} durationInFrames={CIERRE_DURACION + CIERRE_ADELANTO}>
         {/* z-index propio: el telón de la recapitulación (zIndex 500 y 600 de la historia) quedaría por encima del cierre mientras se solapan */}
         <div style={{ position: "absolute", inset: 0, zIndex: 3000 }}>
-          <Cierre sonido={false} mensaje={0.7} pildoraDesde={cierrePildoraDesde(HISTORIA_DESDE + timeline.find((e) => e.kind === "closing")!.from, CIERRE_DESDE - CIERRE_ADELANTO)} />
+          <Cierre capa={CAPA} sonido={false} mensaje={0.7} pildoraDesde={cierrePildoraDesde(HISTORIA_DESDE + timeline.find((e) => e.kind === "closing")!.from, CIERRE_DESDE - CIERRE_ADELANTO)} />
         </div>
       </Sequence>
       {/* Empalmes con un elemento que se transforma (cuadro absoluto, encima de todo) y partículas de marca continuas durante todo el video. */}
       <PuenteIntroApertura />
       <PuenteRecapCierre recapDesde={HISTORIA_DESDE + timeline.find((e) => e.kind === "closing")!.from} />
-      <Particulas />
     </Fill>
+    </StoryBackdropProvider>
   </ThemeProvider>
 );
 

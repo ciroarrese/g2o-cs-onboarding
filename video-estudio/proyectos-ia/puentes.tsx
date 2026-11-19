@@ -13,15 +13,17 @@
 // Solo horizontal (1920 x 1080), como la intro y el cierre de Grow2on.
 import React from "react";
 import { Easing, FrameProvider, useFrame, useVideoConfig } from "video-estudio/engine";
-import { kf } from "video-estudio/kit";
+import { VeilContent, kf } from "video-estudio/kit";
 import { bezier } from "video-estudio/engine";
 import { fade } from "video-estudio/fx/core";
 import { GradientText } from "video-estudio/kit";
+import { StoryBackdropProvider } from "video-estudio/stories";
 import { Chip, Opening, Pill, closingFrames, fitText, openingFrames, useStorySpec, withoutLate } from "video-estudio/stories";
 import { wallOptions } from "video-estudio/stories/types";
 import { closingWall, rigProject, rigTransform } from "video-estudio/stories/layout";
 import { surfaceStyle, textStyle, useTheme } from "video-estudio/themes";
 import { spec } from "./historia/spec";
+import { Particulas } from "../g2o/Particulas";
 
 const mix = (a: number, b: number, p: number) => a + (b - a) * p;
 const hexRgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
@@ -77,7 +79,10 @@ export function AperturaTemprana() {
   if (f < PUENTE1.velo[0] || f >= PUENTE1.apertura) return null;
   return (
     <FrameProvider frame={0} config={config}>
-      <Opening spec={spec} first={0} dock={rs.design?.handoff === "dock"} through={rs.design?.handoff === "through"} />
+      {/* La apertura va con el cuadro 0 congelado, pero las partículas de fondo siguen el cuadro absoluto del video: se las pasa explícito (`frame`), no el del reloj de acá. */}
+      <StoryBackdropProvider backdrop={<Particulas frame={f} />}>
+        <Opening spec={spec} first={0} dock={rs.design?.handoff === "dock"} through={rs.design?.handoff === "through"} />
+      </StoryBackdropProvider>
     </FrameProvider>
   );
 }
@@ -157,7 +162,7 @@ export function PuenteIntroApertura() {
 
   return (
     <>
-      {f >= velo[0] && veloO > 0 && <div data-qa-veil={veloO.toFixed(3)} data-qa-ignore="covered" style={{ position: "absolute", inset: 0, background: t.color.bg, opacity: fade(veloO), zIndex: Z_VELO, pointerEvents: "none" }} />}
+      {f >= velo[0] && veloO > 0 && <div data-qa-veil={veloO.toFixed(3)} data-qa-ignore="covered" style={{ position: "absolute", inset: 0, background: t.color.bg, opacity: fade(veloO), zIndex: Z_VELO, pointerEvents: "none" }}><VeilContent /></div>}
       <div style={{ position: "absolute", inset: 0, zIndex: Z_PUENTE, pointerEvents: "none", ...baseTexto(t) }}>
         {/* `covered` callado: la tarjeta tapa el cartel de la apertura (quieta en su cuadro 0, debajo del velo) a propósito */}
         {f < velo[1] && !llego && <div data-qa-ignore="covered" style={card} />}
@@ -261,7 +266,7 @@ export function PuenteRecapCierre({ recapDesde }: { recapDesde: number }) {
   return (
     <>
       {/* el velo lava el muro; se va cuando el muro ya no está (el cierre de Grow2on ya entra debajo y no se tapa) */}
-      {veloO > 0 && f < toma + 34 && <div data-qa-veil={veloO.toFixed(3)} data-qa-ignore="covered" style={{ position: "absolute", inset: 0, background: t.color.bg, opacity: fade(veloO), zIndex: Z_VELO, pointerEvents: "none" }} />}
+      {veloO > 0 && f < toma + 34 && <div data-qa-veil={veloO.toFixed(3)} data-qa-ignore="covered" style={{ position: "absolute", inset: 0, background: t.color.bg, opacity: fade(veloO), zIndex: Z_VELO, pointerEvents: "none" }}><VeilContent /></div>}
       <div style={{ position: "absolute", inset: 0, zIndex: Z_PUENTE, pointerEvents: "none", ...baseTexto(t) }}>
         {slots.slice(0, n).map((s, i) => {
           const e = kf(f, [base + i * desfase, base + i * desfase + junta], [0, 1], Easing.inOut);

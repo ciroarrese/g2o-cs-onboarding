@@ -18,9 +18,10 @@ const CUE = { titulo: 2, salida: 5.5 };
 export type IntroProps = { eyebrow?: string; titulo1?: string; titulo2?: string; /** achica el título cuando un renglón no entra (1 = tamaño de la plantilla) */ escala?: number;
   /** segundo en que empieza la salida de aro, logo y motas (por defecto 5,5: lo de siempre; dura 1 s) */ salida?: number;
   /** cuadro local desde el cual la intro deja de dibujar la píldora y el título (los toma otra capa que los transforma); sin esto, se dibujan siempre */ traspaso?: number;
-  /** salida del aro con movimiento: `dx` px extra hacia la derecha y `escala` final (1 = sin achicar); sin esto, la salida es la de siempre */ aroSalida?: { dx?: number; escala?: number } };
+  /** salida del aro con movimiento: `dx` px extra hacia la derecha y `escala` final (1 = sin achicar); sin esto, la salida es la de siempre */ aroSalida?: { dx?: number; escala?: number };
+  /** capa de fondo propia (p. ej. `<BackdropLayer>{Particulas}</BackdropLayer>`): se dibuja sobre el blanco y bajo las motas, el aro y los textos; sin esto no hay capa */ capa?: React.ReactNode };
 
-export function Intro({ eyebrow = "Funcionalidades", titulo1 = "Conocé", titulo2 = "nombre de funcionalidad", escala = 1, salida = CUE.salida, traspaso, aroSalida }: IntroProps) {
+export function Intro({ eyebrow = "Funcionalidades", titulo1 = "Conocé", titulo2 = "nombre de funcionalidad", escala = 1, salida = CUE.salida, traspaso, aroSalida, capa }: IntroProps) {
   const f = useFrame();
   const { fps } = useVideoConfig();
   const t = useTheme();
@@ -41,6 +42,7 @@ export function Intro({ eyebrow = "Funcionalidades", titulo1 = "Conocé", titulo
   return (
     <Stage clouds={false}>
       <div style={{ position: "absolute", inset: 0, background: t.color.bg, color: t.color.text, overflow: "hidden" }}>
+        {capa}
         <Motas semilla={3} salida={out} />
         <Imagen
           src={G2O.marca.aroFuncionalidades}

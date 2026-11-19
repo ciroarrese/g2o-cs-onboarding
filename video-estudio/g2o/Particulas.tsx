@@ -1,10 +1,11 @@
 // Partículas flotantes de marca (rosa, naranja y violeta) a la deriva lenta: la capa que acompaña a todo un video.
 // Todo sale del cuadro: sin azar en ejecución (cada partícula se siembra por su índice), sin estado ni CSS animado.
 //
-// Pensada para montarse UNA sola vez, arriba del video entero, con el cuadro absoluto (el `useFrame()` de la raíz): así la posición de cada
-// partícula es la misma antes y después de un corte de escena y no "salta". Va con `mix-blend-mode: multiply`: sobre el fondo claro se ve el
-// color, sobre un texto oscuro lo oscurece (nunca le baja el contraste) y sobre una ventana oscura no se nota (queda "detrás" de la interfaz).
-// Uso:   <Particulas />   (último hijo de la raíz del video, `pointer-events: none`)
+// Es la capa de FONDO global del video: va en la ranura `backdrop` de la historia (`spec.backdrop`) y, con `BackdropLayer`, bajo la intro, el cierre y los
+// empalmes (`stories/backdrop.tsx`). Se dibuja sobre el color y las nubes y debajo de todo el contenido (interfaces, píldoras, titulares): ya no multiplica ni
+// compite con el texto. Dentro de la capa `useFrame()` es el cuadro ABSOLUTO del video, así que cada partícula está en el mismo lugar antes y después de un
+// corte: acá no se suma ningún desplazamiento propio (si no hay capa que lo ponga, se puede pasar `frame`).
+// Uso:   backdrop: Particulas   (en el `StorySpec`)   o   <BackdropLayer>{Particulas}</BackdropLayer>
 import React from "react";
 import { useFrame, useVideoConfig } from "video-estudio/engine";
 import { useTheme } from "video-estudio/themes";
@@ -41,15 +42,18 @@ const hexRgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2
 export type ParticulasProps = {
   /** Cuántas partículas (por defecto 64). */
   cantidad?: number;
-  /** Opacidad general de la capa, de 0 a 1 (por defecto 0,5: tenue, sin competir con el contenido). */
+  /** Opacidad general de la capa, de 0 a 1 (por defecto OPAC: tenue pero visible sobre el fondo claro, sin competir con el contenido). */
   opacidad?: number;
   /** Semilla del reparto (por defecto 11). */
   semilla?: number;
-  /** Cuadro con el que se calcula el movimiento; por defecto el del contexto (la raíz del video = cuadro absoluto). */
+  /** Cuadro con el que se calcula el movimiento; por defecto el del contexto (dentro de la capa de fondo = cuadro absoluto del video). */
   frame?: number;
 };
 
-export function Particulas({ cantidad = 64, opacidad = 0.5, semilla = 11, frame }: ParticulasProps) {
+/** Opacidad por defecto de la capa. */
+const OPAC = 0.5;
+
+export function Particulas({ cantidad = 64, opacidad = OPAC, semilla = 11, frame }: ParticulasProps) {
   const cur = useFrame();
   const f = frame ?? cur;
   const { fps, width, height } = useVideoConfig();
@@ -66,19 +70,23 @@ export function Particulas({ cantidad = 64, opacidad = 0.5, semilla = 11, frame 
   const lista = React.useMemo(() => sembrar(semilla, cantidad, width, height), [semilla, cantidad, width, height]);
   const vuelta = height + 2 * margen;
   return (
-    // Capa decorativa de cuadro completo: no lleva texto; `covered` callado porque cruza todo el cuadro a propósito.
-    <div data-qa-decor="partículas flotantes" data-qa-ignore="covered" style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 5000, mixBlendMode: "multiply", opacity: opacidad }}>
+    // Las marcas de `qa` (decorado, `covered` y `vacio` callados) las pone la capa que la monta (`BackdropLayer`).
+    <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
       {lista.map((p, i) => {
         // sube con módulo (sale por arriba, entra por abajo fuera del cuadro) y se mece de lado: posición enteros
         const yy = (((p.y + p.vy * T + margen) % vuelta) + vuelta) % vuelta - margen;
         const xx = p.x + p.vx * T + Math.sin((T / p.per) * Math.PI * 2 + p.fase) * p.amp;
-        const o = p.op * (0.8 + 0.2 * Math.sin(T * 0.9 + p.pulso));
+        const o = opacidad * p.op * (0.8 + 0.2 * Math.sin(T * 0.9 + p.pulso));
+        // Las lejanas (`blur`) son un punto de borde suave hecho con degradado radial, no con `filter: blur`: un filtro fijo compone la partícula en capa propia y se
+        // rasteriza según el historial (`--check` fallaba por 3 px). Un poco más grandes para que el borde suave no las vuelva más chicas.
+        const w = p.blur ? Math.round(p.d * 1.7) : p.d, c = color(p.color), off = (w - p.d) / 2;
         return (
           <div
             key={i}
             style={{
-              position: "absolute", left: 0, top: 0, width: p.d, height: p.d, borderRadius: "50%", background: color(p.color), opacity: +o.toFixed(3),
-              transform: `translate(${Math.round(xx)}px, ${Math.round(yy)}px)`, ...(p.blur ? { filter: `blur(${p.blur}px)` } : {}),
+              position: "absolute", left: 0, top: 0, width: w, height: w, borderRadius: "50%", opacity: +o.toFixed(3),
+              background: p.blur ? `radial-gradient(circle, ${c} 0%, ${c} 38%, transparent 70%)` : c,
+              transform: `translate(${Math.round(xx - off)}px, ${Math.round(yy - off)}px)`,
             }}
           />
         );

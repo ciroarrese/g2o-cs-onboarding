@@ -1,6 +1,7 @@
 // Configuración de la apertura, las vueltas y el cierre (misma copia y mismas etiquetas que Apertura.tsx del proyecto de Remotion).
 import React from "react";
 import type { StorySpec } from "video-estudio/stories";
+import { Particulas } from "../../g2o/Particulas";
 
 export const spec: StorySpec = {
   title: { text: "Proyectos con IA", highlight: "con IA" },
@@ -24,6 +25,8 @@ export const spec: StorySpec = {
   signoff: { slot: <React.Fragment /> },
   // Apertura de 5 s (la intro de Grow2on ya dio el título), recapitulación de 9,5 s y revelación escenificada de 7 s.
   timing: { opening: 180, closing: 284, interludeReveal: 210 },
+  // Partículas de marca en el FONDO de todos los bloques (sobre el color y las nubes, bajo el contenido); una sola población continua en todo el video.
+  backdrop: Particulas,
   design: { reveal: "stage", closing: { bar: false } }, // la fila 05 entra con resorte, barrido de luz, miniatura que vuela y anillo en la tilde
   // Todo lo estético (cartel, lista, muro, nubes, pasos, atravesado, cierre, degradado) sale del design system de la marca (`theme.style`, ver ../theme.ts):
   // `design` solo lleva la revelación de la fila 05 (`reveal`).

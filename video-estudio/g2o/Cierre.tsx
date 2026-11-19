@@ -23,9 +23,10 @@ const CUE = { mensaje: 2 };
 export type CierreProps = {
   titulo?: string; url?: string;
   /** segundo en que entra la frase (por defecto 2: lo de siempre); la píldora entra 0,6 s después */ mensaje?: number;
-  /** cuadro local desde el cual la píldora de la URL está puesta y quieta, sin entrada (otra capa la trajo hasta su lugar); antes de ese cuadro ocupa su lugar pero no se ve */ pildoraDesde?: number; /** false deja el cierre mudo; con true suena solo si el archivo `assets/g2o/audio/cierre-musica.mp3` está copiado (no se versiona) */ sonido?: boolean };
+  /** cuadro local desde el cual la píldora de la URL está puesta y quieta, sin entrada (otra capa la trajo hasta su lugar); antes de ese cuadro ocupa su lugar pero no se ve */ pildoraDesde?: number; /** false deja el cierre mudo; con true suena solo si el archivo `assets/g2o/audio/cierre-musica.mp3` está copiado (no se versiona) */ sonido?: boolean;
+  /** capa de fondo propia (p. ej. `<BackdropLayer>{Particulas}</BackdropLayer>`): se dibuja sobre el blanco y bajo las motas, el aro y los textos; sin esto no hay capa */ capa?: React.ReactNode };
 
-export function Cierre({ titulo = "¡Animate a crecer más!", url = "grow2on.com", sonido = true, mensaje = CUE.mensaje, pildoraDesde }: CierreProps) {
+export function Cierre({ titulo = "¡Animate a crecer más!", url = "grow2on.com", sonido = true, mensaje = CUE.mensaje, pildoraDesde, capa }: CierreProps) {
   const f = useFrame();
   const { fps } = useVideoConfig();
   const t = useTheme();
@@ -46,6 +47,7 @@ export function Cierre({ titulo = "¡Animate a crecer más!", url = "grow2on.com
         </Sequence>
       ) : null}
       <div style={{ position: "absolute", inset: 0, background: t.color.bg, color: t.color.text, overflow: "hidden" }}>
+        {capa}
         <Motas semilla={7} />
         <Imagen
           src={G2O.marca.aro}
