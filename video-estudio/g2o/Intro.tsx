@@ -17,9 +17,10 @@ const CUE = { titulo: 2, salida: 5.5 };
 
 export type IntroProps = { eyebrow?: string; titulo1?: string; titulo2?: string; /** achica el título cuando un renglón no entra (1 = tamaño de la plantilla) */ escala?: number;
   /** segundo en que empieza la salida de aro, logo y motas (por defecto 5,5: lo de siempre; dura 1 s) */ salida?: number;
-  /** cuadro local desde el cual la intro deja de dibujar la píldora y el título (los toma otra capa que los transforma); sin esto, se dibujan siempre */ traspaso?: number };
+  /** cuadro local desde el cual la intro deja de dibujar la píldora y el título (los toma otra capa que los transforma); sin esto, se dibujan siempre */ traspaso?: number;
+  /** salida del aro con movimiento: `dx` px extra hacia la derecha y `escala` final (1 = sin achicar); sin esto, la salida es la de siempre */ aroSalida?: { dx?: number; escala?: number } };
 
-export function Intro({ eyebrow = "Funcionalidades", titulo1 = "Conocé", titulo2 = "nombre de funcionalidad", escala = 1, salida = CUE.salida, traspaso }: IntroProps) {
+export function Intro({ eyebrow = "Funcionalidades", titulo1 = "Conocé", titulo2 = "nombre de funcionalidad", escala = 1, salida = CUE.salida, traspaso, aroSalida }: IntroProps) {
   const f = useFrame();
   const { fps } = useVideoConfig();
   const t = useTheme();
@@ -28,7 +29,7 @@ export function Intro({ eyebrow = "Funcionalidades", titulo1 = "Conocé", titulo
   const textos = traspaso === undefined || f < traspaso;
 
   const aro = salta(T, 0.1, 1.5);
-  const aroEscala = 0.6 + 0.4 * aro + 0.05 * (T / 8);
+  const aroEscala = (0.6 + 0.4 * aro + 0.05 * (T / 8)) * (aroSalida?.escala !== undefined ? 1 - (1 - aroSalida.escala) * out : 1);
   const aroGiro = -40 * (1 - aro) + 6 * T;
   const logo = entra(T, 0.3, 1.1);
   const pildora = salta(T, CUE.titulo - 0.6, CUE.titulo + 0.1);
@@ -43,7 +44,7 @@ export function Intro({ eyebrow = "Funcionalidades", titulo1 = "Conocé", titulo
         <Motas semilla={3} salida={out} />
         <Imagen
           src={G2O.marca.aroFuncionalidades}
-          style={{ position: "absolute", left: 1010, top: 100, width: 880, height: 880, opacity: aro * (1 - out), transform: `translateX(${Math.round(out * 160)}px) scale(${aroEscala.toFixed(5)}) rotate(${aroGiro.toFixed(4)}deg)` }}
+          style={{ position: "absolute", left: 1010, top: 100, width: 880, height: 880, opacity: aro * (1 - out), transform: `translateX(${Math.round(out * (160 + (aroSalida?.dx ?? 0)))}px) scale(${aroEscala.toFixed(5)}) rotate(${aroGiro.toFixed(4)}deg)` }}
         />
         <Imagen src={G2O.marca.logo} alt="Grow2on" style={{ position: "absolute", left: 140, top: 100, height: 92, width: "auto", ...sube(logo) }} />
         {textos && <div style={{ position: "absolute", left: 140, top: 360, width: 900, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 36 }}>

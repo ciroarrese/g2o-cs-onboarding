@@ -31,7 +31,7 @@ import { MiniStudio } from "../studio/thumb";
 import { CIERRE_DURACION, Cierre } from "../../g2o/Cierre";
 import { INTRO_DURACION, Intro } from "../../g2o/Intro";
 import { Particulas } from "../../g2o/Particulas";
-import { PUENTE1, PuenteIntroApertura, PuenteRecapCierre, cierrePildoraDesde } from "../puentes";
+import { AperturaTemprana, CIERRE_ADELANTO, PUENTE1, PuenteIntroApertura, PuenteRecapCierre, cierrePildoraDesde } from "../puentes";
 
 // La mezcla (`audio/audio-proyectos-ia.wav`: música con licencia y efectos; ver ../audio) no se versiona (regla del repo: ningún wav). Si no está, el video
 // queda mudo en vez de fallar: se detecta al compilar (vite resuelve el glob en el build, igual que `g2o/Cierre`). El tipo del glob está en `../../g2o/vite-glob.d.ts`.
@@ -84,8 +84,10 @@ const Video: React.FC = () => (
     <Fill>
       {HAY_AUDIO ? <Audio src={asset("audio-proyectos-ia.wav")} /> : null}
       <Sequence from={0} durationInFrames={INTRO_DURACION}>
-        <Intro eyebrow="Novedades" titulo1="Proyectos" titulo2="con IA" salida={4.7} traspaso={PUENTE1.toma} />
+        <Intro eyebrow="Novedades" titulo1="Proyectos" titulo2="con IA" salida={4.7} traspaso={PUENTE1.toma} aroSalida={{ dx: 520, escala: 0.55 }} />
       </Sequence>
+      {/* La apertura, quieta en su cuadro 0, antes de que empiece de verdad: el muro y las nubes aparecen mientras el título todavía viaja. */}
+      <AperturaTemprana />
       <Sequence from={HISTORIA_DESDE} durationInFrames={durationInFrames}>
         <Fill>
           <Story />
@@ -96,12 +98,16 @@ const Video: React.FC = () => (
           ))}
         </Fill>
       </Sequence>
-      <Sequence from={CIERRE_DESDE} durationInFrames={CIERRE_DURACION}>
-        <Cierre sonido={false} mensaje={1} pildoraDesde={cierrePildoraDesde(HISTORIA_DESDE + timeline.find((e) => e.kind === "closing")!.from, CIERRE_DESDE)} />
+      {/* El cierre arranca `CIERRE_ADELANTO` cuadros antes (sobre la recapitulación): logo, frase y aro entran mientras viaja la píldora; termina en el mismo cuadro. */}
+      <Sequence from={CIERRE_DESDE - CIERRE_ADELANTO} durationInFrames={CIERRE_DURACION + CIERRE_ADELANTO}>
+        {/* z-index propio: el telón de la recapitulación (zIndex 500 y 600 de la historia) quedaría por encima del cierre mientras se solapan */}
+        <div style={{ position: "absolute", inset: 0, zIndex: 3000 }}>
+          <Cierre sonido={false} mensaje={0.7} pildoraDesde={cierrePildoraDesde(HISTORIA_DESDE + timeline.find((e) => e.kind === "closing")!.from, CIERRE_DESDE - CIERRE_ADELANTO)} />
+        </div>
       </Sequence>
       {/* Empalmes con un elemento que se transforma (cuadro absoluto, encima de todo) y partículas de marca continuas durante todo el video. */}
       <PuenteIntroApertura />
-      <PuenteRecapCierre recapDesde={HISTORIA_DESDE + timeline.find((e) => e.kind === "closing")!.from} cierreDesde={CIERRE_DESDE} />
+      <PuenteRecapCierre recapDesde={HISTORIA_DESDE + timeline.find((e) => e.kind === "closing")!.from} />
       <Particulas />
     </Fill>
   </ThemeProvider>
@@ -114,6 +120,6 @@ export default defineVideo({
   scenes: [
     { id: "intro", name: "Intro de Grow2on", from: 0, durationInFrames: INTRO_DURACION },
     ...timeline.map((e) => ({ id: e.id, name: e.kind === "topic" && e.topic !== undefined ? spec.topics[e.topic]?.name : undefined, from: HISTORIA_DESDE + e.from, durationInFrames: e.durationInFrames })),
-    { id: "cierre-marca", name: "Cierre de Grow2on", from: CIERRE_DESDE, durationInFrames: CIERRE_DURACION },
+    { id: "cierre-marca", name: "Cierre de Grow2on", from: CIERRE_DESDE - CIERRE_ADELANTO, durationInFrames: CIERRE_DURACION + CIERRE_ADELANTO },
   ],
 });
