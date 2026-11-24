@@ -8,23 +8,23 @@ type Mota = { x: number; y: number; r: number; mezcla: number; op: number; demor
 
 const hexRgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 
-function sembrar(semilla: number, cantidad: number): Mota[] {
+function sembrar(semilla: number, cantidad: number, abajo = false): Mota[] {
   let s = semilla;
   const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
   const out: Mota[] = [];
   for (let i = 0; i < cantidad; i++) {
     const d = Math.pow(rnd(), 2.2) * 46;
-    const x = 100 - d;
-    const y = rnd() * 100;
+    const x = abajo ? rnd() * 100 : 100 - d;
+    const y = abajo ? 100 - d : rnd() * 100;
     const z = rnd();
-    out.push({ x, y, r: 1.5 + rnd() * 3, mezcla: (x - 54) / 46, op: 0.5 + z * 0.5, demora: 0.2 + rnd() * 1.4, fase: rnd() * 6.28 });
+    out.push({ x, y, r: 1.5 + rnd() * 3, mezcla: ((abajo ? y : x) - 54) / 46, op: 0.5 + z * 0.5, demora: 0.2 + rnd() * 1.4, fase: rnd() * 6.28 });
   }
   return out;
 }
 
 const suave = (t: number) => (t <= 0 ? 0 : t >= 1 ? 1 : 1 - Math.pow(1 - t, 3));
 
-export function Motas({ semilla = 3, cantidad = 260, salida = 0 }: { semilla?: number; cantidad?: number; /** 0 a 1: cuánto se apagan */ salida?: number }) {
+export function Motas({ semilla = 3, cantidad = 260, salida = 0, borde = "derecha" }: { semilla?: number; cantidad?: number; /** borde del que se juntan: `derecha` (siempre) o `abajo` (vertical) */ borde?: "derecha" | "abajo"; /** 0 a 1: cuánto se apagan */ salida?: number }) {
   const f = useFrame();
   const { fps } = useVideoConfig();
   const t = useTheme();
@@ -36,7 +36,7 @@ export function Motas({ semilla = 3, cantidad = 260, salida = 0 }: { semilla?: n
     const A = paradas[i]!, B = paradas[i + 1]!;
     return `rgb(${A.map((v, k) => Math.round(v + (B[k]! - v) * l)).join(",")})`;
   };
-  const motas = React.useMemo(() => sembrar(semilla, cantidad), [semilla, cantidad]);
+  const motas = React.useMemo(() => sembrar(semilla, cantidad, borde === "abajo"), [semilla, cantidad, borde]);
   return (
     <div data-qa-decor="motas de fondo" style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
       {motas.map((d, i) => {

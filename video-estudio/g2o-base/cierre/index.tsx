@@ -19,5 +19,6 @@ export default defineVideo({
   width: 1920,
   height: 1080,
   durationInFrames: CIERRE_DURACION,
+  formats: ["horizontal", "vertical", "cuadrado"],
   defaultProps: { titulo: "¡Animate a crecer más!", url: "grow2on.com" },
 });

@@ -40,7 +40,7 @@ function sembrar(semilla: number, cantidad: number, ancho: number, alto: number)
 const hexRgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 
 export type ParticulasProps = {
-  /** Cuántas partículas (por defecto 64). */
+  /** Cuántas partículas (por defecto 64 por cada 1920 x 1080 px de cuadro: la misma densidad en cualquier formato). */
   cantidad?: number;
   /** Opacidad general de la capa, de 0 a 1 (por defecto OPAC: tenue pero visible sobre el fondo claro, sin competir con el contenido). */
   opacidad?: number;
@@ -53,10 +53,12 @@ export type ParticulasProps = {
 /** Opacidad por defecto de la capa. */
 const OPAC = 0.5;
 
-export function Particulas({ cantidad = 64, opacidad = OPAC, semilla = 11, frame }: ParticulasProps) {
+export function Particulas({ cantidad: cantidadIn, opacidad = OPAC, semilla = 11, frame }: ParticulasProps) {
   const cur = useFrame();
   const f = frame ?? cur;
   const { fps, width, height } = useVideoConfig();
+  // misma densidad en cada formato: 64 partículas en 1920 x 1080 (y en 1080 x 1920, que tiene la misma área); el cuadrado, de poco más de la mitad del área, lleva menos
+  const cantidad = cantidadIn ?? Math.round((64 * width * height) / (1920 * 1080));
   const t = useTheme();
   const T = f / fps;
   const margen = 40;

@@ -86,7 +86,7 @@ Al pedir un video, alcanza con aclarar esto en el primer mensaje:
 - **Colores ajustados para video:** texto atenuado `#77757a`, éxito `#16793f` y alerta `#8f5d00`. Los originales del sistema no se leían sobre blanco.
 - **Énfasis:** degradado de rosa a naranja, solo en títulos de intro, cierre y números destacados.
 - **Piezas para redes:** sin logo en el pie y sin flechas.
-- **Intro y cierre:** duran 7 segundos cada uno (210 cuadros a 30 fps) y están diseñados solo en horizontal (1920x1080). Para vertical o cuadrado hay que diseñarlos.
+- **Intro y cierre:** duran 7 segundos cada uno (210 cuadros a 30 fps) y tienen disposición propia en horizontal (1920x1080), vertical (1080x1920) y cuadrado (1080x1080): `Intro` y `Cierre` eligen sola la del formato del video (`g2o/formato.ts`, detalle en `g2o/README.md`).
 - **Sonido del cierre:** el cierre trae una cortina sonora con una voz, siempre que el mp3 esté copiado (no se versiona; ver arriba). Con `<Cierre sonido={false} />` queda mudo, por ejemplo cuando el video lleva su propia música.
 
 ## Qué no incluye

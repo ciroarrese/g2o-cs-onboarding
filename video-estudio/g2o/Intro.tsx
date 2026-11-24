@@ -1,4 +1,4 @@
-// Intro de Grow2on (1920x1080, 7 s): entra el aro 3D con las motas y el logo, llega la píldora de categoría y el título
+// Intro de Grow2on (7 s; horizontal 1920x1080, y vertical y cuadrado con otra disposición, ver ./formato.ts): entra el aro 3D con las motas y el logo, llega la píldora de categoría y el título
 // en dos líneas (la segunda en el degradado de marca), y todo sale hacia arriba dejando blanco para cortar a lo que sigue.
 // Portada de "G2O Mkt Design System/templates/youtube-intro". Uso:
 //   <Sequence from={0} durationInFrames={INTRO_DURACION}><Intro eyebrow="Funcionalidades" titulo1="Conocé" titulo2="..." /></Sequence>
@@ -8,6 +8,7 @@ import { GradientText, Stage } from "video-estudio/kit";
 import { useTheme } from "video-estudio/themes";
 import { G2O } from "./assets";
 import { Imagen } from "./Imagen";
+import { introGeom } from "./formato";
 import { Motas } from "./Motas";
 import { Pildora, entra, sale, salta, sube as subeBase } from "./movimiento";
 
@@ -23,8 +24,9 @@ export type IntroProps = { eyebrow?: string; titulo1?: string; titulo2?: string;
 
 export function Intro({ eyebrow = "Funcionalidades", titulo1 = "Conocé", titulo2 = "nombre de funcionalidad", escala = 1, salida = CUE.salida, traspaso, aroSalida, capa }: IntroProps) {
   const f = useFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
   const t = useTheme();
+  const G = introGeom(t, width, height, { escala, titulo1, titulo2 });
   const T = f / fps;
   const out = sale(T, salida, salida + 1);
   const textos = traspaso === undefined || f < traspaso;
@@ -37,19 +39,19 @@ export function Intro({ eyebrow = "Funcionalidades", titulo1 = "Conocé", titulo
   const l1 = entra(T, CUE.titulo - 0.2, CUE.titulo + 0.6);
   const l2 = entra(T, CUE.titulo + 0.1, CUE.titulo + 0.9);
   const sube = (p: number) => subeBase(p, out);
-  const titulo: React.CSSProperties = { fontSize: Math.round(t.type.hero * 0.93 * escala), fontWeight: t.font.weights.semibold, lineHeight: 1.04, letterSpacing: "-0.03em" };
+  const titulo: React.CSSProperties = { fontSize: G.titulo, fontWeight: t.font.weights.semibold, lineHeight: 1.04, letterSpacing: "-0.03em" };
 
   return (
     <Stage clouds={false}>
       <div style={{ position: "absolute", inset: 0, background: t.color.bg, color: t.color.text, overflow: "hidden" }}>
         {capa}
-        <Motas semilla={3} salida={out} />
+        <Motas semilla={3} salida={out} borde={G.motas} />
         <Imagen
           src={G2O.marca.aroFuncionalidades}
-          style={{ position: "absolute", left: 1010, top: 100, width: 880, height: 880, opacity: aro * (1 - out), transform: `translateX(${Math.round(out * (160 + (aroSalida?.dx ?? 0)))}px) scale(${aroEscala.toFixed(5)}) rotate(${aroGiro.toFixed(4)}deg)` }}
+          style={{ position: "absolute", left: G.aro.x, top: G.aro.y, width: G.aro.w, height: G.aro.w, opacity: aro * (1 - out), transform: `translate(${Math.round(out * (160 + (aroSalida?.dx ?? 0)) * G.salida.x)}px, ${Math.round(out * (160 + (aroSalida?.dx ?? 0)) * G.salida.y)}px) scale(${aroEscala.toFixed(5)}) rotate(${aroGiro.toFixed(4)}deg)` }}
         />
-        <Imagen src={G2O.marca.logo} alt="Grow2on" style={{ position: "absolute", left: 140, top: 100, height: 92, width: "auto", ...sube(logo) }} />
-        {textos && <div style={{ position: "absolute", left: 140, top: 360, width: 900, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 36 }}>
+        <Imagen src={G2O.marca.logo} alt="Grow2on" style={{ position: "absolute", left: G.logo.x, top: G.logo.y, height: G.logo.h, width: "auto", ...sube(logo) }} />
+        {textos && <div style={{ position: "absolute", left: G.texto.x, top: G.texto.y, width: G.texto.w, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 36 }}>
           <Pildora p={pildora} out={out} size={t.type.caption * 0.94}>{eyebrow}</Pildora>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <div style={{ ...titulo, ...sube(l1) }}>{titulo1}</div>

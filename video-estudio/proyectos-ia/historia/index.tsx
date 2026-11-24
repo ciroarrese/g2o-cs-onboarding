@@ -31,7 +31,7 @@ import { MiniStudio } from "../studio/thumb";
 import { CIERRE_DURACION, Cierre } from "../../g2o/Cierre";
 import { INTRO_DURACION, Intro } from "../../g2o/Intro";
 import { Particulas } from "../../g2o/Particulas";
-import { AperturaTemprana, CIERRE_ADELANTO, PUENTE1, PuenteIntroApertura, PuenteRecapCierre, cierrePildoraDesde } from "../puentes";
+import { AperturaTemprana, CIERRE_ADELANTO, INTRO_TEXTOS, PUENTE1, PuenteIntroApertura, PuenteRecapCierre, cierrePildoraDesde } from "../puentes";
 
 // La mezcla (`audio/audio-proyectos-ia.wav`: música con licencia y efectos; ver ../audio) no se versiona (regla del repo: ningún wav). Si no está, el video
 // queda mudo en vez de fallar: se detecta al compilar (vite resuelve el glob en el build, igual que `g2o/Cierre`). El tipo del glob está en `../../g2o/vite-glob.d.ts`.
@@ -90,7 +90,7 @@ const Video: React.FC = () => (
     <Fill>
       {HAY_AUDIO ? <Audio src={asset("audio-proyectos-ia.wav")} /> : null}
       <Sequence from={0} durationInFrames={INTRO_DURACION}>
-        <Intro eyebrow="Novedades" titulo1="Proyectos" titulo2="con IA" capa={CAPA} salida={4.7} traspaso={PUENTE1.toma} aroSalida={{ dx: 520, escala: 0.55 }} />
+        <Intro eyebrow={INTRO_TEXTOS.eyebrow} titulo1={INTRO_TEXTOS.titulo1} titulo2={INTRO_TEXTOS.titulo2} capa={CAPA} salida={4.7} traspaso={PUENTE1.toma} aroSalida={{ dx: 520, escala: 0.55 }} />
       </Sequence>
       {/* La apertura, quieta en su cuadro 0, antes de que empiece de verdad: el muro y las nubes aparecen mientras el título todavía viaja. */}
       <AperturaTemprana />
@@ -121,8 +121,8 @@ const Video: React.FC = () => (
 
 export default defineVideo({
   id: "proyectos-ia", component: Video, fps: 30, width: 1920, height: 1080, durationInFrames: TOTAL,
-  // Intro y cierre de Grow2on solo existen en horizontal (1920x1080): no se promete vertical ni cuadrado.
-  formats: ["horizontal"],
+  // Intro, cierre y empalmes de Grow2on tienen disposición propia en cada formato (`g2o/formato.ts`, `puentes.tsx`).
+  formats: ["horizontal", "vertical", "cuadrado"],
   scenes: [
     { id: "intro", name: "Intro de Grow2on", from: 0, durationInFrames: INTRO_DURACION },
     ...timeline.map((e) => ({ id: e.id, name: e.kind === "topic" && e.topic !== undefined ? spec.topics[e.topic]?.name : undefined, from: HISTORIA_DESDE + e.from, durationInFrames: e.durationInFrames })),

@@ -4,7 +4,8 @@ import type { StorySpec } from "video-estudio/stories";
 import { Particulas } from "../../g2o/Particulas";
 
 export const spec: StorySpec = {
-  title: { text: "Proyectos con IA", highlight: "con IA" },
+  // Espacio duro entre "con" e "IA": en los formatos angostos el cartel parte el título en renglones y así queda "Proyectos" / "con IA" (sin "IA" sola); en horizontal es un solo renglón y no cambia nada.
+  title: { text: "Proyectos con\u00a0IA", highlight: "con\u00a0IA" },
   topics: [
     { id: "asistente-ia", name: "Asistente IA", line: "responde, dicta y escala sin salir del ticket" },
     { id: "sincro-presta", name: "Módulo Sincro Presta", line: "la tienda y el ERP, siempre sincronizados" },

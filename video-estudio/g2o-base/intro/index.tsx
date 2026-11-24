@@ -19,5 +19,6 @@ export default defineVideo({
   width: 1920,
   height: 1080,
   durationInFrames: INTRO_DURACION,
+  formats: ["horizontal", "vertical", "cuadrado"],
   defaultProps: { eyebrow: "Funcionalidades", titulo1: "Conocé", titulo2: "nombre de funcionalidad" },
 });

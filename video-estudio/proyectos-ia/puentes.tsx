@@ -10,7 +10,8 @@
 //
 // El traspaso es de píxeles idénticos: en el cuadro de arranque la capa dibuja las mismas piezas, con las mismas funciones y el mismo tema que la intro, la
 // apertura y la recapitulación (`rigTransform`, `Pill`, `surfaceStyle`, `textStyle`), exactamente donde están; después las mueve. Todo sale del cuadro.
-// Solo horizontal (1920 x 1080), como la intro y el cierre de Grow2on.
+// Funcionan en los tres formatos (1920x1080, 1080x1920 y 1080x1080): las posiciones salen de la disposición de cada formato (`g2o/formato.ts` para la intro y
+// el cierre; la apertura y la recapitulación, de `stories/layout`), no de números fijos. En horizontal las constantes son las de siempre.
 import React from "react";
 import { Easing, FrameProvider, useFrame, useVideoConfig } from "video-estudio/engine";
 import { VeilContent, kf } from "video-estudio/kit";
@@ -20,10 +21,12 @@ import { GradientText } from "video-estudio/kit";
 import { StoryBackdropProvider } from "video-estudio/stories";
 import { Chip, Opening, Pill, closingFrames, fitText, openingFrames, useStorySpec, withoutLate } from "video-estudio/stories";
 import { wallOptions } from "video-estudio/stories/types";
-import { closingWall, rigProject, rigTransform } from "video-estudio/stories/layout";
+import { closingWall, fitTitleNarrow, openingWall, pillFit, rigProject, rigTransform, titleCardMax } from "video-estudio/stories/layout";
+import { textWidth } from "video-estudio/kit";
 import { surfaceStyle, textStyle, useTheme } from "video-estudio/themes";
 import { spec } from "./historia/spec";
 import { Particulas } from "../g2o/Particulas";
+import { cierreGeom, formatoDe, introGeom } from "../g2o/formato";
 
 const mix = (a: number, b: number, p: number) => a + (b - a) * p;
 const hexRgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
@@ -62,11 +65,108 @@ export const PUENTE1 = {
   /** el velo del color del fondo se levanta (entran las nubes y el muro) */
   velo: [174, 216] as [number, number],
 };
-/** Ancho (px) del texto "Proyectos con IA" y de "Proyectos " (con su espacio) con la letra del cartel de la apertura (1920 x 1080); se verifican contra el cuadro real. */
+/**
+ * Tiempos del primer empalme por formato. En vertical y cuadrado el título tiene que recorrer más camino (hasta el centro de un cuadro alto) y el cartel de la apertura,
+ * quieto debajo del velo, se asoma a medida que este se levanta: el título llega antes (cuadro 176) y el velo se levanta recién cuando ya está encima, así el cartel de debajo
+ * nunca se ve desfasado. La píldora sigue con el tiempo de siempre (llega al muro cuando entra la apertura).
+ */
+export const tiempos1 = (width: number, height: number) => (width / height < 1.3 ? { viaje: [146, 176] as [number, number], velo: [176, 216] as [number, number] } : { viaje: PUENTE1.viaje, velo: PUENTE1.velo });
+/** Textos de la intro: los usa `historia/index.tsx` en `Intro` y esta capa para saber qué dibuja. */
+export const INTRO_TEXTOS = { eyebrow: "Novedades", titulo1: "Proyectos", titulo2: "con IA" };
+/** Ancho (px) del texto "Proyectos con IA" y de "Proyectos " (con su espacio) con la letra del cartel de la apertura en horizontal (1920 x 1080); se verifican contra el cuadro real. */
 const TXT = { total: 852, hasta2: 536 };
 const PILDORA_W = 227;
-/** Lugar de "Novedades" en el muro de la apertura (coordenadas del muro, como las de `openingWall`): un hueco entre piezas, a la izquierda; arriba a 190, 385 al empezar. */
+/** Lugar de "Novedades" en el muro de la apertura en horizontal (coordenadas del muro, como las de `openingWall`): un hueco entre piezas, a la izquierda; arriba a 190, 385 al empezar. En los otros formatos el hueco se busca (`huecoMuro`). */
 const CHIP_MURO = { x: -935, y: -212, z: -50 };
+
+type Rig = { dz: number; rx: number; ry: number };
+/** Cámara del muro de la apertura en el cuadro local `fl` (la misma cuenta que stories/Opening.tsx). */
+function rigApertura(fl: number, dur: number, dolly: number): Rig {
+  const u = (n: number) => (n * dur) / 300;
+  return {
+    dz: kf(fl, [0, u(130)], [0, 240 + dolly], Easing.linear) + kf(fl, [u(94), u(126) + u(20)], [0, -900]),
+    rx: kf(fl, [0, u(130)], [7, -3], Easing.linear),
+    ry: kf(fl, [0, u(130)], [-11, 6], Easing.linear),
+  };
+}
+
+/** Cartel de la apertura (el que ve la persona cuando llega el título): letra, renglones y caja, según el formato (mismo cálculo que stories/Opening.tsx). */
+function cartelApertura(t: ReturnType<typeof useTheme>, width: number, height: number) {
+  const narrow = width / height < 1.3;
+  const titleW = Math.min(1560, width - 2 * t.safe.x);
+  const tf = narrow ? fitTitleNarrow(t, spec.title.text, width) : fitText(spec.title.text, titleW, t.type.hero, { min: t.type.hero * 0.5, lines: 2, avg: 0.55 });
+  const S2 = tf.size;
+  const padX = Math.round(S2 * 0.55), padY = Math.round(S2 * 0.3);
+  if (!narrow) {
+    return { narrow, S2, padX, padY, filas: 1, anchos: [TXT.total], hasta2: TXT.hasta2, cardW: TXT.total + 2 * padX, cardH: Math.round(S2 * 1.08) + 2 * padY };
+  }
+  // Angosto: el cartel parte el título en renglones solo (con el espacio duro entre "con" e "IA": "Proyectos" / "con IA"); si entero no entra en el ancho del cartel van
+  // dos renglones centrados, si entra, uno solo. (No se usan los renglones de `fitTitleNarrow`: tratan el espacio duro como un espacio y partirían "con" de "IA".)
+  // el cartel pide un interletrado propio (`tracking` -0,03 em sobre el del tema) y `textWidth` con el rol `title` trae solo el del tema: se suma la diferencia por cada letra
+  const ls = parseFloat(String(textStyle(t, "title", { tracking: -0.03 }).letterSpacing ?? "0")) - parseFloat(String(textStyle(t, "title").letterSpacing ?? "0"));
+  const m = (txt: string) => textWidth(t, txt, { size: S2, role: "title" }) + ls * S2 * Array.from(txt).length;
+  const entero = m(`${INTRO_TEXTOS.titulo1} ${INTRO_TEXTOS.titulo2}`);
+  const maxCard = titleCardMax(t, width);
+  const dos = entero > maxCard - 2 * padX - 40; // 40 px de margen: el límite lo decide el navegador con el ancho real (con 8 px de margen este título cae justo en el borde)
+  return {
+    narrow, S2, padX, padY, filas: dos ? 2 : 1, anchos: dos ? [m(INTRO_TEXTOS.titulo1), m(INTRO_TEXTOS.titulo2)] : [entero], hasta2: m(`${INTRO_TEXTOS.titulo1} `),
+    cardW: dos ? maxCard : Math.round(entero) + 2 * padX, // partido en renglones, el cartel ocupa el ancho máximo (el texto fluye en él)
+    cardH: Math.round(S2 * 1.08 * (dos ? 2 : 1)) + 2 * padY,
+  };
+}
+
+const huecos = new Map<string, { x: number; y: number; z: number }>();
+/**
+ * Hueco del muro de la apertura para la pieza "Novedades" en los formatos angostos: se prueban posiciones del muro (a la profundidad de la pieza) y se elige la que,
+ * en todos los cuadros en que el muro se ve (con su cámara), queda dentro del cuadro, sin pisar ninguna otra pieza del muro ni el cartel del título (mientras está) y
+ * lo más cerca posible de donde empieza la píldora; si no hay un hueco limpio, el que menos se pisa. Función pura de la geometría (sin azar): da lo mismo en cada cuadro.
+ */
+function huecoMuro(t: ReturnType<typeof useTheme>, rs: ReturnType<typeof useStorySpec>, width: number, height: number, dur: number, inicio: { x: number; y: number }, cartel: { w: number; h: number }) {
+  const clave = `${width}x${height}`;
+  const hit = huecos.get(clave);
+  if (hit) return hit;
+  const u = (n: number) => (n * dur) / 300;
+  const wo = wallOptions(rs.design);
+  const cx = width / 2, cy = height / 2;
+  const wall = openingWall(rs, height, width);
+  const size = t.type.caption * 0.94;
+  const medida = (txt: string, k: number) => ({ w: (textWidth(t, txt, { size, weight: t.font.weights.medium }) + 1.8 * size + 8) * k, h: size * 2.3 * k });
+  const propia = medida(INTRO_TEXTOS.eyebrow, 1);
+  const frames: number[] = [];
+  for (let fl = 0; fl <= u(94); fl += 4) frames.push(fl);
+  const rigs = frames.map((fl) => rigApertura(fl, dur, wo.dolly));
+  const otras = wall.map((c) => ({ c, m: medida(c.text, c.k) }));
+  const aire = 14;
+  const solape = (a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }) => {
+    const ox = Math.min(a.x + a.w / 2, b.x + b.w / 2) - Math.max(a.x - a.w / 2, b.x - b.w / 2) + aire;
+    const oy = Math.min(a.y + a.h / 2, b.y + b.h / 2) - Math.max(a.y - a.h / 2, b.y - b.h / 2) + aire;
+    return ox > 0 && oy > 0 ? ox * oy : 0;
+  };
+  // rectángulos de las demás piezas en cada cuadro (centro en pantalla y tamaño proyectado)
+  const rects = rigs.map((rig) => otras.flatMap(({ c, m }) => { const q = rigProject(c.x, c.y, c.z, rig, 1400); return q ? [{ x: cx + q.x, y: cy + q.y, w: m.w * q.s, h: m.h * q.s }] : []; }));
+  let mejor = { x: 0, y: 0, z: -50 }, mejorCosto = Infinity;
+  const z = -50;
+  for (let x = -700; x <= 700; x += 20) {
+    for (let y = -height * 0.62; y <= height * 0.62; y += 20) {
+      let costo = 0, fuera = false;
+      for (let i = 0; i < frames.length && !fuera; i++) {
+        const q = rigProject(x, y, z, rigs[i]!, 1400);
+        if (!q) { fuera = true; break; }
+        const r = { x: cx + q.x, y: cy + q.y, w: propia.w * q.s, h: propia.h * q.s };
+        if (r.x - r.w / 2 < 36 || r.x + r.w / 2 > width - 36 || r.y - r.h / 2 < 36 || r.y + r.h / 2 > height - 36) { fuera = true; break; }
+        for (const o of rects[i]!) costo += solape(r, o);
+        if (frames[i]! < u(100)) costo += solape(r, { x: cx, y: cy, w: cartel.w, h: cartel.h });
+      }
+      if (fuera) continue;
+      const q0 = rigProject(x, y, z, rigs[0]!, 1400)!;
+      const dist = Math.hypot(cx + q0.x - inicio.x, cy + q0.y - inicio.y);
+      const total = costo * 1000 + dist;
+      if (total < mejorCosto) { mejorCosto = total; mejor = { x, y, z }; }
+    }
+  }
+  huecos.set(clave, mejor);
+  return mejor;
+}
 
 /**
  * La apertura quieta en su cuadro 0, montada antes de que empiece (desde que se levanta el velo): así el muro y las nubes empiezan a aparecer mientras el título
@@ -76,7 +176,7 @@ export function AperturaTemprana() {
   const f = useFrame();
   const config = useVideoConfig();
   const rs = useStorySpec(spec);
-  if (f < PUENTE1.velo[0] || f >= PUENTE1.apertura) return null;
+  if (f < tiempos1(config.width, config.height).velo[0] || f >= PUENTE1.apertura) return null;
   return (
     <FrameProvider frame={0} config={config}>
       {/* La apertura va con el cuadro 0 congelado, pero las partículas de fondo siguen el cuadro absoluto del video: se las pasa explícito (`frame`), no el del reloj de acá. */}
@@ -92,46 +192,54 @@ export function PuenteIntroApertura() {
   const { width, height } = useVideoConfig();
   const t = useTheme();
   const rs = useStorySpec(withoutLate(spec));
-  const { toma, viaje, apertura, velo } = PUENTE1;
+  const { toma, apertura } = PUENTE1;
+  const { viaje, velo } = tiempos1(width, height);
   if (f < toma || f > apertura + 78) return null;
 
-  // --- inicio: lo que dibuja la intro (mismo cálculo que g2o/Intro.tsx) ---
-  const S1 = Math.round(t.type.hero * 0.93);
-  const pildoraAlto = t.type.caption * 0.94 * 1.2 + 28;
-  const l1Top = 360 + pildoraAlto + 36;
-  const l2Top = l1Top + S1 * 1.04 + 4;
+  // --- inicio: lo que dibuja la intro (la misma disposición que g2o/Intro.tsx, de g2o/formato.ts) ---
+  const G = introGeom(t, width, height, { titulo1: INTRO_TEXTOS.titulo1, titulo2: INTRO_TEXTOS.titulo2 });
+  const S1 = G.titulo;
+  const pildoraAlto = G.pildoraAlto;
+  const l1Top = G.l1Top;
+  const l2Top = G.l2Top;
+  const x0 = G.texto.x, pildoraY = G.texto.y;
   // --- fin: el cartel de la apertura (mismo cálculo que stories/Opening.tsx) ---
-  const titleW = Math.min(1560, width - 2 * t.safe.x);
-  const tf = fitText(spec.title.text, titleW, t.type.hero, { min: t.type.hero * 0.5, lines: 2, avg: 0.55 });
-  const S2 = tf.size;
+  const C = cartelApertura(t, width, height);
+  const S2 = C.S2;
   const tt = textStyle(t, "title", { tracking: -0.03 });
-  const padX = Math.round(S2 * 0.55), padY = Math.round(S2 * 0.3);
-  const cardW = TXT.total + 2 * padX, cardH = Math.round(S2 * 1.08) + 2 * padY;
+  const padX = C.padX, padY = C.padY;
+  const cardW = C.cardW, cardH = C.cardH;
   const surf = surfaceStyle(t, "title", { titleCard: "solid" });
   const cartel: React.CSSProperties = {
-    maxWidth: Math.min(1700, width - t.safe.x), boxSizing: "border-box", padding: `${padY}px ${padX}px`, ...surf, textAlign: "center",
+    maxWidth: titleCardMax(t, width), boxSizing: "border-box", padding: `${padY}px ${padX}px`, ...surf, textAlign: "center",
     fontSize: S2, fontFamily: tt.fontFamily, fontWeight: tt.fontWeight, color: t.color.text, letterSpacing: tt.letterSpacing, lineHeight: 1.08,
   };
   const cx = width / 2, cy = height / 2;
   const e = kf(f, viaje, [0, 1], Easing.inOut);
+  const ep = kf(f, PUENTE1.viaje, [0, 1], Easing.inOut); // la píldora viaja con el tiempo de siempre
   const llego = f >= viaje[1];
   const veloO = kf(f, velo, [1, 0], Easing.linear);
-  // piezas del título: de dos renglones a la izquierda a un renglón centrado
-  const xFin1 = cx - TXT.total / 2, xFin2 = xFin1 + TXT.hasta2;
-  const yFin = cy - (S2 * 1.08) / 2;
+  // piezas del título: de dos renglones a la izquierda al cartel. Horizontal: a un renglón centrado; formatos angostos: a los renglones del cartel, centrados.
   const lsFin = parseFloat(String(tt.letterSpacing ?? "0")); // em (el cartel de la apertura suma el tracking del tema)
-  // El recorrido: primero cada palabra se corre hacia su lugar en horizontal (la segunda por debajo de la primera, sin pisarla) y recién después la
-  // segunda sube a la línea de la primera; así nunca se encima un texto con otro.
-  const ex = kf(f, [viaje[0], viaje[0] + (viaje[1] - viaje[0]) * 0.65], [0, 1], Easing.inOut);
+  const lineaFin = S2 * 1.08;
+  const bloqueTop = cy - lineaFin * C.filas / 2;
+  const dosRenglones = C.filas === 2;
+  const xFin1 = cx - C.anchos[0]! / 2;
+  const xFin2 = dosRenglones ? cx - C.anchos[1]! / 2 : xFin1 + C.hasta2;
+  const yFin1 = bloqueTop, yFin2 = dosRenglones ? bloqueTop + lineaFin : bloqueTop;
+  // El recorrido (horizontal): primero cada palabra se corre hacia su lugar en horizontal (la segunda por debajo de la primera, sin pisarla) y recién después la
+  // segunda sube a la línea de la primera; así nunca se encima un texto con otro. En angosto los dos renglones siguen apilados: se mueven juntos.
+  const ex = dosRenglones ? e : kf(f, [viaje[0], viaje[0] + (viaje[1] - viaje[0]) * 0.65], [0, 1], Easing.inOut);
   const ey1 = e;
-  const ey2 = kf(f, [viaje[0] + (viaje[1] - viaje[0]) * 0.35, viaje[1]], [0, 1], Easing.inOut);
-  const pieza = (x0: number, y0: number, xf: number, ey: number): React.CSSProperties => ({
+  const ey2 = dosRenglones ? e : kf(f, [viaje[0] + (viaje[1] - viaje[0]) * 0.35, viaje[1]], [0, 1], Easing.inOut);
+  const pieza = (xa: number, ya: number, xf: number, yf: number, ey: number): React.CSSProperties => ({
     position: "absolute", left: 0, top: 0, whiteSpace: "nowrap", fontSize: mix(S1, S2, e), lineHeight: mix(1.04, 1.08, e),
-    fontWeight: t.font.weights.semibold, letterSpacing: `${mix(-0.03, lsFin, e).toFixed(4)}em`, transform: `translate(${Math.round(mix(x0, xf, ex))}px, ${Math.round(mix(y0, yFin, ey))}px)`,
+    fontWeight: t.font.weights.semibold, letterSpacing: `${mix(-0.03, lsFin, e).toFixed(4)}em`, transform: `translate(${Math.round(mix(xa, xf, ex))}px, ${Math.round(mix(ya, yf, ey))}px)`,
   });
 
   // tarjeta: crece detrás del título desde su caja inicial hasta la del cartel (acompaña a las palabras: llega a su tamaño cuando ellas llegan a su lugar en horizontal)
-  const c0 = { x: 140 - 40, y: l1Top - 30, w: 540, h: Math.round(S1 * 1.04 * 2 + 4 + 76) };
+  const c0w = C.narrow ? Math.round(Math.max(textWidth(t, INTRO_TEXTOS.titulo1, { size: S1, role: "title" }), textWidth(t, INTRO_TEXTOS.titulo2, { size: S1, role: "title" })) + 80) : 540;
+  const c0 = { x: x0 - 40, y: l1Top - 30, w: c0w, h: Math.round(S1 * 1.04 * 2 + 4 + 76) };
   const cardP = kf(f, [viaje[0], viaje[0] + (viaje[1] - viaje[0]) * 0.65], [0, 1], Easing.inOut);
   const cardOp = kf(f, [viaje[0], viaje[0] + 14], [0, 1]);
   const card: React.CSSProperties = {
@@ -145,20 +253,17 @@ export function PuenteIntroApertura() {
   const u = (n: number) => (n * dur) / 300;
   const fl = Math.max(0, f - apertura);
   const wo = wallOptions(rs.design);
-  const rig = {
-    dz: kf(fl, [0, u(130)], [0, 240 + wo.dolly], Easing.linear) + kf(fl, [u(94), u(126) + u(20)], [0, -900]),
-    rx: kf(fl, [0, u(130)], [7, -3], Easing.linear),
-    ry: kf(fl, [0, u(130)], [-11, 6], Easing.linear),
-  };
-  const pj = rigProject(CHIP_MURO.x, CHIP_MURO.y, CHIP_MURO.z, rig, 1400);
+  const rig = rigApertura(fl, dur, wo.dolly);
+  const hueco = C.narrow ? huecoMuro(t, rs, width, height, dur, { x: x0 + PILDORA_W / 2, y: pildoraY + pildoraAlto / 2 }, { w: cardW, h: cardH }) : CHIP_MURO;
+  const pj = rigProject(hueco.x, hueco.y, hueco.z, rig, 1400);
   const murO = kf(fl, [u(94), u(126)], [1, 0.05]);
-  const centro = { x: mix(140 + PILDORA_W / 2, cx + (pj?.x ?? 0), e), y: mix(360 + pildoraAlto / 2, cy + (pj?.y ?? 0), e) - 50 * Math.sin(e * Math.PI) };
-  const pEsc = mix(1, pj?.s ?? 1, e);
+  const centro = { x: mix(x0 + PILDORA_W / 2, cx + (pj?.x ?? 0), ep), y: mix(pildoraY + pildoraAlto / 2, cy + (pj?.y ?? 0), ep) - 50 * Math.sin(ep * Math.PI) };
+  const pEsc = mix(1, pj?.s ?? 1, ep);
   const pX = Math.round(centro.x - PILDORA_W / 2), pY = Math.round(centro.y - pildoraAlto / 2);
   const pilOp = kf(f, [apertura - 6, apertura], [1, 0], Easing.linear);
   const chipOp = kf(f, [apertura - 6, apertura], [0, 1], Easing.linear) * (fade(murO) ?? 1);
-  const chipFondo = mezcla(t.color.accent, t.color.surface, e);
-  const chipTexto = mezcla(t.color.onAccent, t.color.text, e);
+  const chipFondo = mezcla(t.color.accent, t.color.surface, ep);
+  const chipTexto = mezcla(t.color.onAccent, t.color.text, ep);
 
   return (
     <>
@@ -171,8 +276,8 @@ export function PuenteIntroApertura() {
             {/* `overlap` callado: las dos palabras viajan por carriles propios (la segunda por debajo de la primera y sube recién al pasarla) con coordenadas medidas
                 con la tipografía de marca; con una tipografía de reserva más ancha (estrés de `qa`) la primera puede rozar a la segunda en el último cuadro del viaje.
                 A las 210 la capa pasa al cartel armado por el navegador (arriba), que sí ajusta el ancho real. Cada marca va en el contenedor de su palabra. */}
-            <div data-qa-ignore="overlap" style={pieza(140, l1Top, xFin1, ey1)}>Proyectos</div>
-            <div data-qa-ignore="overlap" style={pieza(140, l2Top, xFin2, ey2)}><GradientText>con IA</GradientText></div>
+            <div data-qa-ignore="overlap" style={pieza(x0, l1Top, xFin1, yFin1, ey1)}>{INTRO_TEXTOS.titulo1}</div>
+            <div data-qa-ignore="overlap" style={pieza(x0, l2Top, xFin2, yFin2, ey2)}><GradientText>{INTRO_TEXTOS.titulo2}</GradientText></div>
           </div>
         )}
         {f < velo[1] && llego && (
@@ -182,19 +287,19 @@ export function PuenteIntroApertura() {
             <div style={{ position: "relative" }}>
               <div style={{ position: "absolute", inset: 0, borderRadius: surf.borderRadius, boxShadow: surf.boxShadow, opacity: fade(veloO) }} />
               {/* `overlap` y `covered` callados: este cartel es una copia del de la apertura, que está debajo del velo (se lee uno solo: el de esta capa tapa al otro y este es el que se juzga) */}
-              <div data-qa-ignore="overlap covered" style={{ ...cartel, boxShadow: undefined, position: "relative" }}>Proyectos <GradientText>con IA</GradientText></div>
+              <div data-qa-ignore="overlap covered" style={{ ...cartel, boxShadow: undefined, position: "relative" }}>{INTRO_TEXTOS.titulo1} <GradientText>{INTRO_TEXTOS.titulo2.replace(" ", "\u00a0")}</GradientText></div>
             </div>
           </div>
         )}
         {pilOp > 0 && (
           <div style={{ position: "absolute", left: 0, top: 0, zIndex: 3, transform: `translate(${pX}px, ${pY}px)${Math.abs(pEsc - 1) > 1e-3 ? ` scale(${pEsc.toFixed(4)})` : ""}`, ...(pilOp < 1 ? { opacity: +pilOp.toFixed(3) } : {}) }}>
-            <PildoraTinte fondo={chipFondo} texto={chipTexto} borde={e > 0.02 ? t.color.accent : undefined} size={t.type.caption * 0.94} padding="14px 32px" calla={e < 1 || pilOp < 1}>Novedades</PildoraTinte>
+            <PildoraTinte fondo={chipFondo} texto={chipTexto} borde={ep > 0.02 ? t.color.accent : undefined} size={t.type.caption * 0.94} padding="14px 32px" calla={ep < 1 || pilOp < 1}>{INTRO_TEXTOS.eyebrow}</PildoraTinte>
           </div>
         )}
         {chipOp > 0 && f >= apertura - 6 && pj && (
           // ya es una pieza del muro (adorno, como las demás: mismas marcas que en la apertura), con la cámara y el apagado del muro de la apertura
-          <div data-qa-decor="" data-qa-ignore="covered overlap safe-area" style={{ position: "absolute", left: 0, top: 0, transformOrigin: "0 0", zIndex: 3, transform: rigTransform(CHIP_MURO.x, CHIP_MURO.y, CHIP_MURO.z, rig, 1400, cx, cy, " translate(-50%, -50%)"), ...(chipOp < 1 ? { opacity: +chipOp.toFixed(3) } : {}) }}>
-            <Chip text="Novedades" lit={1} pop={0} />
+          <div data-qa-decor="" data-qa-ignore="covered overlap safe-area" style={{ position: "absolute", left: 0, top: 0, transformOrigin: "0 0", zIndex: 3, transform: rigTransform(hueco.x, hueco.y, hueco.z, rig, 1400, cx, cy, " translate(-50%, -50%)"), ...(chipOp < 1 ? { opacity: +chipOp.toFixed(3) } : {}) }}>
+            <Chip text={INTRO_TEXTOS.eyebrow} lit={1} pop={0} />
           </div>
         )}
       </div>
@@ -206,8 +311,7 @@ export function PuenteIntroApertura() {
 // 2. Recapitulación -> cierre
 // ======================================================================================================================================
 
-/** Lugar de la píldora "grow2on.com" en el cierre de Grow2on (1920 x 1080) y su tamaño (se verifica contra el cuadro real). */
-const PILDORA_URL = { x: 140, y: 668, w: 327, h: 75 };
+/** Lugar de la píldora "grow2on.com" en el cierre de Grow2on: sale de la disposición del formato (`cierreGeom`; en horizontal { x: 140, y: 668, w: 327, h: 75 }). */
 export const PUENTE2 = {
   /** cuadros después del arranque de la recapitulación en que la capa toma las cinco píldoras (ya quietas en el muro) */
   toma: 204,
@@ -222,6 +326,12 @@ export const CIERRE_ADELANTO = 44;
 /** Cuadro local del cierre desde el que la píldora de la URL ya está en su lugar (lo pasa el video al `Cierre`): el cuadro en que termina el viaje. */
 export const cierrePildoraDesde = (recapDesde: number, cierreInicio: number) => recapDesde + PUENTE2.toma + PUENTE2.viaje[1] - cierreInicio;
 
+/** Ancho máximo de la píldora del muro de la recapitulación (la misma cuenta que stories/Closing.tsx: ya agrandada por 1,5 ocupa como mucho el 80 % del cuadro). */
+const pildoraMuroMax = (t: ReturnType<typeof useTheme>, name: string, width: number): number | undefined => {
+  const cap = Math.floor((width * 0.8) / 1.5);
+  return pillFit(t, name).w <= cap ? undefined : cap;
+};
+
 export function PuenteRecapCierre({ recapDesde }: { recapDesde: number }) {
   const fAbs = useFrame();
   const { width, height } = useVideoConfig();
@@ -230,6 +340,7 @@ export function PuenteRecapCierre({ recapDesde }: { recapDesde: number }) {
   const { toma, junta, desfase, viaje } = PUENTE2;
   const llegada = toma + viaje[1];
   if (f < toma || f >= llegada) return null;
+  const PILDORA_URL = cierreGeom(t, width, height).pildora;
 
   const dur = closingFrames(spec);
   const u = (n: number) => (n * dur) / 480;
@@ -285,7 +396,7 @@ export function PuenteRecapCierre({ recapDesde }: { recapDesde: number }) {
           // `overlap` y `covered` callados a propósito: las cinco píldoras se juntan en el mismo punto y se funden (el choque ES la transformación); cada marca va en el contenedor de su píldora
           return (
             <div key={i} data-qa-ignore="overlap covered" style={{ position: "absolute", left: 0, top: 0, transformOrigin: "0 0", zIndex: 10 + i, transform, ...(op < 1 ? { opacity: +op.toFixed(3) } : {}) }}>
-              <Pill index={i} name={spec.topics[i]!.name} glow={0.3} />
+              <Pill index={i} name={spec.topics[i]!.name} glow={0.3} maxW={pildoraMuroMax(t, spec.topics[i]!.name, width)} />
             </div>
           );
         })}

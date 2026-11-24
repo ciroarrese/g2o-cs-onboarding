@@ -1,4 +1,4 @@
-// Cierre de Grow2on (1920x1080, 7 s): entra el aro abierto girando y el logo, aparece la frase de cierre en el degradado
+// Cierre de Grow2on (7 s; horizontal 1920x1080, y vertical y cuadrado con otra disposición, ver ./formato.ts): entra el aro abierto girando y el logo, aparece la frase de cierre en el degradado
 // de marca y la píldora con la URL; queda la pantalla final con el aro girando. Con la cortina sonora de marca.
 // Portado de "G2O Mkt Design System/templates/youtube-cierre".
 import React from "react";
@@ -7,6 +7,7 @@ import { GradientText, Stage } from "video-estudio/kit";
 import { useTheme } from "video-estudio/themes";
 import { G2O } from "./assets";
 import { Imagen } from "./Imagen";
+import { cierreGeom } from "./formato";
 import { Motas } from "./Motas";
 import { Pildora, entra, salta, sube } from "./movimiento";
 
@@ -28,8 +29,10 @@ export type CierreProps = {
 
 export function Cierre({ titulo = "¡Animate a crecer más!", url = "grow2on.com", sonido = true, mensaje = CUE.mensaje, pildoraDesde, capa }: CierreProps) {
   const f = useFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
   const t = useTheme();
+  const G = cierreGeom(t, width, height);
+  const horizontal = G.formato === "horizontal";
   const T = f / fps;
 
   const aro = entra(T, 0, 1.6);
@@ -48,14 +51,14 @@ export function Cierre({ titulo = "¡Animate a crecer más!", url = "grow2on.com
       ) : null}
       <div style={{ position: "absolute", inset: 0, background: t.color.bg, color: t.color.text, overflow: "hidden" }}>
         {capa}
-        <Motas semilla={7} />
+        <Motas semilla={7} borde={G.formato === "vertical" ? "abajo" : "derecha"} />
         <Imagen
           src={G2O.marca.aro}
-          style={{ position: "absolute", left: 1160, top: -60, width: 1200, height: 1200, opacity: aro, transform: `translateX(${Math.round((1 - aro) * 120)}px) scale(${(0.85 + 0.15 * aro).toFixed(5)}) rotate(${aroGiro.toFixed(4)}deg)` }}
+          style={{ position: "absolute", left: G.aro.x, top: G.aro.y, width: G.aro.w, height: G.aro.w, opacity: aro, transform: `translateX(${Math.round((1 - aro) * 120)}px) scale(${(0.85 + 0.15 * aro).toFixed(5)}) rotate(${aroGiro.toFixed(4)}deg)` }}
         />
-        <div style={{ position: "absolute", left: 140, top: 0, bottom: 0, width: 860, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-start", gap: 56 }}>
-          <Imagen src={G2O.marca.logo} alt="Grow2on" style={{ height: 120, width: "auto", ...sube(logo) }} />
-          <div style={{ fontSize: t.type.h1 * 0.875, fontWeight: t.font.weights.semibold, letterSpacing: "-0.03em", lineHeight: 1.1, paddingBottom: 6, ...sube(frase) }}>
+        <div style={{ position: "absolute", left: G.texto.x, width: G.texto.w, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: G.gap, ...(horizontal ? { top: 0, bottom: 0, justifyContent: "center" } : { top: G.texto.y! }) }}>
+          <Imagen src={G2O.marca.logo} alt="Grow2on" style={{ height: G.logoH, width: "auto", ...sube(logo) }} />
+          <div style={{ fontSize: G.fraseSize, fontWeight: t.font.weights.semibold, letterSpacing: "-0.03em", lineHeight: 1.1, paddingBottom: 6, ...sube(frase) }}>
             <GradientText>{titulo}</GradientText>
           </div>
           <div style={{ display: "contents", ...(pildoraDesde !== undefined && f < pildoraDesde ? { visibility: "hidden" } : {}) }}>
