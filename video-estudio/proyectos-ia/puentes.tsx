@@ -70,7 +70,10 @@ export const PUENTE1 = {
  * quieto debajo del velo, se asoma a medida que este se levanta: el título llega antes (cuadro 176) y el velo se levanta recién cuando ya está encima, así el cartel de debajo
  * nunca se ve desfasado. La píldora sigue con el tiempo de siempre (llega al muro cuando entra la apertura).
  */
-export const tiempos1 = (width: number, height: number) => (width / height < 1.3 ? { viaje: [146, 176] as [number, number], velo: [176, 216] as [number, number] } : { viaje: PUENTE1.viaje, velo: PUENTE1.velo });
+export const tiempos1 = (width: number, height: number) => (width / height < 1.3
+  // `muro`: cuándo empieza a levantarse el velo que deja ver las nubes y el muro (en angosto antes que el velo que tapa el cartel: ver `parche` en `PuenteIntroApertura`)
+  ? { viaje: [146, 176] as [number, number], velo: [176, 216] as [number, number], muro: [165, 216] as [number, number] }
+  : { viaje: PUENTE1.viaje, velo: PUENTE1.velo, muro: PUENTE1.velo });
 /** Textos de la intro: los usa `historia/index.tsx` en `Intro` y esta capa para saber qué dibuja. */
 export const INTRO_TEXTOS = { eyebrow: "Novedades", titulo1: "Proyectos", titulo2: "con IA" };
 /** Ancho (px) del texto "Proyectos con IA" y de "Proyectos " (con su espacio) con la letra del cartel de la apertura en horizontal (1920 x 1080); se verifican contra el cuadro real. */
@@ -176,7 +179,7 @@ export function AperturaTemprana() {
   const f = useFrame();
   const config = useVideoConfig();
   const rs = useStorySpec(spec);
-  if (f < tiempos1(config.width, config.height).velo[0] || f >= PUENTE1.apertura) return null;
+  if (f < tiempos1(config.width, config.height).muro[0] || f >= PUENTE1.apertura) return null;
   return (
     <FrameProvider frame={0} config={config}>
       {/* La apertura va con el cuadro 0 congelado, pero las partículas de fondo siguen el cuadro absoluto del video: se las pasa explícito (`frame`), no el del reloj de acá. */}
@@ -193,7 +196,7 @@ export function PuenteIntroApertura() {
   const t = useTheme();
   const rs = useStorySpec(withoutLate(spec));
   const { toma, apertura } = PUENTE1;
-  const { viaje, velo } = tiempos1(width, height);
+  const { viaje, velo, muro } = tiempos1(width, height);
   if (f < toma || f > apertura + 78) return null;
 
   // --- inicio: lo que dibuja la intro (la misma disposición que g2o/Intro.tsx, de g2o/formato.ts) ---
@@ -219,6 +222,12 @@ export function PuenteIntroApertura() {
   const ep = kf(f, PUENTE1.viaje, [0, 1], Easing.inOut); // la píldora viaja con el tiempo de siempre
   const llego = f >= viaje[1];
   const veloO = kf(f, velo, [1, 0], Easing.linear);
+  // Velo que deja ver el muro y las nubes. En horizontal es el mismo de siempre (`muro` = `velo`). En angosto se levanta antes y el cartel real de la apertura (quieto debajo, en su
+  // cuadro 0) se tapa con un parche del color del fondo con borde difuso hasta que llega el título; entonces el parche se va (el cartel de esta capa lo cubre) y la sombra se reparte.
+  const angosto = C.narrow;
+  const veloM = angosto ? kf(f, muro, [0.88, 0], Easing.out ?? Easing.inOut) : veloO; // en angosto arranca cuando el aro y el logo ya casi salieron (165), con el muro asomando desde el primer cuadro (0,88 de velo) y cae rápido al principio
+  const parche = angosto ? (llego ? kf(f, [viaje[1], viaje[1] + 6], [1, 0], Easing.linear) : 1) : 0;
+  const sombra = angosto ? 1 - (1 - parche) * (1 - veloM) : veloO; // opacidad de la sombra complementaria del cartel
   // piezas del título: de dos renglones a la izquierda al cartel. Horizontal: a un renglón centrado; formatos angostos: a los renglones del cartel, centrados.
   const lsFin = parseFloat(String(tt.letterSpacing ?? "0")); // em (el cartel de la apertura suma el tracking del tema)
   const lineaFin = S2 * 1.08;
@@ -267,8 +276,10 @@ export function PuenteIntroApertura() {
 
   return (
     <>
-      {f >= velo[0] && veloO > 0 && <div data-qa-veil={veloO.toFixed(3)} data-qa-ignore="covered" style={{ position: "absolute", inset: 0, background: t.color.bg, opacity: fade(veloO), zIndex: Z_VELO, pointerEvents: "none" }}><VeilContent /></div>}
+      {f >= muro[0] && veloM > 0 && <div data-qa-veil={veloM.toFixed(3)} data-qa-ignore="covered" style={{ position: "absolute", inset: 0, background: t.color.bg, opacity: fade(veloM), zIndex: Z_VELO, pointerEvents: "none" }}><VeilContent /></div>}
       <div style={{ position: "absolute", inset: 0, zIndex: Z_PUENTE, pointerEvents: "none", ...baseTexto(t) }}>
+        {/* `covered` callado: el parche tapa a propósito el cartel de la apertura (quieto debajo del velo, desfasado del título que viaja); desaparece al llegar el título */}
+        {angosto && f >= muro[0] && parche > 0 && f < velo[1] && <div data-qa-ignore="covered" style={{ position: "absolute", left: Math.round(cx - cardW / 2), top: Math.round(cy - cardH / 2), width: cardW, height: cardH, background: t.color.bg, borderRadius: surf.borderRadius, boxShadow: `0 0 70px 40px ${t.color.bg}`, opacity: fade(parche) ?? undefined, zIndex: 0 }} />}
         {/* `covered` callado: la tarjeta tapa el cartel de la apertura (quieta en su cuadro 0, debajo del velo) a propósito */}
         {f < velo[1] && !llego && <div data-qa-ignore="covered" style={card} />}
         {f < velo[1] && !llego && (
@@ -285,7 +296,7 @@ export function PuenteIntroApertura() {
           <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
             {/* la sombra del cartel que está debajo (la de la apertura) se ve a medida que se levanta el velo: la de esta capa es el complemento, así la suma no se oscurece ni salta al irse */}
             <div style={{ position: "relative" }}>
-              <div style={{ position: "absolute", inset: 0, borderRadius: surf.borderRadius, boxShadow: surf.boxShadow, opacity: fade(veloO) }} />
+              <div style={{ position: "absolute", inset: 0, borderRadius: surf.borderRadius, boxShadow: surf.boxShadow, opacity: fade(sombra) }} />
               {/* `overlap` y `covered` callados: este cartel es una copia del de la apertura, que está debajo del velo (se lee uno solo: el de esta capa tapa al otro y este es el que se juzga) */}
               <div data-qa-ignore="overlap covered" style={{ ...cartel, boxShadow: undefined, position: "relative" }}>{INTRO_TEXTOS.titulo1} <GradientText>{INTRO_TEXTOS.titulo2.replace(" ", "\u00a0")}</GradientText></div>
             </div>
@@ -323,6 +334,10 @@ export const PUENTE2 = {
 };
 /** Cuadros que el `Cierre` de Grow2on arranca ANTES de su lugar en la línea de tiempo (la recapitulación y el cierre se solapan): el logo, la frase y el aro entran mientras viaja la píldora; la duración total no cambia. */
 export const CIERRE_ADELANTO = 44;
+/** En vertical y cuadrado el cierre arranca antes (64 cuadros): el velo de la recapitulación se cierra y se levanta antes (`veloRecap`) y el aro, el logo y la frase entran mientras las píldoras todavía se juntan, sin cuadros con solo la píldora. */
+export const cierreAdelanto = (width: number, height: number) => (width / height < 1.3 ? 64 : CIERRE_ADELANTO);
+/** Velo que lava el muro de la recapitulación: cuadros (después de la toma) en que llega a 1, y en que se va (en horizontal se queda en 1 y se corta en 34). */
+const veloRecap = (angosto: boolean) => (angosto ? { llega: 16, sale: 30 } : { llega: 22, sale: 34 });
 /** Cuadro local del cierre desde el que la píldora de la URL ya está en su lugar (lo pasa el video al `Cierre`): el cuadro en que termina el viaje. */
 export const cierrePildoraDesde = (recapDesde: number, cierreInicio: number) => recapDesde + PUENTE2.toma + PUENTE2.viaje[1] - cierreInicio;
 
@@ -355,7 +370,9 @@ export function PuenteRecapCierre({ recapDesde }: { recapDesde: number }) {
     rx: 0,
     ry: kf(f, [0, pull], [-6, 3]),
   };
-  const veloO = kf(f, [toma, toma + 22], [0, 1], Easing.linear);
+  const angosto = width / height < 1.3;
+  const vr = veloRecap(angosto);
+  const veloO = angosto ? kf(f, [toma, toma + vr.llega], [0, 1], Easing.linear) * kf(f, [toma + vr.llega, toma + vr.sale], [1, 0], Easing.linear) : kf(f, [toma, toma + 22], [0, 1], Easing.linear);
 
   // el centro donde se juntan y la píldora rosa en que se funden
   const K0 = 1.35; // tamaño de la rosa al fundirse (respecto del final)
@@ -377,7 +394,7 @@ export function PuenteRecapCierre({ recapDesde }: { recapDesde: number }) {
   return (
     <>
       {/* el velo lava el muro; se va cuando el muro ya no está (el cierre de Grow2on ya entra debajo y no se tapa) */}
-      {veloO > 0 && f < toma + 34 && <div data-qa-veil={veloO.toFixed(3)} data-qa-ignore="covered" style={{ position: "absolute", inset: 0, background: t.color.bg, opacity: fade(veloO), zIndex: Z_VELO, pointerEvents: "none" }}><VeilContent /></div>}
+      {veloO > 0 && f < toma + vr.sale && <div data-qa-veil={veloO.toFixed(3)} data-qa-ignore="covered" style={{ position: "absolute", inset: 0, background: t.color.bg, opacity: fade(veloO), zIndex: Z_VELO, pointerEvents: "none" }}><VeilContent /></div>}
       <div style={{ position: "absolute", inset: 0, zIndex: Z_PUENTE, pointerEvents: "none", ...baseTexto(t) }}>
         {slots.slice(0, n).map((s, i) => {
           const e = kf(f, [base + i * desfase, base + i * desfase + junta], [0, 1], Easing.inOut);

@@ -9,7 +9,7 @@
 //  2. La apertura termina atravesando el titular 01 (`handoff: "through"`) con solo las nubes; la primera escena arranca con su ventana y
 //     su titular ya puestos. `AparecerContenido` hace entrar ese contenido en 10 cuadros sobre las mismas nubes.
 import React from "react";
-import { Audio, Fill, Sequence, asset, defineVideo, useFrame } from "video-estudio/engine";
+import { Audio, Fill, Sequence, asset, defineVideo, useFrame, useVideoConfig } from "video-estudio/engine";
 import { VeilContent, kf } from "video-estudio/kit";
 import { fade } from "video-estudio/fx/core";
 import { BackdropLayer, StoryBackdropProvider, composeStory } from "video-estudio/stories";
@@ -31,7 +31,7 @@ import { MiniStudio } from "../studio/thumb";
 import { CIERRE_DURACION, Cierre } from "../../g2o/Cierre";
 import { INTRO_DURACION, Intro } from "../../g2o/Intro";
 import { Particulas } from "../../g2o/Particulas";
-import { AperturaTemprana, CIERRE_ADELANTO, INTRO_TEXTOS, PUENTE1, PuenteIntroApertura, PuenteRecapCierre, cierrePildoraDesde } from "../puentes";
+import { AperturaTemprana, CIERRE_ADELANTO, INTRO_TEXTOS, PUENTE1, PuenteIntroApertura, PuenteRecapCierre, cierreAdelanto, cierrePildoraDesde } from "../puentes";
 
 // La mezcla (`audio/audio-proyectos-ia.wav`: música con licencia y efectos; ver ../audio) no se versiona (regla del repo: ningún wav). Si no está, el video
 // queda mudo en vez de fallar: se detecta al compilar (vite resuelve el glob en el build, igual que `g2o/Cierre`). El tipo del glob está en `../../g2o/vite-glob.d.ts`.
@@ -82,7 +82,10 @@ const TOTAL = CIERRE_DESDE + CIERRE_DURACION;
 
 const CAPA = <BackdropLayer>{Particulas}</BackdropLayer>;
 
-const Video: React.FC = () => (
+const Video: React.FC = () => {
+  const { width, height } = useVideoConfig();
+  const adelanto = cierreAdelanto(width, height); // en vertical y cuadrado el cierre entra antes (ver `puentes.tsx`)
+  return (
   <ThemeProvider theme={theme}>
     {/* Capa de fondo global (partículas): las del video entero salen de acá. La historia la dibuja por `spec.backdrop`; la intro y el cierre por su prop `capa`;
         los velos propios de este archivo y de los empalmes la llevan adentro (`VeilContent`). Todas con el cuadro absoluto: una sola población continua. */}
@@ -105,10 +108,10 @@ const Video: React.FC = () => (
         </Fill>
       </Sequence>
       {/* El cierre arranca `CIERRE_ADELANTO` cuadros antes (sobre la recapitulación): logo, frase y aro entran mientras viaja la píldora; termina en el mismo cuadro. */}
-      <Sequence from={CIERRE_DESDE - CIERRE_ADELANTO} durationInFrames={CIERRE_DURACION + CIERRE_ADELANTO}>
+      <Sequence from={CIERRE_DESDE - adelanto} durationInFrames={CIERRE_DURACION + adelanto}>
         {/* z-index propio: el telón de la recapitulación (zIndex 500 y 600 de la historia) quedaría por encima del cierre mientras se solapan */}
         <div style={{ position: "absolute", inset: 0, zIndex: 3000 }}>
-          <Cierre capa={CAPA} sonido={false} mensaje={0.7} pildoraDesde={cierrePildoraDesde(HISTORIA_DESDE + timeline.find((e) => e.kind === "closing")!.from, CIERRE_DESDE - CIERRE_ADELANTO)} />
+          <Cierre capa={CAPA} sonido={false} mensaje={0.7} pildoraDesde={cierrePildoraDesde(HISTORIA_DESDE + timeline.find((e) => e.kind === "closing")!.from, CIERRE_DESDE - adelanto)} />
         </div>
       </Sequence>
       {/* Empalmes con un elemento que se transforma (cuadro absoluto, encima de todo) y partículas de marca continuas durante todo el video. */}
@@ -117,7 +120,8 @@ const Video: React.FC = () => (
     </Fill>
     </StoryBackdropProvider>
   </ThemeProvider>
-);
+  );
+};
 
 export default defineVideo({
   id: "proyectos-ia", component: Video, fps: 30, width: 1920, height: 1080, durationInFrames: TOTAL,
