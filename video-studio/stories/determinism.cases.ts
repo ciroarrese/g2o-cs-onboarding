@@ -52,6 +52,8 @@ export const CASES: Case[] = [
   { id: "e-neon", theme: "neon", formats: ["cuadrado"], spec: { title: { text: "Atravesamos y brillamos", highlight: "brillamos" }, topics: T(4, true), labels: ["Alfa", "Beta", "Gamma", "Delta"], signoff: { text: "Hasta pronto", tagline: "Nota al pie" } } },
   { id: "e-papel", theme: "papel", noScene: [0], spec: { title: { text: "Papel con marcador", highlight: "marcador" }, topics: T(3), labels: ["Uno", "Dos", "Tres"], signoff: { text: "Fin" }, design: { closing: { bar: true } } } },
   { id: "o-fondo", backdrop: true, formats: ["vertical"], spec: { title: { text: "Una capa de fondo continua", highlight: "continua" }, topics: T(3), labels: ["Alfa", "Beta", "Gamma"], signoff: { text: "Fin" } } },
+  // revelación escenificada con la miniatura grande en vertical y cuadrado (el cuadrado con la lista llena usa el centro): su ventana cae en píxeles enteros
+  { id: "o-revela", formats: ["vertical", "cuadrado"], spec: { title: { text: "Una revelación con miniatura" }, topics: [...T(3), { id: "t4", name: "Un dato extra", line: "algo que no estaba en la lista", reveal: "late" }], labels: ["Uno", "Dos", "Tres"], signoff: { text: "Fin" }, design: { reveal: "stage" }, timing: { interludeReveal: 200 } } },
   { id: "o-sin-escenas", noScene: [0, 1, 2], spec: { title: { text: "Solo apertura y cierre" }, topics: T(3), labels: [], signoff: { text: "Fin" } } },
 ];
 
@@ -81,5 +83,6 @@ export default defineStory({ id: ${JSON.stringify(c.id)}, spec, scenes, theme: $
 /** Escenas generadas que se verifican de cada caso: apertura, primera vuelta (si hay alguna escena de tema) y cierre. */
 export function scenesToCheck(c: Case): string[] {
   const hasScenes = (c.noScene?.length ?? 0) < c.spec.topics.length;
-  return ["opening", ...(hasScenes ? ["interlude-1"] : []), "closing"];
+  const tardio = c.spec.topics.some((t: { reveal?: string }) => t.reveal === "late");
+  return ["opening", ...(hasScenes ? ["interlude-1"] : []), ...(tardio ? ["interlude-reveal"] : []), "closing"];
 }

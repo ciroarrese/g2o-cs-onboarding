@@ -130,6 +130,9 @@ describe("miniatura de la revelación en formatos angostos", () => {
         expect(t.x + t.w / 2).toBeLessThanOrEqual(w);
         expect(t.y - t.h / 2).toBeGreaterThanOrEqual(0);
         expect(t.y + t.h / 2).toBeLessThanOrEqual(h);
+        // el panel de 560x340 escalado cae en píxeles enteros (bordes sin mitad de píxel: su suavizado no puede depender del historial de cuadros)
+        expect(Number.isInteger(t.x - t.w / 2) && Number.isInteger(t.y - t.h / 2), "borde izquierdo o superior fraccionario").toBe(true);
+        expect(Number.isInteger(t.w) && Number.isInteger((340 * t.w) / 560), "tamaño fraccionario").toBe(true);
         if (t.mode === "free") {
           const box = { x: t.x - t.w / 2, y: t.y - t.h / 2, w: t.w, h: t.h };
           for (const r of listTextRects(L, neutral, n - 1, L.rowH * 0.14)) {

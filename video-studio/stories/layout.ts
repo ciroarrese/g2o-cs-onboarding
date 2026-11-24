@@ -865,11 +865,13 @@ export function revealThumbRect(L: ListLayout, theme: Theme, lateI: number, widt
   const rects = listTextRects(L, theme, lateI, L.rowH * 0.14); // las filas ya vistas se corren 0,14 filas hacia arriba (Interlude: `room`)
   const air = 14;
   const hit = (a: TextRect, b: TextRect) => a.x < b.x + b.w + air && a.x + a.w + air > b.x && a.y < b.y + b.h + air && a.y + a.h + air > b.y;
-  const right = Math.min(L.left + L.rowW, width - Math.round(width * 0.06));
+  const right = Math.round(Math.min(L.left + L.rowW, width - Math.round(width * 0.06)));
   const yMin = Math.round(height * 0.06), yMax = height - Math.round(height * 0.06);
   const prefer = L.top + lateI * L.rowH + L.blockTop + (L.stacked ? L.numH + L.numGap + L.nameH / 2 : L.nameH / 2);
-  for (let w = Math.round(width * REVEAL_THUMB.max); w >= Math.round(width * REVEAL_THUMB.min); w -= 4) {
-    const h = Math.round((w * 340) / 560);
+  // Ancho múltiplo de 28 (= 560 / 20): el panel de 560x340 escalado queda en píxeles enteros en los dos ejes (ancho 28k, alto 17k, escala k/20). Con medidas
+  // fraccionarias los bordes de la ventana (recorte redondeado y sombra) caen a mitad de píxel y su suavizado depende de qué se dibujó antes (`--check` en cuadrado).
+  for (let w = Math.floor((width * REVEAL_THUMB.max) / 28) * 28; w >= Math.round(width * REVEAL_THUMB.min); w -= 28) {
+    const h = (w * 340) / 560;
     let best: { y: number; d: number } | null = null;
     for (let top = yMin; top + h <= yMax; top += 4) {
       const box = { x: right - w, y: top, w, h };
@@ -879,6 +881,6 @@ export function revealThumbRect(L: ListLayout, theme: Theme, lateI: number, widt
     }
     if (best) return { mode: "free", x: right - w / 2, y: best.y + h / 2, w, h };
   }
-  const w = Math.round(width * REVEAL_THUMB.spotlight);
-  return { mode: "spotlight", x: width / 2, y: height / 2, w, h: Math.round((w * 340) / 560) };
+  const w = Math.max(28, Math.round((width * REVEAL_THUMB.spotlight) / 28) * 28), h = (w * 340) / 560;
+  return { mode: "spotlight", x: Math.round((width - w) / 2) + w / 2, y: Math.round((height - h) / 2) + h / 2, w, h }; // el borde izquierdo y el superior en píxeles enteros
 }
