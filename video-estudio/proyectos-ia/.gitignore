@@ -1,0 +1,6 @@
+# audio derivado y de salida: ningún wav, mp3 ni mp4 se versiona (regla del repo)
+audio/
+out/
+*.wav
+*.mp3
+*.mp4

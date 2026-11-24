@@ -15,17 +15,22 @@ import { Pildora, entra, sale, salta, sube as subeBase } from "./movimiento";
 export const INTRO_DURACION = 210;
 const CUE = { titulo: 2, salida: 5.5 };
 
-export type IntroProps = { eyebrow?: string; titulo1?: string; titulo2?: string; /** achica el título cuando un renglón no entra (1 = tamaño de la plantilla) */ escala?: number };
+export type IntroProps = { eyebrow?: string; titulo1?: string; titulo2?: string; /** achica el título cuando un renglón no entra (1 = tamaño de la plantilla) */ escala?: number;
+  /** segundo en que empieza la salida de aro, logo y motas (por defecto 5,5: lo de siempre; dura 1 s) */ salida?: number;
+  /** cuadro local desde el cual la intro deja de dibujar la píldora y el título (los toma otra capa que los transforma); sin esto, se dibujan siempre */ traspaso?: number;
+  /** salida del aro con movimiento: `dx` px extra hacia la derecha y `escala` final (1 = sin achicar); sin esto, la salida es la de siempre */ aroSalida?: { dx?: number; escala?: number };
+  /** capa de fondo propia (p. ej. `<BackdropLayer>{Particulas}</BackdropLayer>`): se dibuja sobre el blanco y bajo las motas, el aro y los textos; sin esto no hay capa */ capa?: React.ReactNode };
 
-export function Intro({ eyebrow = "Funcionalidades", titulo1 = "Conocé", titulo2 = "nombre de funcionalidad", escala = 1 }: IntroProps) {
+export function Intro({ eyebrow = "Funcionalidades", titulo1 = "Conocé", titulo2 = "nombre de funcionalidad", escala = 1, salida = CUE.salida, traspaso, aroSalida, capa }: IntroProps) {
   const f = useFrame();
   const { fps } = useVideoConfig();
   const t = useTheme();
   const T = f / fps;
-  const out = sale(T, CUE.salida, CUE.salida + 1);
+  const out = sale(T, salida, salida + 1);
+  const textos = traspaso === undefined || f < traspaso;
 
   const aro = salta(T, 0.1, 1.5);
-  const aroEscala = 0.6 + 0.4 * aro + 0.05 * (T / 8);
+  const aroEscala = (0.6 + 0.4 * aro + 0.05 * (T / 8)) * (aroSalida?.escala !== undefined ? 1 - (1 - aroSalida.escala) * out : 1);
   const aroGiro = -40 * (1 - aro) + 6 * T;
   const logo = entra(T, 0.3, 1.1);
   const pildora = salta(T, CUE.titulo - 0.6, CUE.titulo + 0.1);
@@ -37,19 +42,20 @@ export function Intro({ eyebrow = "Funcionalidades", titulo1 = "Conocé", titulo
   return (
     <Stage clouds={false}>
       <div style={{ position: "absolute", inset: 0, background: t.color.bg, color: t.color.text, overflow: "hidden" }}>
+        {capa}
         <Motas semilla={3} salida={out} />
         <Imagen
           src={G2O.marca.aroFuncionalidades}
-          style={{ position: "absolute", left: 1010, top: 100, width: 880, height: 880, opacity: aro * (1 - out), transform: `translateX(${Math.round(out * 160)}px) scale(${aroEscala.toFixed(5)}) rotate(${aroGiro.toFixed(4)}deg)` }}
+          style={{ position: "absolute", left: 1010, top: 100, width: 880, height: 880, opacity: aro * (1 - out), transform: `translateX(${Math.round(out * (160 + (aroSalida?.dx ?? 0)))}px) scale(${aroEscala.toFixed(5)}) rotate(${aroGiro.toFixed(4)}deg)` }}
         />
         <Imagen src={G2O.marca.logo} alt="Grow2on" style={{ position: "absolute", left: 140, top: 100, height: 92, width: "auto", ...sube(logo) }} />
-        <div style={{ position: "absolute", left: 140, top: 360, width: 900, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 36 }}>
+        {textos && <div style={{ position: "absolute", left: 140, top: 360, width: 900, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 36 }}>
           <Pildora p={pildora} out={out} size={t.type.caption * 0.94}>{eyebrow}</Pildora>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <div style={{ ...titulo, ...sube(l1) }}>{titulo1}</div>
             <div style={{ ...titulo, paddingBottom: 8, ...sube(l2) }}><GradientText>{titulo2}</GradientText></div>
           </div>
-        </div>
+        </div>}
       </div>
     </Stage>
   );

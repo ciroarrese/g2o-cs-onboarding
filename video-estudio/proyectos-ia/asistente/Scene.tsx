@@ -1,0 +1,150 @@
+// Asistente IA, migrada desde video/src/scenes/AsistenteIA.tsx (Remotion). Un ticket de la mesa de ayuda con el panel de IA al lado: el panel se
+// levanta, dicta una respuesta por voz, la ordena con formato, busca errores de pedidos en CloudWatch y crea un ticket interno para Desarrollo que
+// vuela al hilo de comentarios; la cámara atraviesa ese comentario. 840 cuadros a 30 fps. Cifras, empresa, personas y tickets, ficticios.
+//
+// La escena no decide estética: cámara (inclinación y desenfoque), garabatos, viñeta, titular, velo, superficies, radios, pesos de letra, entradas y
+// el vuelo del ticket salen del design system y del kit. La mesa de ayuda va con la marca; el panel IA es oscuro y con su paleta, un design system anidado
+// (./tema.ts) dentro de un `ThemeScope`. Distinto del original: el mundo no usa `preserve-3d` (el plano se inclina entero), la profundidad del panel
+// y de la mesa es la `perspective()` propia de cada elemento, y el ticket que vuela deja la estela y el arco del kit en vez de la inclinación.
+import React from "react";
+import { random, useFormat, useFrame } from "video-estudio/engine";
+import { Cursor, FlyingCard, Stage, Vignette, Wash, World, flight, hideFromScale, kf, textWidth, useCameraAt, zoomThrough } from "video-estudio/kit";
+import { fade as op } from "video-estudio/fx/core";
+import { TopicHeadline, useTopic } from "video-estudio/stories";
+import { ThemeProvider, cornerRadius, dark, editorial, neon, neutral, papel, entrance, surfaceStyle, textStyle, useTheme } from "video-estudio/themes";
+import { Easing } from "video-estudio/engine";
+import { temaVideo as brand } from "../extension";
+import { C, DURACION, KEYS, NEW_TICKET, P as PH, TILT_RX, TILT_RY, TILT_T, TOPIC } from "./datos";
+import { KEYS_CUADRADO, KEYS_VERTICAL, useGeo } from "./geo";
+import { Panel } from "./Panel";
+import { ICON, Icon, TicketView } from "./Ticket";
+import { Anillo } from "../senal";
+
+export { DURACION };
+
+const OUT = Easing.out;
+
+/** Pastilla de voz que flota sobre el editor mientras se dicta. */
+const Waveform: React.FC = () => {
+  const f = useFrame();
+  const t = useTheme();
+  const { MAIN, EDITOR } = useGeo();
+  const a = kf(f, [C.dictar + 8, C.dictar + 20], [0, 1], OUT) * (1 - kf(f, [C.dictStop, C.dictStop + 10], [0, 1], Easing.linear));
+  if (a <= 0) return null;
+  return (
+    <div
+      style={{
+        position: "absolute", left: MAIN.x + MAIN.w - 246, top: EDITOR.y + 4, width: 230, height: 30, boxSizing: "border-box", ...surfaceStyle(t, "chip", { on: true }),
+        display: "flex", alignItems: "center", gap: 4, padding: "0 16px", opacity: op(a), zIndex: 30,
+      }}
+    >
+      <Icon d={ICON.mic} c={t.color.accent} size={22} />
+      {Array.from({ length: 20 }).map((_, i) => {
+        const v = 0.25 + Math.abs(Math.sin(f / 3 + i * 0.9) * Math.sin(f / 7 + i * 0.4)) * 0.75 * (0.6 + random(`w${i}`) * 0.4);
+        return <span key={i} style={{ width: 4, height: +(22 * v).toFixed(2), borderRadius: cornerRadius(t, "bar"), background: t.gradient.brand }} />;
+      })}
+    </div>
+  );
+};
+
+/** El ticket interno que viaja de "Crear reporte" al hilo de comentarios: crece hasta el ancho del comentario donde aterriza. */
+const FlyingTicket: React.FC = () => {
+  const f = useFrame();
+  const t = useTheme();
+  const { MAIN, COMMENT_Y, P, angosta } = useGeo();
+  const from = { x: P.x + 290 + 120, y: P.y + 520 + 35 };
+  const to = { x: MAIN.x + MAIN.w / 2, y: COMMENT_Y + 35 };
+  const { t: p } = flight(f, C.fly, from, to, {});
+  // parte del ancho que necesita su contenido medido (el original partía de 240 px y lo dejaba cortado) y crece hasta el del comentario
+  const need = Math.ceil(textWidth(t, `#${NEW_TICKET}`, { size: t.type.ui.sm, role: "title" }) + textWidth(t, "Ticket interno · Desarrollo", { size: t.type.ui.sm, role: "title" })) + 40 + 22 + 28 + 8;
+  const w = Math.round(need + (MAIN.w - need) * p);
+  const contenido = (
+    <>
+      <Icon d={ICON.tag} c={t.color.accent} />#{NEW_TICKET}
+      <span style={{ color: t.color.text }}>Ticket interno · Desarrollo</span>
+    </>
+  );
+  const tarjeta: React.CSSProperties = { height: 70, boxSizing: "border-box", ...surfaceStyle(t, "card", { on: true, corner: "panel", level: "lg", glow: 0.6 }), display: "flex", alignItems: "center", gap: 14, padding: "0 20px", fontSize: t.type.ui.sm, lineHeight: 1.25, ...textStyle(t, "title"), color: t.color.accent, whiteSpace: "nowrap" };
+  return (
+    <FlyingCard range={C.fly} from={from} to={to} arc={angosta ? -220 : -300} width={MAIN.w} height={70} hideAfter>
+      {angosta ? (
+        // angosta: la tarjeta crece si el texto (con otra tipografía) es más ancho que el medido; queda centrada en el ancho del comentario
+        <div style={{ position: "absolute", left: 0, top: 0, width: MAIN.w, height: 70, display: "flex", justifyContent: "center" }}>
+          <div style={{ ...tarjeta, width: w, minWidth: "max-content" }}>{contenido}</div>
+        </div>
+      ) : (
+        <div style={{ position: "absolute", left: Math.round((MAIN.w - w) / 2), top: 0, width: w, ...tarjeta, overflow: "hidden" }}>{contenido}</div>
+      )}
+    </FlyingCard>
+  );
+};
+
+export function SceneBody() {
+  const f = useFrame();
+  const { width, height, pick } = useFormat();
+  const g = useGeo();
+  const { MAIN, COMMENT_Y, pc } = g;
+  const keys = pick({ horizontal: KEYS, vertical: KEYS_VERTICAL, cuadrado: KEYS_CUADRADO });
+  const topic = useTopic({ name: TOPIC.name, line: TOPIC.line, index: 0 });
+  const cam0 = useCameraAt(f, keys, {
+    map: (fr, c) => zoomThrough(fr, C.through, c, { x: MAIN.x + 230, y: COMMENT_Y + 48 }, 40),
+    noBlurFrom: C.through[0],
+  });
+  // la inclinación de base del original (por cuadro) se suma a la que el design system da por velocidad
+  const tilt = pick({ horizontal: 1, vertical: 0.4, cuadrado: 0.4 }); // en los formatos angostos la inclinación de base es menor: no deja las líneas del mismo renglón pisándose
+  const cam = { ...cam0, rx: cam0.rx + tilt * kf(f, TILT_T, TILT_RX), ry: cam0.ry + tilt * kf(f, TILT_T, TILT_RY) };
+  // la cámara encuadra el panel o el editor y deja cortado el resto de la mesa; en los formatos angostos la vista general ya viene acercada
+  const zoomed = cam.scale > pick({ horizontal: 1.05, vertical: 1.42, cuadrado: 1.3 });
+  const zoomIn = Math.max(0, Math.min(1, (cam.scale - pick({ horizontal: 1.1, vertical: 1.5, cuadrado: 1.4 })) / 0.3));
+  // en los formatos angostos la vista general ya viene acercada y las de trabajo cambian poco de escala: el titular se aparta cuando el panel se levanta y no vuelve
+  const hide = pick({
+    horizontal: hideFromScale(cam.scale, 1, 0.08),
+    vertical: kf(f, [C.lift[0] - 12, C.lift[0] + 4], [0, 1], Easing.inOut),
+    cuadrado: kf(f, [C.lift[0] - 12, C.lift[0] + 4], [0, 1], Easing.inOut),
+  });
+  const recede = kf(f, [C.lift[0], C.lift[1]], [0, 1], Easing.inOut);
+  return (
+    <>
+      <World camera={cam} width={width} height={height} perspective={2200}>
+        <TicketView zoomed={zoomed} recede={recede} />
+        <Waveform />
+        {(g.formato !== "cuadrado" || f >= 96) && <Panel />}{/* en cuadrado el panel espera abajo, fuera de la vista, hasta que la cámara baja */}
+        <FlyingTicket />
+        <Anillo start={C.formato + 6} end={C.formatoDone + 4} cx={pc(PH.x + 270, PH.y + 60 + 68).x} cy={pc(PH.x + 270, PH.y + 60 + 68).y} rx={282} ry={36} id="dc-formato" />
+        <Anillo start={C.cards + 26} end={C.cwClose - 4} cx={pc(PH.x + 150, PH.y + 274 + 158).x} cy={pc(PH.x + 150, PH.y + 274 + 158).y} rx={150} ry={26} id="dc-cards" />
+        <Cursor
+          show={[205, 790]}
+          clicks={[C.dictar, C.dictStop, C.formato, C.cw, C.buscar, C.cwClose, C.reportar, C.crear]}
+          keys={[
+            [205, ...(g.angosta ? ([620, 1250] as const) : ([1250, 700] as const))],
+            [226, pc(1729, 346).x, pc(1729, 346).y],
+            [C.dictStop - 8, pc(1729, 346).x, pc(1729, 346).y],
+            [C.formato - 8, pc(1600, 300).x, pc(1600, 300).y],
+            [C.cw - 8, pc(1416, PH.y + 254).x, pc(1416, PH.y + 254).y],
+            [C.buscar - 8, pc(1600, PH.y + 274 + 87).x, pc(1600, PH.y + 274 + 87).y],
+            [C.cwClose - 8, pc(1416, PH.y + 254).x, pc(1416, PH.y + 254).y],
+            [C.reportar - 8, pc(1416, PH.y + 294).x, pc(1416, PH.y + 294).y],
+            [C.crear - 8, pc(1729, PH.y + 274 + 40 + 233).x, pc(1729, PH.y + 274 + 40 + 233).y],
+            [C.creado + 4, pc(1729, PH.y + 274 + 40 + 233).x, pc(1729, PH.y + 274 + 40 + 233).y],
+            [770, ...(g.angosta ? ([680, 1210] as const) : ([1500, 900] as const))],
+          ]}
+        />
+      </World>
+      <Vignette amount={zoomIn * (1 - kf(f, [C.through[0], C.through[1]], [0, 1], Easing.linear))} />
+      <TopicHeadline title={topic.name} number={topic.index + 1} subtitle={topic.line} start={-30} hide={hide} />
+      <Wash range={[C.through[1] - 14, C.through[1]]} />
+    </>
+  );
+}
+
+/** Design systems con nombre para probar la escena con otro: `--props '{"theme":"editorial"}'` (también "neon", "papel", "dark", "neutral"). */
+const NOMBRADOS = { neutral, dark, editorial, neon, papel };
+
+/** Escena sola (fuera de la historia): tema de marca y sus nubes (o el que se pida por nombre en `--props`). */
+export const SceneVideo: React.FC<{ theme?: keyof typeof NOMBRADOS }> = ({ theme }) => (
+  <ThemeProvider theme={theme ? NOMBRADOS[theme] : brand}>
+    <Stage>
+      <SceneBody />
+    </Stage>
+  </ThemeProvider>
+);
